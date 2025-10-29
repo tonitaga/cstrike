@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Удален плагин `admin_explode.amxx`
 - Добавлен плагин `ReDeathmatch.amxx`, по умолчанию выключен
 - Добавлены модели игроков с тематическими надписями на груди и спине.
+- Добавлена автоматическая выдача парашута всем игрокам
 
 ## [0.4.0]
 
