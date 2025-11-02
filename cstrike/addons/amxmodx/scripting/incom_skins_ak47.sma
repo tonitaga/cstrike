@@ -15,7 +15,8 @@ new const Models_V[][] =
 	"models/incom/ak47/the_empress/v_ak47.mdl",
 	"models/incom/ak47/fuel_injector/v_ak47.mdl",
 	"models/incom/ak47/vulcan/v_ak47.mdl",
-	"models/incom/ak47/elite_build/v_ak47.mdl"
+	"models/incom/ak47/elite_build/v_ak47.mdl",
+    "models/incom/ak47/incom/v_ak47.mdl"
 };
 
 new const Models_P[][] =
@@ -26,7 +27,8 @@ new const Models_P[][] =
 	"models/incom/ak47/the_empress/p_ak47.mdl",
 	"models/incom/ak47/fuel_injector/p_ak47.mdl",
 	"models/incom/ak47/vulcan/p_ak47.mdl",
-	"models/incom/ak47/elite_build/p_ak47.mdl"
+	"models/incom/ak47/elite_build/p_ak47.mdl",
+    "models/incom/ak47/incom/p_ak47.mdl"
 };
 
 new const ModelNames[][] =
@@ -37,7 +39,8 @@ new const ModelNames[][] =
 	"AK47 The Empress",
 	"AK47 Fuel Injector",
 	"AK47 Vulcan",
-	"AK47 Elite Build"
+	"AK47 Elite Build",
+    "AK47 INCOM"
 };
 
 new SkinStorage[33];
@@ -78,6 +81,7 @@ public IncomMenu(id)
 	menu_additem(menu, "\yAK47 \wFuel Injector", "5", 0)
 	menu_additem(menu, "\yAK47 \wVulcan",        "6", 0)
 	menu_additem(menu, "\yAK47 \wElite Build",   "7", 0)
+    menu_additem(menu, "\yAK47 \wIncom",   "8", 0)
 
 	menu_setprop(menu, MPROP_EXIT, MEXIT_ALL);
 	menu_display(id, menu, 0);
