@@ -1,9 +1,10 @@
 #include <amxmodx>
 #include <cstrike>
 #include <cromchat>
+#include <incom_skins>
 
 new const PLUGIN[]       = "Incomsystem Knife Menu";
-new const VERSION[]      = "2.0";
+new const VERSION[]      = "2.1";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-knife";
 
@@ -61,6 +62,15 @@ new const ModelNames[][] =
 	"Knife Skeleton Case Hardened"
 };
 
+///> Handle базы данных
+new Handle:g_DbHandle;
+
+///> Название таблицы
+new const TABLE_NAME[] = "knife";
+
+///> Индекс скина по умолчанию
+new const DEFAULT_SKIN = 8; // "Knife Bayonet Chang Specialist"
+
 new SkinStorage[33];
 
 public plugin_init()
@@ -68,11 +78,10 @@ public plugin_init()
 	register_plugin(PLUGIN, VERSION, AUTHOR);
 	register_clcmd(SKIN_COMMAND,"IncomMenu");
 	register_event("CurWeapon", "IncomChangeCurrentWeapon", "be", "1=1");
-}
 
-public client_putinserver(id)
-{
-	SkinStorage[id] = 11; // "Knife Skeleton Crimson Web"
+	g_DbHandle = IncomSkins_GetHandle();
+
+	IncomSkins_CreateTable(g_DbHandle, TABLE_NAME);
 }
 
 public plugin_precache() 
@@ -81,6 +90,27 @@ public plugin_precache()
 	{
 		precache_model(Models_V[i]);
 	}
+}
+
+public plugin_end()
+{
+	SQL_FreeHandle(g_DbHandle);
+}
+
+public client_putinserver(id)
+{
+	if(is_user_bot(id) || !is_user_connected(id))
+		return;
+
+	IncomSkins_LoadUserSkin(g_DbHandle, TABLE_NAME, id, "LoadUserSkinHandle");
+}
+
+public client_disconnected(id)
+{
+	if(is_user_bot(id))
+		return;
+
+	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
 }
 
 public IncomMenu(id)
@@ -129,6 +159,8 @@ public IncomCase(id, menu, item)
 
 	SkinStorage[id] = item;
 	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
+
+	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
 	
 	menu_destroy(menu);
 	return 1;
@@ -139,5 +171,34 @@ public IncomChangeCurrentWeapon(id)
 	if(get_user_weapon(id) == CSW_KNIFE) 
 	{
 		set_pev(id, pev_viewmodel2, Models_V[SkinStorage[id]]);
+	}
+}
+
+public LoadUserSkinHandle(failstate, Handle:query, error[], errcode, data[], size)
+{
+	if(failstate != TQUERY_SUCCESS)
+	{
+		log_amx("incom_skins_knife error: %s", error);
+		return;
+	}
+	
+	new id = data[0];
+	
+	if(!is_user_connected(id))
+		return;
+	
+	if(SQL_NumRows(query) > 0)
+	{
+		SkinStorage[id] = SQL_ReadResult(query, 0);
+		
+		if(SkinStorage[id] < 0 || SkinStorage[id] >= sizeof Models_V)
+		{
+			SkinStorage[id] = DEFAULT_SKIN;
+		}
+	}
+	else
+	{
+		SkinStorage[id] = DEFAULT_SKIN;
+		IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
 	}
 }
