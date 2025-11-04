@@ -11,6 +11,7 @@ new const SKIN_COMMAND[] = "say /skins-ak47";
 new const Models_V[][] =
 {
 	"models/v_ak47.mdl",
+    "models/incom/ak47/incom/v_ak47.mdl",
 	"models/incom/ak47/fire_serpent/v_ak47.mdl",
 	"models/incom/ak47/bloodsport/v_ak47.mdl",
 	"models/incom/ak47/the_empress/v_ak47.mdl",
@@ -22,6 +23,7 @@ new const Models_V[][] =
 new const Models_P[][] =
 {
 	"models/p_ak47.mdl",
+    "models/incom/ak47/incom/p_ak47.mdl",
 	"models/incom/ak47/fire_serpent/p_ak47.mdl",
 	"models/incom/ak47/bloodsport/p_ak47.mdl",
 	"models/incom/ak47/the_empress/p_ak47.mdl",
@@ -33,12 +35,13 @@ new const Models_P[][] =
 new const ModelNames[][] =
 {
     "AK47 [DEFAULT]",
+    "AK47 INCOM",
 	"AK47 Fire Serpent",
 	"AK47 Bloodsport",
 	"AK47 The Empress",
 	"AK47 Fuel Injector",
 	"AK47 Vulcan",
-	"AK47 Elite Build"
+	"AK47 Elite Build",
 };
 
 ///> Handle базы данных
@@ -102,12 +105,13 @@ public IncomMenu(id)
 	new menu = menu_create("\y>>>>> \rAK47 skin selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "IncomCase")
 	
 	menu_additem(menu, "AK47 \r[DEFAULT]^n",     "1", 0)
-	menu_additem(menu, "\yAK47 \wFire Serpent",  "2", 0)
-	menu_additem(menu, "\yAK47 \wBloodsport",    "3", 0)
-	menu_additem(menu, "\yAK47 \wThe Empress",   "4", 0)
-	menu_additem(menu, "\yAK47 \wFuel Injector", "5", 0)
-	menu_additem(menu, "\yAK47 \wVulcan",        "6", 0)
-	menu_additem(menu, "\yAK47 \wElite Build",   "7", 0)
+    menu_additem(menu, "\yAK47 \wIncom",   "2", 0)
+	menu_additem(menu, "\yAK47 \wFire Serpent",  "3", 0)
+	menu_additem(menu, "\yAK47 \wBloodsport",    "4", 0)
+	menu_additem(menu, "\yAK47 \wThe Empress",   "5", 0)
+	menu_additem(menu, "\yAK47 \wFuel Injector", "6", 0)
+	menu_additem(menu, "\yAK47 \wVulcan",        "7", 0)
+	menu_additem(menu, "\yAK47 \wElite Build",   "8", 0)
 
 	menu_setprop(menu, MPROP_EXIT, MEXIT_ALL);
 	menu_display(id, menu, 0);
