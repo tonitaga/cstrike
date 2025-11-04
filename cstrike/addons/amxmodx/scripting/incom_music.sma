@@ -1,44 +1,56 @@
 #include <amxmodx>
 
 #define PLUGIN  "Incomsystem music"
-#define VERSION "2.1"
+#define VERSION "2.2"
 #define AUTHOR  "Tonitaga"
+
+#define KEY_ENABLE     "amx_incom_music_enable"
+#define DEFAULT_ENABLE "1"
+
+new g_Enable;
 
 public plugin_init() 
 { 
     register_plugin(PLUGIN, VERSION, AUTHOR)
     
-    // Используем logevent вместо SendAudio
     register_logevent("round_end", 2, "1=Round_End")
 
     register_clcmd("joinclass", "OnAgentChoose");
-    
-    // Блокируем стандартные звуки через SendAudio
-    register_event("SendAudio", "block_standard_sounds", "a", "2&%!MRAD_terwin", "2&%!MRAD_ctwin", "2&%!MRAD_rounddraw")
 }
 
-public block_standard_sounds()
+
+public plugin_cfg()
 {
-    return PLUGIN_HANDLED // Полностью блокируем стандартные звуки
+	g_Enable = create_cvar(KEY_ENABLE, DEFAULT_ENABLE, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
+
+	AutoExecConfig(true, "incom_music");
 }
 
 public client_connect(playerId)
 {
-    client_cmd(playerId, "spk incom/greeting")
-    return 0;
+    if (get_pcvar_num(g_Enable))
+    {
+        client_cmd(playerId, "spk incom/greeting")
+    }
 }
 
 public OnAgentChoose(playerId)
 {
-    client_cmd(playerId,"stopsound")
+    if (get_pcvar_num(g_Enable))
+    {
+        client_cmd(playerId, "stopsound")
+    }
 }
 
 public round_end()
 {
-    new rand = random_num(1,10)
-    
-    client_cmd(0,"stopsound")
-    set_task(0.5, "play_round_sound", rand)
+    if (get_pcvar_num(g_Enable))
+    {
+        new rand = random_num(1,10)
+        
+        client_cmd(0, "stopsound")
+        set_task(0.5, "play_round_sound", rand)
+    }
 }
 
 public play_round_sound(sound_id)
