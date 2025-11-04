@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
         - 1 HP за каждые два уровня престижа (Максимальный показатель HP 130)
 - Добавлен плагин для изменения стандартого меню выбора команды на минималистичное текстовое `teamselect.amxx`
 - Добавлены скины на ak47, m4a1 в стиле `incomsystem`
+- Убран плагин `incom_hud_info.amxx`, вместо этого добавлен плагин `incom_version.amxx`, по команде `/version` отображает версию сборки
 
 ## [0.4.0]
 
