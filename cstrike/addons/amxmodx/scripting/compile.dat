@@ -67,7 +67,7 @@ Age=1533301559
 [incom_skins_awp.sma]
 Age=1533301570
 [incom_skins_deagle.sma]
-Age=1533314620
+Age=1533314721
 [incom_skins_glock.sma]
 Age=1533301430
 [incom_skins_knife.sma]
@@ -166,3 +166,5 @@ Age=1513717591
 Age=1532582022
 [molotov_aes_layer.sma]
 Age=1532864206
+[incom_camera_changer.sma]
+Age=1533316167
