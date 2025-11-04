@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлен плагин для изменения стандартого меню выбора команды на минималистичное текстовое `teamselect.amxx`
 - Добавлены скины на ak47, m4a1 в стиле `incomsystem`
 - Убран плагин `incom_hud_info.amxx`, вместо этого добавлен плагин `incom_version.amxx`, по команде `/version` отображает версию сборки
+- Добавлен плагин для отображения тематического графити в стиле `Incomsystem`. `amxx_grafity.amxx`
 
 ## [0.4.0]
 
