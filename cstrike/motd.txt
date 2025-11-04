@@ -19,7 +19,7 @@ hr{ border:1px solid #333; width:80%; }
 <div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="blue">v0.5.0.draft</div>
+<div class="blue">v0.5.0</div>
 <br><hr><br>
 <div class="grn">play_cs();</div>
 <div class="grn">make_headshot();</div>
