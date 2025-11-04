@@ -42,8 +42,8 @@ stock const STEAM_PREFIX[] = "^1[^4Steam^1] ";
 // Skill letter support
 #define FUNCTION_ADD_SKILL_LETTER "^1[^4%s^1] "
 
-#define PREFIX_MAX_LENGTH 32
-#define AES_MAX_LENGTH 32
+#define PREFIX_MAX_LENGTH 64
+#define AES_MAX_LENGTH 64
 
 #if defined FUNCTION_SQL_PREFIX
 #include <sqlx>
