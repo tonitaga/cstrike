@@ -1,0 +1,11 @@
+$2000$_xmas - map Fun
+$3000$_xmas.bsp is © 04/12/08 by Calou (pascal.poulain@tele2.fr)
+Respawn points/Slots : 32
+________________________________________________
+
+- reprise de la celebre $2000$ en version Noel
+
+- Remake of the celeb $2000$ version christmas
+
+
+[Press FIRE to continue]
