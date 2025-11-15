@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - При выключении режима `amx_incom_respawn_enable 0`, допонительно выставляется
         1) `amx_incom_weapons_delete_enable 0` - выключение плагина по удалению выпавшего оружия
 - [**BUG**] Обнаружена проблема с совместимостью плагина `restmenu.amxx` и `PodBot`: боты добавляются в игру, но остаются в режиме наблюдателя. Это известная проблема, и пока решение не найдено. [#12](https://github.com/tonitaga/incomsystem_cstrike/issues/12)
+- Доработана система увеличения `HP` в зависимости от уровня престижа. Максимальное количество HP теперь `105`
 
 ## [0.5.0]
 
