@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.6.0.draft]
 
+- Добавлен плагин `restmenu_chat.amxx` для админа на запрет оружия. Теперь щит по умолчанию недоступен
+
 ## [0.5.0]
 
 - Удален плагин `admin_explode.amxx`
