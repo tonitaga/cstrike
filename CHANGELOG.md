@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             - (` T`): AK47 + Deagle
     - Добавлена логика информирования игроков
         - Каждые 60 секунд игрокам напоминают, что можно менять оружие с помощью команды `/weapons`.
+- Добавлены карты `$2000$_xmas` `de_dust2_2x2_xmas`
 
 ## [0.5.0]
 
