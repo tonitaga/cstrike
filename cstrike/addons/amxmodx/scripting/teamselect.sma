@@ -237,5 +237,5 @@ public HandleMenu_ChooseTeam_Post(const id, const MenuChooseTeam:slot) {
 	}
 
 	set_member(id, m_iMenu, Menu_ChooseAppearance);
-	rg_internal_cmd(id, "joinclass", "5");
+	client_cmd(id, "joinclass 5");
 }
