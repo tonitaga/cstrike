@@ -5,10 +5,11 @@
 #include <fakemeta>
 #include <engine>
 #include <fun>
+#include <cromchat>
 #include <parse_color>
 
 #define PLUGIN  "Incomsystem Respawn"
-#define VERSION "1.3.1"
+#define VERSION "1.4.0"
 #define AUTHOR  "Tonitaga"
 
 #define WEAPONS_COMMAND "say /weapons"
@@ -83,32 +84,44 @@ public OnAgentChoose(playerId)
 
 public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
 {
-	new oldVal = str_to_num(old_value);
-	new newVal = str_to_num(new_value);
-	
-	if (oldVal == 1 && newVal == 0)
-	{
-		new players[32], count;
-		get_players(players, count);
-		
-		for (new i = 0; i < count; i++)
-		{
-			new playerId = players[i];
+    new oldVal = str_to_num(old_value);
+    new newVal = str_to_num(new_value);
+    
+    if (oldVal == 0 && newVal == 1)
+    {
+        set_cvar_num("amx_incom_weapons_delete_enable", 1);
+        set_cvar_float("amx_incom_weapons_delete_time", 5.0);
+        set_cvar_float("amx_incom_respawn_time", 1.0);
 
-			if (task_exists(g_GodmodeTaskOffset + playerId))
-			{
-				remove_task(g_GodmodeTaskOffset + playerId);
-			}
+        CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Enabled&x01 Team&x07DM&x01");
+    }
+    else if (oldVal == 1 && newVal == 0)
+    {
+        set_cvar_num("amx_incom_weapons_delete_enable", 0);
+        
+        // Останавливаем все задачи и выключаем godmode
+        new players[32], count;
+        get_players(players, count);
+        
+        for (new i = 0; i < count; i++)
+        {
+            new playerId = players[i];
 
-			if (is_user_connected(playerId))
-			{
-				StopGodmodeEffects(playerId);
-				SetGodmode(playerId, false);
-			}
-		}
-	}
+            if (task_exists(g_GodmodeTaskOffset + playerId))
+            {
+                remove_task(g_GodmodeTaskOffset + playerId);
+            }
+
+            if (is_user_connected(playerId))
+            {
+                StopGodmodeEffects(playerId);
+                SetGodmode(playerId, false);
+            }
+        }
+
+        CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Disabled&x01 Team&x07DM&x01");
+    }
 }
-
 public OnRoundStart()
 {
     if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled))
@@ -148,23 +161,34 @@ public RespawnPlayerTask(playerData[])
 		return;
 	
 	ExecuteHamB(Ham_CS_RoundRespawn, playerId);
-	
-	SetGodmode(playerId, true);
 
-	new Float:godmodeDuration = get_pcvar_float(g_GodmodeTime);
-	
-	new godmodeData[1];
-	godmodeData[0] = playerId;
-	set_task(godmodeDuration, "RemoveGodmodeTask", g_GodmodeTaskOffset + playerId, godmodeData, sizeof(godmodeData));
-	
-	StartGodmodeEffects(playerId);
+	if (is_user_alive(playerId))
+    {
+		SetGodmode(playerId, true);
 
-	if (get_pcvar_num(g_HUDEnabled))
-	{
-		ShowHudMessage(playerId, "Вы неуязвимы", godmodeDuration)
+		new Float:godmodeDuration = get_pcvar_float(g_GodmodeTime);
+		
+		new godmodeData[1];
+		godmodeData[0] = playerId;
+		set_task(godmodeDuration, "RemoveGodmodeTask", g_GodmodeTaskOffset + playerId, godmodeData, sizeof(godmodeData));
+		
+		StartGodmodeEffects(playerId);
+
+		if (get_pcvar_num(g_HUDEnabled))
+		{
+			ShowHudMessage(playerId, "Вы неуязвимы", godmodeDuration)
+		}
+		
+		MakeShowWeaponsMenuTask(playerId)
 	}
-	
-	MakeShowWeaponsMenuTask(playerId)
+	else
+	{
+		new authId[35];
+		get_user_authid(playerId, authId, charsmax(authId));
+
+		server_print("[incom_respawn][warning] Failed to restart player with authID '%s'! Trying again", authId);
+		set_task(0.5, "RespawnPlayerTask", playerId, playerData, 1);
+	}
 }
 
 public RemoveGodmodeTask(godmodeData[])
