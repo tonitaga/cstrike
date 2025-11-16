@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0.draft]
+## [0.6.0]
 
 - Добавлен плагин `restmenu_chat.amxx` для админа на запрет оружия. Теперь щит по умолчанию недоступен
 - [**BUG**] Обнаружена проблема с совместимостью плагина `restmenu.amxx` и `PodBot`: боты добавляются в игру, но остаются в режиме наблюдателя. Это известная проблема, и пока решение не найдено. [#12](https://github.com/tonitaga/incomsystem_cstrike/issues/12)

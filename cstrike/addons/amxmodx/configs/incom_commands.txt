@@ -17,7 +17,7 @@ body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 <div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="blue">v0.6.0.draft</div>
+<div class="blue">v0.6.0</div>
 <br><hr><br>
 <div class=cmds><table>
 <tr><td class=ylw>/version</td><td class=grn>- Версия сервера</td></tr>
