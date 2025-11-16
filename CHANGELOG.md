@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.6.0.xmas]
 
 - Включена замена моделей гранат на модели ёлочных игрушек. [weapons_replacement.amxx]
+- Включены новогодние плагины
 
 ## [0.6.0]
 
