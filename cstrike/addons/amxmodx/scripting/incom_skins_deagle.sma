@@ -4,13 +4,21 @@
 #include <incom_skins>
 
 new const PLUGIN[]       = "Incomsystem Deagle Menu";
-new const VERSION[]      = "2.1";
+new const VERSION[]      = "2.2";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-deagle";
+
+// Добавление в сборку скина XMas
+#define XMAS_SKIN_ENABLE 0
 
 new const Models_V[][] =
 {
 	"models/v_deagle.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/deagle/xmas/v_deagle.mdl",
+#endif // XMAS_SKIN_ENABLE
+
 	"models/incom/deagle/blaze/v_deagle.mdl",
 	"models/incom/deagle/oxide_blaze/v_deagle.mdl"
 };
@@ -18,6 +26,11 @@ new const Models_V[][] =
 new const Models_P[][] =
 {
 	"models/p_deagle.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/deagle/xmas/p_deagle.mdl",
+#endif // XMAS_SKIN_ENABLE
+
 	"models/incom/deagle/blaze/p_deagle.mdl",
 	"models/incom/deagle/oxide_blaze/p_deagle.mdl"
 };
@@ -25,6 +38,12 @@ new const Models_P[][] =
 new const ModelNames[][] =
 {
     "Deagle [DEFAULT]",
+
+#if XMAS_SKIN_ENABLE == 1
+	"Deagle Christmas",
+#endif // XMAS_SKIN_ENABLE
+
+
 	"Deagle Blaze",
 	"Deagle Oxide Blaze",
 };
@@ -36,7 +55,7 @@ new Handle:g_DbHandle;
 new const TABLE_NAME[] = "deagle";
 
 ///> Индекс скина по умолчанию
-new const DEFAULT_SKIN = 1; // "Deagle Blaze"
+new const DEFAULT_SKIN = 1;
 
 new SkinStorage[33];
 
@@ -89,7 +108,12 @@ public IncomMenu(id)
 {
 	new menu = menu_create("\y>>>>> \rDeagle skin selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "IncomCase")
 	
-	menu_additem(menu, "Deagle \r[DEFAULT]^n",   "1", 0)
+	menu_additem(menu, "Deagle \r[DEFAULT]^n", "1", 0)
+
+#if XMAS_SKIN_ENABLE == 1
+    menu_additem(menu, "\yDeagle \wChristmas", "100", 0);
+#endif // XMAS_SKIN_ENABLE
+
 	menu_additem(menu, "\yDeagle \wBlaze",       "2", 0)
 	menu_additem(menu, "\yDeagle \wOxide Blaze", "3", 0)
 
@@ -113,14 +137,15 @@ public IncomCase(id, menu, item)
 	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
 	
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
-	
+	IncomChangeCurrentWeapon(id);
+
 	menu_destroy(menu);
 	return 1;
 }
 
 public IncomChangeCurrentWeapon(id) 
 {
-	if(get_user_weapon(id) == CSW_DEAGLE) 
+	if(is_user_alive(id) && get_user_weapon(id) == CSW_DEAGLE) 
 	{
 		set_pev(id, pev_viewmodel2,   Models_V[SkinStorage[id]]);
 		set_pev(id, pev_weaponmodel2, Models_P[SkinStorage[id]]);

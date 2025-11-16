@@ -4,13 +4,21 @@
 #include <incom_skins>
 
 new const PLUGIN[]       = "Incomsystem AWP Menu";
-new const VERSION[]      = "2.1";
+new const VERSION[]      = "2.2";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-awp";
+
+// Добавление в сборку скина XMas
+#define XMAS_SKIN_ENABLE 0
 
 new const Models_V[][] =
 {
 	"models/v_awp.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/awp/xmas/v_awp.mdl",
+#endif // XMAS_SKIN_ENABLE
+
 	"models/incom/awp/dragon_lore/v_awp.mdl",
 	"models/incom/awp/fever_dream/v_awp.mdl",
 	"models/incom/awp/hyper_beast/v_awp.mdl",
@@ -21,6 +29,11 @@ new const Models_V[][] =
 new const Models_P[][] =
 {
 	"models/p_awp.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/awp/xmas/p_awp.mdl",
+#endif // XMAS_SKIN_ENABLE
+
 	"models/incom/awp/dragon_lore/p_awp.mdl",
 	"models/incom/awp/fever_dream/p_awp.mdl",
 	"models/incom/awp/hyper_beast/p_awp.mdl",
@@ -31,6 +44,11 @@ new const Models_P[][] =
 new const ModelNames[][] =
 {
     "AWP [DEFAULT]",
+
+#if XMAS_SKIN_ENABLE == 1
+	"AWP Christmas",
+#endif // XMAS_SKIN_ENABLE
+
 	"AWP Dragon	Lore",
 	"AWP Fever Dream",
 	"AWP Hyper Beast",
@@ -45,7 +63,7 @@ new Handle:g_DbHandle;
 new const TABLE_NAME[] = "awp";
 
 ///> Индекс скина по умолчанию
-new const DEFAULT_SKIN = 1; // "AWP Dragon	Lore"
+new const DEFAULT_SKIN = 1;
 
 new SkinStorage[33];
 
@@ -98,8 +116,13 @@ public IncomMenu(id)
 {
 	new menu = menu_create("\y>>>>> \rAWP skin selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "IncomCase")
 	
-	menu_additem(menu, "AWP \r[DEFAULT]^n",        "1", 0)
-	menu_additem(menu, "\yAWP \wDragon Lore",     "2", 0)
+	menu_additem(menu, "AWP \r[DEFAULT]^n", "1", 0)
+
+#if XMAS_SKIN_ENABLE == 1
+    menu_additem(menu, "\yAWP \wChristmas", "100", 0);
+#endif // XMAS_SKIN_ENABLE
+
+	menu_additem(menu, "\yAWP \wDragon Lore",      "2", 0)
 	menu_additem(menu, "\yAWP \wFever Dream",      "3", 0)
 	menu_additem(menu, "\yAWP \wHyper Beast",      "4", 0)
 	menu_additem(menu, "\yAWP \wLightning Strike", "5", 0)
@@ -125,6 +148,7 @@ public IncomCase(id, menu, item)
 	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
 
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
+	IncomChangeCurrentWeapon(id);
 	
 	menu_destroy(menu);
 	return 1;
@@ -132,7 +156,7 @@ public IncomCase(id, menu, item)
 
 public IncomChangeCurrentWeapon(id) 
 {
-	if(get_user_weapon(id) == CSW_AWP) 
+	if(is_user_alive(id) && get_user_weapon(id) == CSW_AWP) 
 	{
 		set_pev(id, pev_viewmodel2,   Models_V[SkinStorage[id]]);
 		set_pev(id, pev_weaponmodel2, Models_P[SkinStorage[id]]);

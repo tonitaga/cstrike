@@ -4,13 +4,21 @@
 #include <incom_skins>
 
 new const PLUGIN[]       = "Incomsystem AK47 Menu";
-new const VERSION[]      = "2.1";
+new const VERSION[]      = "2.2";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-ak47";
+
+// Добавление в сборку скина XMas
+#define XMAS_SKIN_ENABLE 0
 
 new const Models_V[][] =
 {
 	"models/v_ak47.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/ak47/xmas/v_ak47.mdl",
+#endif // XMAS_SKIN_ENABLE
+
     "models/incom/ak47/incom/v_ak47.mdl",
 	"models/incom/ak47/fire_serpent/v_ak47.mdl",
 	"models/incom/ak47/bloodsport/v_ak47.mdl",
@@ -23,6 +31,11 @@ new const Models_V[][] =
 new const Models_P[][] =
 {
 	"models/p_ak47.mdl",
+
+#if XMAS_SKIN_ENABLE == 1
+	"models/incom/ak47/xmas/p_ak47.mdl",
+#endif // XMAS_SKIN_ENABLE
+
     "models/incom/ak47/incom/p_ak47.mdl",
 	"models/incom/ak47/fire_serpent/p_ak47.mdl",
 	"models/incom/ak47/bloodsport/p_ak47.mdl",
@@ -35,6 +48,11 @@ new const Models_P[][] =
 new const ModelNames[][] =
 {
     "AK47 [DEFAULT]",
+
+#if XMAS_SKIN_ENABLE == 1
+	"AK47 Christmas",
+#endif // XMAS_SKIN_ENABLE
+
     "AK47 INCOM",
 	"AK47 Fire Serpent",
 	"AK47 Bloodsport",
@@ -51,7 +69,7 @@ new Handle:g_DbHandle;
 new const TABLE_NAME[] = "ak47";
 
 ///> Индекс скина по умолчанию
-new const DEFAULT_SKIN = 1; // "AK47 Fire Serpent"
+new const DEFAULT_SKIN = 1;
 
 new SkinStorage[33];
 
@@ -103,9 +121,14 @@ public client_disconnected(id)
 public IncomMenu(id)
 {
 	new menu = menu_create("\y>>>>> \rAK47 skin selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "IncomCase")
+
+	menu_additem(menu, "AK47 \r[DEFAULT]^n", "1", 0)
+
+#if XMAS_SKIN_ENABLE == 1
+    menu_additem(menu, "\yAK47 \wChristmas", "100", 0);
+#endif // XMAS_SKIN_ENABLE
 	
-	menu_additem(menu, "AK47 \r[DEFAULT]^n",     "1", 0)
-    menu_additem(menu, "\yAK47 \wIncom",   "2", 0)
+	menu_additem(menu, "\yAK47 \wIncom",         "2", 0)
 	menu_additem(menu, "\yAK47 \wFire Serpent",  "3", 0)
 	menu_additem(menu, "\yAK47 \wBloodsport",    "4", 0)
 	menu_additem(menu, "\yAK47 \wThe Empress",   "5", 0)
@@ -133,6 +156,7 @@ public IncomCase(id, menu, item)
 	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
 
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
+	IncomChangeCurrentWeapon(id);
 	
 	menu_destroy(menu);
 	return 1;
@@ -140,7 +164,7 @@ public IncomCase(id, menu, item)
 
 public IncomChangeCurrentWeapon(id) 
 {
-	if(get_user_weapon(id) == CSW_AK47) 
+	if(is_user_alive(id) && get_user_weapon(id) == CSW_AK47) 
 	{
 		set_pev(id, pev_viewmodel2,   Models_V[SkinStorage[id]]);
 		set_pev(id, pev_weaponmodel2, Models_P[SkinStorage[id]]);
