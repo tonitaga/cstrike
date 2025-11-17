@@ -40,7 +40,7 @@ new const g_Sounds[][] =
     "incom/roundend8_v2",
     "incom/roundend9_v2",
 
-    "incom/roundend1_xmas",
+    "incom/roundend1_xmas_v2",
     "incom/roundend2_xmas",
     "incom/roundend3_xmas",
     "incom/roundend4_xmas",
