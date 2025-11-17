@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1]
+
+- Обновления плагина `incom_music.amxx`
+    - Добавлены плавные переходы: мягкое начало и затухание в конце.
+    - Добавлены новые новогодние песни.
+    - Игроки с флагом `ADMIN_IMMUNITY` могут в любой момент включать музыку, используя команду `say /music`, и выключать `say /stop_music`.
+
 ## [0.6.0]
 
 - Добавлен плагин `restmenu_chat.amxx` для админа на запрет оружия. Теперь щит по умолчанию недоступен
