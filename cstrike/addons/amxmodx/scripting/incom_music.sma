@@ -24,12 +24,21 @@ new g_Type;
 #define MUSIC_STOP_COMMAND_SAY      "say /stop_music"
 #define MUSIC_STOP_COMMAND_SAY_TEAM "say_team /stop_music"
 
+new g_SongRequested = false;
+new const g_SondRequestTaskId = 14839;
+
 new const g_Sounds[][] =
 {
+    ///> Greeting sounds
     "incom/greeting",
+
+    ///> Greeting sounds [XMas]
     "incom/greeting_xmas",
     "incom/greeting_xmas_let_it_snow",
+    "incom/greeting_xmas_rocking_around",
+    "incom/greeting_xmas_last_christmas",
 
+    ///> Incomsystem [Default]
     "incom/roundend1_v2",
     "incom/roundend2_v2",
     "incom/roundend3_v2",
@@ -40,6 +49,7 @@ new const g_Sounds[][] =
     "incom/roundend8_v2",
     "incom/roundend9_v2",
 
+    ///> Incomsystem [XMas]
     "incom/roundend1_xmas_v2",
     "incom/roundend2_xmas",
     "incom/roundend3_xmas",
@@ -50,9 +60,45 @@ new const g_Sounds[][] =
     "incom/roundend8_xmas"
 };
 
-#define SOUND_OFFSET_GREETING 0  // g_Sounds[0]
-#define SOUND_OFFSET_DEFAULT  3  // g_Sounds[3]
-#define SOUND_OFFSET_XMAS     12 // g_Sounds[12]
+///> Для отображения имени в меню
+///> Если строка пустая, то отображаться будет название из массива g_Sounds
+new const g_SoundsNames[][] =
+{
+    ///> Greeting sounds
+    "Incom Greeting",
+
+    ///> Greeting sounds [XMas]
+    "Incom XMas Greeting",
+    "Let It Snow!",
+    "Rockin Around The Christmas Tree",
+    "Wham! Last Christmas",
+
+    ///> Incomsystem [Default]
+    "Roundend #1",
+    "Roundend #2",
+    "Roundend #3",
+    "Roundend #4",
+    "Roundend #5",
+    "Roundend #6",
+    "Roundend #7",
+    "Roundend #8",
+    "Roundend #9",
+
+    ///> Incomsystem [XMas]
+    "Roundend XMas #1",
+    "Roundend XMas #2",
+    "Roundend XMas #3",
+    "Roundend XMas #4",
+    "Roundend XMas #5",
+    "Roundend XMas #6",
+    "Roundend XMas #7",
+    "Roundend XMas #8"
+};
+
+#define SOUND_OFFSET_GREETING      0  // g_Sounds[0]
+#define SOUND_OFFSET_GREETING_XMAS 1  // g_Sounds[0]
+#define SOUND_OFFSET_DEFAULT       5  // g_Sounds[5]
+#define SOUND_OFFSET_XMAS          14 // g_Sounds[14]
 
 public plugin_init() 
 { 
@@ -119,6 +165,7 @@ public round_end()
     if (get_pcvar_num(g_Enable))
     {
         client_cmd(0, "stopsound")
+        Wrapper_SetSongRequested(false);
 
         new type = get_pcvar_num(g_Type)
         if (type == MUSIC_TYPE_DEFAULT)
@@ -157,37 +204,134 @@ public StopSound(playerId)
     if (get_user_flags(playerId) & ADMIN_FLAG)
     {
         client_cmd(0, "stopsound")
+        Wrapper_SetSongRequested(false);
     }
+}
+
+stock IsSongAlreadyRequested()
+{
+    return g_SongRequested;
+}
+
+stock Wrapper_SetSongRequested(value)
+{
+    new data[1];
+
+    data[0] = value;
+    SetSongRequested(data);
+}
+
+public SetSongRequested(data[])
+{
+    new value = data[0];
+    if (value == g_SongRequested)
+    {
+        return;
+    }
+
+    g_SongRequested = value;
+    if (task_exists(g_SondRequestTaskId))
+    {
+        remove_task(g_SondRequestTaskId);
+    }
+
+    if (value)
+    {
+        data[0] = false;
+        set_task(90.0, "SetSongRequested", g_SondRequestTaskId, data, 1);
+        return;
+    }
+
+    CC_SendMessage(0, "[&x07Incomsystem music&x01] Song request &x04available&x01. Try &x07/anew&x01!");
+}
+
+public pointBonus_RequestSong(playerId)
+{
+    if (!IsSongAlreadyRequested())
+    {
+        ShowMusicRequestMenu(playerId);
+        Wrapper_SetSongRequested(true);
+        return true;
+    }
+
+    CC_SendMessage(playerId, "[&x07Incomsystem music&x01] Song &x04already&x01 requested. Try again &x07later&x01!");
+    return false;
+}
+
+public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
+{
+    new menu = menu_create("\y>>>>> \rIncomsystem Music Menu \y<<<<<^n \dby >>\rTonitaga\d<<", callback)
+
+    new data[8], menuItem[64];
+    for (new i = soundIndexLhs; i < soundIndexRhs; ++i)
+    {
+        num_to_str(i, data, charsmax(data));
+    
+        if (equal(g_SoundsNames[i], ""))
+        {
+            formatex(menuItem, charsmax(menuItem), "\y%s", g_Sounds[i]);
+        }
+        else
+        {
+            formatex(menuItem, charsmax(menuItem), "\y%s", g_SoundsNames[i]);
+        }
+
+        menu_additem(menu, menuItem, data, 0)
+    }
+    
+    menu_setprop(menu, MPROP_EXIT, MEXIT_ALL)
+    menu_display(playerId, menu, 0)
 }
 
 public ShowMusicMenu(playerId)
 {
     if (get_user_flags(playerId) & ADMIN_FLAG)
     {
-        new menu = menu_create("\y>>>>> \rIncomsystem Music Menu \y<<<<<^n \dby >>\rTonitaga\d<<", "MenuCase")
-
-        new data[8], menuItem[32];
-        for (new i = 0; i < sizeof g_Sounds; ++i)
-        {
-            num_to_str(i, data, charsmax(data));
-            formatex(menuItem, charsmax(menuItem), "\y%s", g_Sounds[i]);
-    
-            menu_additem(menu, menuItem, data, 0)
-        }
-        
-        menu_setprop(menu, MPROP_EXIT, MEXIT_ALL)
-        menu_display(playerId, menu, 0)
+        ShowMenu(playerId, 0, sizeof g_Sounds, "MenuCase");
     }
 }
 
-public MenuCase(playerId, menu, item) 
+public MenuCase(playerId, menu, item)
 {
 	if(item == MENU_EXIT)
 	{
-		menu_destroy(menu)
-		return PLUGIN_HANDLED
+		menu_destroy(menu);
+		return PLUGIN_HANDLED;
 	}
 
+	Wrapper_SetSongRequested(true); ///> Админовская команда, проверять на наличие выставленного флага не будем
+	return CommonMenuCase(playerId, menu, item);
+}
+
+public ShowMusicRequestMenu(playerId)
+{
+    new lhsIndex = SOUND_OFFSET_GREETING;
+    new rhsIndex = SOUND_OFFSET_GREETING_XMAS;
+
+    new type = get_pcvar_num(g_Type)
+    if (type == MUSIC_TYPE_XMAS)
+    {
+        lhsIndex = SOUND_OFFSET_GREETING_XMAS;
+        rhsIndex = SOUND_OFFSET_DEFAULT;
+    }
+
+    ShowMenu(playerId, lhsIndex, rhsIndex, "RequestMenuCase");
+}
+
+public RequestMenuCase(playerId, menu, item)
+{
+    if(item == MENU_EXIT)
+    {
+    	menu_destroy(menu);
+        Wrapper_SetSongRequested(false);
+    	return PLUGIN_HANDLED;
+    }
+
+    return CommonMenuCase(playerId, menu, item);
+}
+
+public CommonMenuCase(playerId, menu, item)
+{
 	new data[6], name[128];
 	new access, callback;
 
@@ -198,7 +342,15 @@ public MenuCase(playerId, menu, item)
 	PlaySound(soundId);
 
 	get_user_name(playerId, name, charsmax(name));
-	CC_SendMessage(0, "ADMIN &x07%s&x01 requested sound &x04#%d&x01", name, soundId + 1);
+
+	if (equal(g_SoundsNames[soundId], ""))
+	{
+	    CC_SendMessage(0, "[&x07Incomsystem music&x01] &x04%s&x01 requested song &x07#%d&x01", name, soundId);
+	}
+	else
+	{
+	    CC_SendMessage(0, "[&x07Incomsystem music&x01] &x04%s&x01 requested song &x07%s&x01", name, g_SoundsNames[soundId]);
+	}
 
 	menu_destroy(menu)
 	return PLUGIN_HANDLED

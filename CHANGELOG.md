@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Добавлены новые новогодние песни.
     - Игроки с флагом `ADMIN_IMMUNITY` могут в любой момент включать музыку, используя команду `say /music`, и выключать `say /stop_music`.
     - Убрана задержка перед началом песни, так как появилось мягкое начало
-    - Добавлена песня `Dean Martin - Let It Snow! Let It Snow! Let It Snow!`
+    - Добавлена песни `Let It Snow!`, `Rockin’ Around the Christmas Tree`, `Last Christmas`
+    - Теперь можно заказывать песни через бонусное меню `/anew`. Заказ доступен после завершения раунда или через `90 секунд` после предыдущего выбора.
 - Обновления плагина `incom_respawn.amxx` (`1.4.0` -> `1.5.0`)
     - Добавлен cvar `amx_incom_respawn_random_weapons_enable`. Включает режим TeamDM со случайным оружием
     - Для работы нового `cvar` необоходимо, чтобы TeamDM был включен: `amx_incom_respawn_enable 1`
