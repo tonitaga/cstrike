@@ -28,6 +28,7 @@ new const g_Sounds[][] =
 {
     "incom/greeting",
     "incom/greeting_xmas",
+    "incom/greeting_xmas_let_it_snow",
 
     "incom/roundend1_v2",
     "incom/roundend2_v2",
@@ -50,8 +51,8 @@ new const g_Sounds[][] =
 };
 
 #define SOUND_OFFSET_GREETING 0  // g_Sounds[0]
-#define SOUND_OFFSET_DEFAULT  2  // g_Sounds[2]
-#define SOUND_OFFSET_XMAS     11 // g_Sounds[11]
+#define SOUND_OFFSET_DEFAULT  3  // g_Sounds[3]
+#define SOUND_OFFSET_XMAS     12 // g_Sounds[12]
 
 public plugin_init() 
 { 
