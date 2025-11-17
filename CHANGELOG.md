@@ -5,12 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1]
+## [0.7.0]
 
-- Обновления плагина `incom_music.amxx`
+- Обновления плагина `incom_music.amxx` (`3.0` -> `3.1`)
     - Добавлены плавные переходы: мягкое начало и затухание в конце.
     - Добавлены новые новогодние песни.
     - Игроки с флагом `ADMIN_IMMUNITY` могут в любой момент включать музыку, используя команду `say /music`, и выключать `say /stop_music`.
+- Обновления плагина `incom_respawn.amxx` (`1.4.0` -> `1.5.0`)
+    - Добавлен cvar `amx_incom_respawn_random_weapons_enable`. Включает режим TeamDM со случайным оружием
+    - Для работы нового `cvar` необоходимо, чтобы TeamDM был включен: `amx_incom_respawn_enable 1`
 
 ## [0.6.0]
 

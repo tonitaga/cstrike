@@ -10,7 +10,7 @@
 #include <reapi>
 
 #define PLUGIN  "Incomsystem Respawn"
-#define VERSION "1.4.0"
+#define VERSION "1.5.0"
 #define AUTHOR  "Tonitaga"
 
 #define WEAPONS_COMMAND          "/weapons"
@@ -24,19 +24,25 @@
 #define KEY_GLOW_COLOR             "amx_incom_respawn_glow_color"
 #define KEY_HUD_COLOR              "amx_incom_respawn_hud_color"
 #define KEY_ENABLE_HUD             "amx_incom_respawn_enable_hud"
+#define KEY_RANDOM_WEAPONS_ENABLED "amx_incom_respawn_random_weapons_enable"
+
 
 #define UNDEFINED_SET   0
 #define AK47_DEAGLE_SET 1
 #define M4A1_DEAGLE_SET 2
 #define AWP_DEAGLE_SET  3
 
+///> Количество патронов
+new const AMMO_COUNT = 210
+
 #define DEFAULT_ENABLED                "0"
 #define DEFAULT_GODMODE_TIME           "3.0"
-#define DEFAULT_RESPAWN_TIME           "0.5"
+#define DEFAULT_RESPAWN_TIME           "1.0"
 #define DEFAULT_WEAPONS_CHOOSE_ENABLED "1"
 #define DEFAULT_GLOW_COLOR             "255215000"
 #define DEFAULT_HUD_COLOR              "000255255"
 #define DEFAULT_ENABLE_HUD             "1"
+#define DEFAULT_RANDOM_WEAPONS_ENABLED "0"
 
 new g_RespawnEnabled;
 new g_GodmodeTime;
@@ -45,6 +51,7 @@ new g_WeaponsChooseEnabled;
 new g_GlowColor;
 new g_HUDColor;
 new g_HUDEnabled;
+new g_RandomWeaponsEnabled;
 
 new g_GodmodeTaskOffset = 1000; // Базовый оффсет для задач неуязвимости
 new g_NotifyAboutWeaponSelectTaskId = 12472;
@@ -61,7 +68,7 @@ public plugin_init()
 	register_clcmd(WEAPONS_COMMAND_SAY,      "MakeShowWeaponsMenuTask");
 	register_clcmd(WEAPONS_COMMAND_SAY_TEAM, "MakeShowWeaponsMenuTask");
 
-	set_task(60.0, "NotifyAboutWeaponSelect", g_NotifyAboutWeaponSelectTaskId, .flags = "b");
+	set_task(120.0, "NotifyAboutWeaponSelect", g_NotifyAboutWeaponSelectTaskId, .flags = "b");
 
 	RegisterHam(Ham_TakeDamage, "player", "OnPlayerTakeDamage");
 	RegisterHam(Ham_Spawn, "player", "OnPlayerSpawn");
@@ -76,8 +83,10 @@ public plugin_cfg()
 	g_GlowColor            = create_cvar(KEY_GLOW_COLOR, DEFAULT_GLOW_COLOR, _, "Цвет свечения игрока в режиме бога");
 	g_HUDColor             = create_cvar(KEY_HUD_COLOR, DEFAULT_HUD_COLOR, _, "Цвет HUD сообщений");
 	g_HUDEnabled           = create_cvar(KEY_ENABLE_HUD, DEFAULT_ENABLE_HUD, _, "Отображение информации на HUD^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
+	g_RandomWeaponsEnabled = create_cvar(KEY_RANDOM_WEAPONS_ENABLED, DEFAULT_RANDOM_WEAPONS_ENABLED, _, "Включить случайную выдачу оружия^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 
-	hook_cvar_change(g_RespawnEnabled, "OnRespawnEnabledChanged");
+	hook_cvar_change(g_RespawnEnabled,       "OnRespawnEnabledChanged");
+	hook_cvar_change(g_RandomWeaponsEnabled, "OnRandomWeaponsEnabledChanged");
 
 	AutoExecConfig(true, "incom_respawn");
 }
@@ -142,9 +151,34 @@ public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
     }
 }
 
+public OnRandomWeaponsEnabledChanged(cvar, const old_value[], const new_value[])
+{
+	if (get_pcvar_num(g_RespawnEnabled))
+	{
+		new oldVal = str_to_num(old_value);
+		new newVal = str_to_num(new_value);
+
+		if (newVal == oldVal)
+		{
+			return;
+		}
+
+		if (oldVal == 0 && newVal == 1)
+		{
+			CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Enabled&x01 Random &x07Weapons&x01");
+		}
+		else if (oldVal == 1 && newVal == 0)
+		{
+			CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Disabled&x01 Random &x07Weapons&x01");
+		}
+
+		GiveWeaponsToAllPlayers();
+	}
+}
+
 public NotifyAboutWeaponSelect()
 {
-	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled))
+	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
 		CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 say &x04%s&x01 для выбора оружия", WEAPONS_COMMAND);
 	}
@@ -209,7 +243,10 @@ public OnPlayerSpawn(playerId)
 {
 	if (get_pcvar_num(g_RespawnEnabled) && is_user_alive(playerId))
 	{
-		GiveWeapons(playerId);
+		if (!get_pcvar_num(g_RandomWeaponsEnabled))
+		{
+			GiveWeapons(playerId);
+		}
 	}
 }
 
@@ -335,7 +372,7 @@ public MakeShowWeaponsMenuTask(playerId)
 
 public ShowWeaponsMenu(playerId)
 {
-	if (get_pcvar_num(g_RespawnEnabled))
+	if (get_pcvar_num(g_RespawnEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
 		new menu = menu_create("\y>>>>> \rWeapon selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "WeaponCase")
 		
@@ -367,7 +404,6 @@ public WeaponCase(playerId, menu, item)
 	menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback);
 	
 	g_SelectedWeaponsStorage[playerId] = str_to_num(data)
-	server_print("[WeaponCase] %d player selected: %d set", playerId, g_SelectedWeaponsStorage[playerId]);
 
 	GiveWeapons(playerId);
 	return PLUGIN_HANDLED;
@@ -380,29 +416,47 @@ stock GiveWeapons(playerId)
 		SetDefaultWeapons(playerId);
 	}
 
+	if (get_pcvar_num(g_RandomWeaponsEnabled))
+	{
+		GiveRandomWeapons(playerId);
+		return PLUGIN_HANDLED;
+	}
+
 	switch (g_SelectedWeaponsStorage[playerId])
 	{
 		case AK47_DEAGLE_SET:
 		{
 			rg_give_item(playerId, "weapon_ak47", GT_REPLACE);
-			cs_set_user_bpammo(playerId, WEAPON_AK47, 210);
+			cs_set_user_bpammo(playerId, WEAPON_AK47, AMMO_COUNT);
 		}
 		case M4A1_DEAGLE_SET:
 		{
 			rg_give_item(playerId, "weapon_m4a1", GT_REPLACE);
-			rg_set_user_bpammo(playerId, WEAPON_M4A1, 210);
+			rg_set_user_bpammo(playerId, WEAPON_M4A1, AMMO_COUNT);
 		}
 		case AWP_DEAGLE_SET:
 		{
 			rg_give_item(playerId, "weapon_awp", GT_REPLACE);
-			rg_set_user_bpammo(playerId, WEAPON_AWP, 90);
+			rg_set_user_bpammo(playerId, WEAPON_AWP, AMMO_COUNT);
 		}
 	}
 
 	rg_give_item(playerId, "weapon_deagle", GT_REPLACE);
-	rg_set_user_bpammo(playerId, WEAPON_DEAGLE, 63);
+	rg_set_user_bpammo(playerId, WEAPON_DEAGLE, AMMO_COUNT);
 
 	return PLUGIN_HANDLED;
+}
+
+stock GiveWeaponsToAllPlayers()
+{
+	new players[MAX_PLAYERS],playersCount;
+
+	get_players(players, playersCount);
+	for (new i = 0; i < playersCount; ++i)
+	{
+		new playerId = players[i];
+		GiveWeapons(playerId);
+	}
 }
 
 stock SetDefaultWeapons(playerId)
@@ -418,4 +472,53 @@ stock SetDefaultWeapons(playerId)
 			g_SelectedWeaponsStorage[playerId] = M4A1_DEAGLE_SET
 		}
 	}
+}
+
+new const WeaponIdType:g_SecondaryWeaponEnum[] =
+{
+	WEAPON_ELITE, WEAPON_DEAGLE, WEAPON_FIVESEVEN,
+	WEAPON_USP,   WEAPON_GLOCK18
+};
+
+new const g_SecondaryWeaponName[][] =
+{
+    "weapon_elite", "weapon_deagle", "weapon_fiveseven",
+    "weapon_usp",   "weapon_glock18"
+};
+
+new const WeaponIdType:g_PrimaryWeaponEnum[] =
+{
+	WEAPON_M249,   WEAPON_SG550,  WEAPON_MP5N,
+	WEAPON_P90,    WEAPON_G3SG1,  WEAPON_MAC10,
+	WEAPON_M4A1,   WEAPON_FAMAS,  WEAPON_AUG,
+	WEAPON_AK47,   WEAPON_SG552,  WEAPON_UMP45,
+	WEAPON_GALIL,  WEAPON_XM1014, WEAPON_SCOUT,
+	WEAPON_AWP,    WEAPON_M3
+};
+
+new const g_PrimaryWeaponName[][] =
+{
+    "weapon_m249",   "weapon_sg550",  "weapon_mp5navy",
+    "weapon_p90",    "weapon_g3sg1",  "weapon_mac10",
+    "weapon_m4a1",   "weapon_famas",  "weapon_aug",
+    "weapon_ak47",   "weapon_sg552",  "weapon_ump45",
+    "weapon_galil",  "weapon_xm1014", "weapon_scout",
+    "weapon_awp",    "weapon_m3"
+};
+
+stock GiveRandomWeapons(playerId)
+{
+	new lhs = 0, rhs = (sizeof g_PrimaryWeaponEnum) - 1;
+
+	new rand = random_num(lhs, rhs);
+
+	rg_give_item(playerId, g_PrimaryWeaponName[rand], GT_REPLACE);
+	rg_set_user_bpammo(playerId, g_PrimaryWeaponEnum[rand], AMMO_COUNT);
+
+	rhs = (sizeof g_SecondaryWeaponEnum) - 1;
+
+	rand = random_num(lhs, rhs);
+
+	rg_give_item(playerId, g_SecondaryWeaponName[rand], GT_REPLACE);
+	rg_set_user_bpammo(playerId, g_SecondaryWeaponEnum[rand], AMMO_COUNT);
 }
