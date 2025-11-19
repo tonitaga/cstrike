@@ -5,15 +5,11 @@
 <style>
 body{ background:#000; color:#fff; font-family:'Courier New'; margin:10px; }
 .hdr{ color:#f00; font-weight:bold; font-size:22px; }
-.grn{ color:#0f0; }
-.ylw{ color:#ff0; }
-.blue{ color:#08f; }
-.cmd{ background:#112; border:1px dashed #44f; padding:10px; margin:5px 0; }
-.contr{ background:#111; border:1px solid #333; padding:15px; margin:10px auto; width:80%; }
-.contr-tag{ background:#222; color:#0f0; padding:5px 10px; margin:3px; display:inline-block; border-radius:3px; }
-.git-link{ background:#222; color:#08f; padding:8px 15px; margin:10px; display:inline-block; border-radius:3px; text-decoration:none; border:1px solid #44f; }
-hr{ border:1px solid #333; width:80%; }
-.footer{ color:#888; font-size:12px; margin-top:20px; }
+.g{ color:#0f0; }
+.y{ color:#ff0; }
+.b{ color:#08f; }
+hr{ border:1px solid #444 ; width:100%; }
+.ftr{ ; font-size:12px; margin-top:20px; }
 </style>
 </head>
 <body>
@@ -22,22 +18,22 @@ hr{ border:1px solid #333; width:80%; }
 <div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="blue">v0.7.0.draft</div>
-<br><hr><br>
-<div class="blue">🚀 УЗНАТЬ ВОЗМОЖНОСТИ СЕРВЕРА</div>
+<div class="b">v0.7.0.draft</div>
 <br>
-<div class="cmd"><span class="ylw">/commands</span> - <span class="grn">Посмотреть команды сервера</span></div>
-<br><hr><br>
-<div class="contr">
-    <div class="blue">👥 CONTRIBUTORS</div>
-    <br>
-    <div class="contr-tag">smayl1ks</div>
-</div>
-<a href="https://github.com/tonitaga/incomsystem_cstrike" class="git-link" target="_blank">
-    🐙 GitHub Repository
+<a href="https://github.com/tonitaga/incomsystem_cstrike" target="_blank" style="display:inline-block; text-decoration:none">
+<span class="y">🐙 GitHub</span> - <span class="g">tonitaga/incomsystem_cstrike</span>
 </a>
 <br>
-<div class="footer">© 2025 INCOMSYSTEM [DEV ZONE] | Powered by Tonitaga</div>
+<br><hr><br>
+<div class="b">🚀 LOOKUP SERVER COMMANDS</div>
+<br>
+<div><span class="y">/commands</span> - <span class="g">Lookup server commands</span></div>
+<br><hr><br>
+<div class=b>👥 CONTRIBUTORS</div>
+<br>
+<span class="g">smayl1ks</span>
+<br><br><hr>
+<div class="ftr">© 2025 INCOMSYSTEM [DEV ZONE] | Powered by Tonitaga</div>
 </center>
 </body>
 </html>
