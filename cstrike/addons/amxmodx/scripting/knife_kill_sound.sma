@@ -63,9 +63,9 @@ public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 
 	if(iKiller == pevInflictor && FClassnameIs(get_member(iKiller, m_pActiveItem),"weapon_knife") || FClassnameIs(pevInflictor, "weapon_knife") ) {
 		
-		new cur_type = random_num(0,1); 
+		new cur_type = random_num(0, sizeof(KILL_SOUND) - 1); 
 		#if defined SOUNS
-		rg_send_audio(0, KILL_SOUND[cur_type], PITCH_NORM);
+		play_loud_sound_for_all(cur_type);
 		#endif
 		#if defined MODELS
 		ghost_effect(cur_type,pevInflictor,iVictim)
@@ -75,6 +75,26 @@ public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 
 	return HC_CONTINUE;
 }
+
+#if defined SOUNS
+public play_loud_sound_for_all(sound_index)
+{
+	client_cmd(0, "stopsound");
+	set_task(0.1, "play_delayed_sound", sound_index);
+}
+
+public play_delayed_sound(sound_index)
+{
+	for(new i = 1; i <= get_maxplayers(); i++)
+	{
+		if(is_user_connected(i))
+		{
+			client_cmd(i, "spk ^"%s^"", KILL_SOUND[sound_index]);
+		}
+	}
+	rg_send_audio(0, KILL_SOUND[sound_index], PITCH_NORM);
+}
+#endif
 
 #if defined MODELS
 public ghost_effect(cur_type,pevInflictor,iVictim)
