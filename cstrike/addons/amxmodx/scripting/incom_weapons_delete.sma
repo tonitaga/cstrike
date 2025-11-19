@@ -25,7 +25,7 @@ public plugin_cfg()
 	g_Enabled    = create_cvar(KEY_ENABLED, DEFAULT_ENABLED, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 	g_DeleteTime = create_cvar(KEY_DELETE_TIME, DEFAULT_DELETE_TIME, _, "Задержка перед тем как оружие на полу упавшее от игрока будет удалено (в секундах)", true, 1.0, true, 120.0);
 	
-	AutoExecConfig(true, "incom_weapons_delete");
+	AutoExecConfig();
 }
 
 public Fw_SetModel(entity, const model[])

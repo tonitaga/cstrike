@@ -29,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Обновление плагина `incom_camera_changer.amxx` (`1.0` -> `1.1`)
     - Добавлен новый ключ `CAMERA_NAME` в словать `incom_camera_changer.txt`
 - Добавлено игнорирование файлов `*.pvi` `*.pxp` в `.gitignore`
+- Изменена автогенерация `cfg` файлов для скриптов.
+    - Формат сгенерированного файла теперь такой: `plugin-plugin_name.cfg`
+- Добавлен плагин `incom_gravity.amxx` со случайным изменением гравитации на сервере.
+    - Параметры (cvar) плагина можно посмотреть в `plugin-incom_gravity.cfg`
 
 ## [0.6.0]
 

@@ -46,7 +46,7 @@ public plugin_cfg()
 		register_clcmd(CAMERA_COMMAND_SAY_TEAM, "CameraMenu")
 	}
 
-	AutoExecConfig(true, "incom_camera_changer");
+	AutoExecConfig();
 }
 
 public plugin_precache()

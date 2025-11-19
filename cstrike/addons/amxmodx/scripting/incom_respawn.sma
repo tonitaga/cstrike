@@ -100,7 +100,7 @@ public plugin_cfg()
 	hook_cvar_change(g_RespawnEnabled,       "OnRespawnEnabledChanged");
 	hook_cvar_change(g_RandomWeaponsEnabled, "OnRandomWeaponsEnabledChanged");
 
-	AutoExecConfig(true, "incom_respawn");
+	AutoExecConfig();
 }
 
 public client_connect(playerId)

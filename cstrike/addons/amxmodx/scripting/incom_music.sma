@@ -137,7 +137,7 @@ public plugin_cfg()
 	g_RequestTimeout = create_cvar(KEY_REQUEST_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, _, "Максимальное время ожидания между двумя заказами песен", true, 30.0, true, 180.0);
 	g_RequestEnable  = create_cvar(KEY_REQUEST_ENABLE, DEFAULT_REQUEST_ENABLE, _, "Возможность заказать песню ^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 
-	AutoExecConfig(true, "incom_music");
+	AutoExecConfig();
 }
 
 public plugin_precache()
@@ -165,7 +165,7 @@ public client_connect(playerId)
         }
         else if (type == MUSIC_TYPE_XMAS)
         {
-            PlaySound(playerId, SOUND_OFFSET_GREETING + 1);
+            PlaySound(playerId, SOUND_OFFSET_GREETING_XMAS + 0);
         }
     }
 }
