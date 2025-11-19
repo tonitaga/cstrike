@@ -7,17 +7,20 @@
 
 #define KEY_ENABLE          "amx_incom_music_enable"
 #define KEY_TYPE            "amx_incom_music_type"
+#define KEY_REQUEST_ENABLE  "amx_incom_music_request_enable"
 #define KEY_REQUEST_TIMEOUT "amx_incom_music_request_timeout"
 
 #define DEFAULT_ENABLE          "1"
 #define DEFAULT_TYPE            "1"
-#define DEFAULT_REQUEST_TIMEOUT "90"
+#define DEFAULT_REQUEST_ENABLE  "1"
+#define DEFAULT_REQUEST_TIMEOUT "60"
 
 new const MUSIC_TYPE_DEFAULT = 1
 new const MUSIC_TYPE_XMAS    = 2
 
 new g_Enable;
 new g_Type;
+new g_RequestEnable;
 new g_RequestTimeout;
 
 #define ADMIN_FLAG ADMIN_IMMUNITY
@@ -29,6 +32,7 @@ new g_RequestTimeout;
 
 new g_SongRequested = false;
 new g_SongRequestCounter = 0;
+new g_SongRequestMenuOnHud = 0;
 
 new const g_SondRequestTaskId = 20000;
 new const g_MenuDestroyTaskId = 20500;
@@ -131,6 +135,7 @@ public plugin_cfg()
 	g_Enable         = create_cvar(KEY_ENABLE, DEFAULT_ENABLE, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 	g_Type           = create_cvar(KEY_TYPE, DEFAULT_TYPE, _, "Тип музыки^n1 - Incomsystem [Default]^n2 - Incomsystem [XMas]", true, 1.0, true, 2.0);
 	g_RequestTimeout = create_cvar(KEY_REQUEST_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, _, "Максимальное время ожидания между двумя заказами песен", true, 30.0, true, 180.0);
+	g_RequestEnable  = create_cvar(KEY_REQUEST_ENABLE, DEFAULT_REQUEST_ENABLE, _, "Возможность заказать песню ^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 
 	AutoExecConfig(true, "incom_music");
 }
@@ -177,13 +182,13 @@ public round_end()
 {
     if (get_pcvar_num(g_Enable))
     {
-        client_cmd(0, "stopsound")
-
+        // Пока песня запрошена, то песни конца раунда не будет
         if (IsSongAlreadyRequested())
         {
-            SetSongRequested(false);
-            IncomPrint_Client(0, "[%L] %L", 0, "INCOM_MUSIC", 0, "SOUND_AVAILABLE");
+            return;
         }
+
+        client_cmd(0, "stopsound")
 
         new type = get_pcvar_num(g_Type)
         if (type == MUSIC_TYPE_DEFAULT)
@@ -242,6 +247,16 @@ public StopSound(playerId)
     }
 }
 
+stock IsSongRequestMenuOnHud()
+{
+    return g_SongRequestMenuOnHud;
+}
+
+stock SongRequestMenuOnHud(value)
+{
+    g_SongRequestMenuOnHud = value;
+}
+
 stock IsSongAlreadyRequested()
 {
     return g_SongRequested;
@@ -286,15 +301,26 @@ public PollSongRequest()
 
 public pointBonus_RequestSong(playerId)
 {
-    if (!IsSongAlreadyRequested())
+    if (!get_pcvar_num(g_RequestEnable))
     {
-        SetSongRequested(true);
-        ShowMusicRequestMenu(playerId);
-        return true;
+        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "REQUEST_DISABLED");
+        return false;
     }
 
-    IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
-    return false;
+    if (IsSongAlreadyRequested())
+    {
+        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
+        return false;
+    }
+
+    if (IsSongRequestMenuOnHud())
+    {
+        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOMEONE_SELECTING_SOUND");
+        return false;
+    }
+
+    ShowMusicRequestMenu(playerId);
+    return true;
 }
 
 stock MakeInactiveMenuCanceler(playerId, Float:timeout)
@@ -314,13 +340,15 @@ public InactiveMenuCanceler(taskId)
     menu_cancel(playerId);
     show_menu(playerId, 0, "^n", 1);
 
-    SetSongRequested(false);
+    SongRequestMenuOnHud(false);
 
     IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_AVAILABLE");
 }
 
 public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
 {
+    SongRequestMenuOnHud(true);
+
     new menu = menu_create("\y>>>>> \rIncomsystem Music Menu \y<<<<<^n \dby >>\rTonitaga\d<<", callback)
 
     new data[8], menuItem[64];
@@ -356,7 +384,8 @@ public ShowMusicMenu(playerId)
 
 public MenuCase(playerId, menu, item)
 {
-	RemoveInvactiveMenuCanceler(playerId);
+	SongRequestMenuOnHud(false);
+    RemoveInvactiveMenuCanceler(playerId);
 	
 	if(item == MENU_EXIT)
 	{
@@ -364,8 +393,6 @@ public MenuCase(playerId, menu, item)
 		return PLUGIN_HANDLED;
 	}
 
-	///> Админовская команда, проверять на наличие выставленного флага не будем
-	SetSongRequested(true);
 	return CommonMenuCase(playerId, menu, item);
 }
 
@@ -386,12 +413,12 @@ public ShowMusicRequestMenu(playerId)
 
 public RequestMenuCase(playerId, menu, item)
 {
+    SongRequestMenuOnHud(false);
     RemoveInvactiveMenuCanceler(playerId);
 
     if(item == MENU_EXIT)
     {
     	menu_destroy(menu);
-        SetSongRequested(false);
     	return PLUGIN_HANDLED;
     }
 
@@ -400,6 +427,8 @@ public RequestMenuCase(playerId, menu, item)
 
 public CommonMenuCase(playerId, menu, item)
 {
+	SetSongRequested(true);
+
 	new data[6], name[128];
 	new access, callback;
 
