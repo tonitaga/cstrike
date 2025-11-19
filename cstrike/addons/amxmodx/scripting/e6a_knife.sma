@@ -43,7 +43,7 @@ public plugin_precache() {
 
 public plugin_init()
 {
-	register_plugin("Knife kill", "1.0.1", "MurLemur");
+	register_plugin("e6a knife", "1.1.1", "MurLemur & e6aluga");
 	RegisterHookChain(RG_CSGameRules_DeathNotice, "CSGameRules_DeathNotice", true);
 }	
 
