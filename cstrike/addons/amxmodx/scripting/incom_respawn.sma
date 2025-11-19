@@ -192,7 +192,7 @@ public NotifyAboutWeaponSelect()
 {
 	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
-		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "WEAPONS_NOTIFY");
+		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "WEAPONS_NOTIFY", WEAPONS_COMMAND);
 	}
 }
 
