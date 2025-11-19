@@ -8,28 +8,27 @@ body{ background:#000; color:#fff; font-family:'Courier New'; margin:10px; }
 .g{ color:#0f0; }
 .y{ color:#ff0; }
 .b{ color:#08f; }
-hr{ border:1px solid #444 ; width:100%; }
-.ftr{ ; font-size:12px; margin-top:20px; }
+hr{ border:1px solid #444 ; width:60%; }
+.ftr{ color:#944; font-size:12px; margin-top:20px; }
 </style>
 </head>
 <body>
 <center>
 <br>
-<div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
+<div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
 <div class="b">v0.7.0.draft</div>
 <br>
-<a href="https://github.com/tonitaga/incomsystem_cstrike" target="_blank" style="display:inline-block; text-decoration:none">
-<span class="y">🐙 GitHub</span> - <span class="g">tonitaga/incomsystem_cstrike</span>
+<span class="y">✉ GitHub</span> - <span class="g">github.com/tonitaga/incomsystem_cstrike</span>
 </a>
 <br>
 <br><hr><br>
-<div class="b">🚀 LOOKUP SERVER COMMANDS</div>
+<div class="b">✰ LOOKUP SERVER COMMANDS</div>
 <br>
-<div><span class="y">/commands</span> - <span class="g">Lookup server commands</span></div>
+<div><span class="y">▫ /commands</span> - <span class="g">Lookup server commands</span></div>
 <br><hr><br>
-<div class=b>👥 CONTRIBUTORS</div>
+<div class=b>✰ CONTRIBUTORS</div>
 <br>
 <span class="g">smayl1ks</span>
 <br><br><hr>
