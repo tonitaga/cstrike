@@ -182,7 +182,7 @@ public round_end()
         if (IsSongAlreadyRequested())
         {
             SetSongRequested(false);
-            IncomPrint_Client(0, "[%L] %L", 0, "NAME", 0, "SOUND_AVAILABLE");
+            IncomPrint_Client(0, "[%L] %L", 0, "INCOM_MUSIC", 0, "SOUND_AVAILABLE");
         }
 
         new type = get_pcvar_num(g_Type)
@@ -233,12 +233,12 @@ public StopSound(playerId)
         new name[128];
         get_user_name(playerId, name, charsmax(name));
 
-        IncomPrint_Client(0, "[%L] %L", playerId, "NAME", playerId, "ADMIN_STOP_SOUND", name);
+        IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "ADMIN_STOP_SOUND", name);
     }
     else
     {
         client_cmd(playerId, "stopsound")
-        IncomPrint_Client(0, "[%L] %L", playerId, "NAME", playerId, "PLAYER_STOP_SOUND");
+        IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "PLAYER_STOP_SOUND");
     }
 }
 
@@ -278,7 +278,7 @@ public PollSongRequest()
     --g_SongRequestCounter;
     if (g_SongRequestCounter <= 0)
     {
-        IncomPrint_Client(0, "[%L] %L", 0, "NAME", 0, "SOUND_AVAILABLE");
+        IncomPrint_Client(0, "[%L] %L", 0, "INCOM_MUSIC", 0, "SOUND_AVAILABLE");
         SetSongRequested(false);
         return;
     }
@@ -293,7 +293,7 @@ public pointBonus_RequestSong(playerId)
         return true;
     }
 
-    IncomPrint_Client(playerId, "[%L] %L", playerId, "NAME", playerId, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
+    IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
     return false;
 }
 
@@ -316,7 +316,7 @@ public InactiveMenuCanceler(taskId)
 
     SetSongRequested(false);
 
-    IncomPrint_Client(0, "[%L] %L", playerId, "NAME", playerId, "SOUND_AVAILABLE");
+    IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_AVAILABLE");
 }
 
 public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
@@ -411,7 +411,7 @@ public CommonMenuCase(playerId, menu, item)
 
 	get_user_name(playerId, name, charsmax(name));
 
-	IncomPrint_Client(0, "[%L] %L", playerId, "NAME", playerId, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
+	IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
 	menu_destroy(menu)
 	return PLUGIN_HANDLED
 }
