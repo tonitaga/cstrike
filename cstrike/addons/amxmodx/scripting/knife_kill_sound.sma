@@ -9,19 +9,19 @@
 #if defined SOUNS
 new const KILL_SOUND[][] =
 {
-	"ks/kill_1.wav",
-	"ks/kill_2.wav",
-	"ks/kill_3.wav",
-	"ks/kill_4.wav",
-	"ks/kill_5.wav"
+	"e6a_knife/kill_1.wav",
+	"e6a_knife/kill_2.wav",
+	"e6a_knife/kill_3.wav",
+	"e6a_knife/kill_4.wav",
+	"e6a_knife/kill_5.wav"
 }
 #endif
 #if defined MODELS
 new const ENTITY_MODEL[][] =
 {
-	"models/item_relaxcs/piglet.mdl",
-	"models/item_relaxcs/cutesheep.mdl",
-	"models/item_relaxcs/rxghost.mdl"
+	"models/e6a_knife/piglet.mdl",
+	"models/e6a_knife/cutesheep.mdl",
+	"models/e6a_knife/rxghost.mdl"
 }
 
 new const ENTITY_CLASSNAME[] = "ghost";
