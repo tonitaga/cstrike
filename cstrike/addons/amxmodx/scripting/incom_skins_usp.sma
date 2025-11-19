@@ -116,6 +116,7 @@ public IncomCase(id, menu, item)
 	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
 
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
+	IncomChangeCurrentWeapon(id);
 	
 	menu_destroy(menu);
 	return 1;
@@ -123,7 +124,7 @@ public IncomCase(id, menu, item)
 
 public IncomChangeCurrentWeapon(id) 
 {
-	if(get_user_weapon(id) == CSW_USP) 
+	if(is_user_alive(id) && get_user_weapon(id) == CSW_USP) 
 	{
 		set_pev(id, pev_viewmodel2,   Models_V[SkinStorage[id]]);
 		set_pev(id, pev_weaponmodel2, Models_P[SkinStorage[id]]);

@@ -5,13 +5,17 @@
 #include <fakemeta>
 #include <engine>
 #include <fun>
+#include <cromchat>
 #include <parse_color>
+#include <reapi>
 
 #define PLUGIN  "Incomsystem Respawn"
-#define VERSION "1.3.1"
+#define VERSION "1.4.0"
 #define AUTHOR  "Tonitaga"
 
-#define WEAPONS_COMMAND "say /weapons"
+#define WEAPONS_COMMAND          "/weapons"
+#define WEAPONS_COMMAND_SAY      "say /weapons"
+#define WEAPONS_COMMAND_SAY_TEAM "say_team /weapons"
 
 #define KEY_ENABLED                "amx_incom_respawn_enable"
 #define KEY_GODMODE_TIME           "amx_incom_respawn_godmode"
@@ -20,6 +24,11 @@
 #define KEY_GLOW_COLOR             "amx_incom_respawn_glow_color"
 #define KEY_HUD_COLOR              "amx_incom_respawn_hud_color"
 #define KEY_ENABLE_HUD             "amx_incom_respawn_enable_hud"
+
+#define UNDEFINED_SET   0
+#define AK47_DEAGLE_SET 1
+#define M4A1_DEAGLE_SET 2
+#define AWP_DEAGLE_SET  3
 
 #define DEFAULT_ENABLED                "0"
 #define DEFAULT_GODMODE_TIME           "3.0"
@@ -37,21 +46,25 @@ new g_GlowColor;
 new g_HUDColor;
 new g_HUDEnabled;
 
-// Базовый оффсет для задач неуязвимости
-new g_GodmodeTaskOffset = 1000;
+new g_GodmodeTaskOffset = 1000; // Базовый оффсет для задач неуязвимости
+new g_NotifyAboutWeaponSelectTaskId = 12472;
+
+new g_SelectedWeaponsStorage[33];
 
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
 
 	register_event("DeathMsg", "OnPlayerDeath", "a");
-	register_event("HLTV",     "OnRoundStart", "a", "1=0", "2=0");
-
 	register_clcmd("joinclass", "OnAgentChoose");
 
-	register_clcmd(WEAPONS_COMMAND, "MakeShowWeaponsMenuTask");
+	register_clcmd(WEAPONS_COMMAND_SAY,      "MakeShowWeaponsMenuTask");
+	register_clcmd(WEAPONS_COMMAND_SAY_TEAM, "MakeShowWeaponsMenuTask");
+
+	set_task(60.0, "NotifyAboutWeaponSelect", g_NotifyAboutWeaponSelectTaskId, .flags = "b");
 
 	RegisterHam(Ham_TakeDamage, "player", "OnPlayerTakeDamage");
+	RegisterHam(Ham_Spawn, "player", "OnPlayerSpawn");
 }
 
 public plugin_cfg()
@@ -69,6 +82,11 @@ public plugin_cfg()
 	AutoExecConfig(true, "incom_respawn");
 }
 
+public client_connect(playerId)
+{
+    g_SelectedWeaponsStorage[playerId] = UNDEFINED_SET;
+}
+
 public OnAgentChoose(playerId)
 {
 	if (get_pcvar_num(g_RespawnEnabled))
@@ -83,43 +101,52 @@ public OnAgentChoose(playerId)
 
 public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
 {
-	new oldVal = str_to_num(old_value);
-	new newVal = str_to_num(new_value);
-	
-	if (oldVal == 1 && newVal == 0)
-	{
-		new players[32], count;
-		get_players(players, count);
-		
-		for (new i = 0; i < count; i++)
-		{
-			new playerId = players[i];
+    new oldVal = str_to_num(old_value);
+    new newVal = str_to_num(new_value);
+    
+    if (oldVal == 0 && newVal == 1)
+    {
+        set_cvar_num("amx_incom_weapons_delete_enable", 1);
+        set_cvar_float("amx_incom_weapons_delete_time", 5.0);
+        set_cvar_float("amx_incom_respawn_time", 1.0);
 
-			if (task_exists(g_GodmodeTaskOffset + playerId))
-			{
-				remove_task(g_GodmodeTaskOffset + playerId);
-			}
+        CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Enabled&x01 Team&x07DM&x01");
+        server_cmd("sv_restart 1");
+    }
+    else if (oldVal == 1 && newVal == 0)
+    {
+        set_cvar_num("amx_incom_weapons_delete_enable", 0);
+        
+        // Останавливаем все задачи и выключаем godmode
+        new players[32], count;
+        get_players(players, count);
+        
+        for (new i = 0; i < count; i++)
+        {
+            new playerId = players[i];
 
-			if (is_user_connected(playerId))
-			{
-				StopGodmodeEffects(playerId);
-				SetGodmode(playerId, false);
-			}
-		}
-	}
+            if (task_exists(g_GodmodeTaskOffset + playerId))
+            {
+                remove_task(g_GodmodeTaskOffset + playerId);
+            }
+
+            if (is_user_connected(playerId))
+            {
+                StopGodmodeEffects(playerId);
+                SetGodmode(playerId, false);
+            }
+        }
+
+        CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 &x04Disabled&x01 Team&x07DM&x01");
+        server_cmd("sv_restart 1");
+    }
 }
 
-public OnRoundStart()
+public NotifyAboutWeaponSelect()
 {
-    if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled))
+	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled))
 	{
-		new players[32], count
-		get_players(players, count)
-
-		for (new i = 0; i < count; i++)
-		{
-			MakeShowWeaponsMenuTask(players[i])
-		}
+		CC_SendMessage(0, "INCOMSYSTEM [&x07DEV ZONE&x01]&x01 say &x04%s&x01 для выбора оружия", WEAPONS_COMMAND);
 	}
 }
 
@@ -148,23 +175,42 @@ public RespawnPlayerTask(playerData[])
 		return;
 	
 	ExecuteHamB(Ham_CS_RoundRespawn, playerId);
-	
-	SetGodmode(playerId, true);
 
-	new Float:godmodeDuration = get_pcvar_float(g_GodmodeTime);
-	
-	new godmodeData[1];
-	godmodeData[0] = playerId;
-	set_task(godmodeDuration, "RemoveGodmodeTask", g_GodmodeTaskOffset + playerId, godmodeData, sizeof(godmodeData));
-	
-	StartGodmodeEffects(playerId);
+	if (is_user_alive(playerId))
+    {
+		SetGodmode(playerId, true);
 
-	if (get_pcvar_num(g_HUDEnabled))
-	{
-		ShowHudMessage(playerId, "Вы неуязвимы", godmodeDuration)
+		new Float:godmodeDuration = get_pcvar_float(g_GodmodeTime);
+		
+		new godmodeData[1];
+		godmodeData[0] = playerId;
+		set_task(godmodeDuration, "RemoveGodmodeTask", g_GodmodeTaskOffset + playerId, godmodeData, sizeof(godmodeData));
+		
+		StartGodmodeEffects(playerId);
+
+		if (get_pcvar_num(g_HUDEnabled))
+		{
+			ShowHudMessage(playerId, "Вы неуязвимы", godmodeDuration)
+		}
+
+		GiveWeapons(playerId);
 	}
-	
-	MakeShowWeaponsMenuTask(playerId)
+	else
+	{
+		new authId[35];
+		get_user_authid(playerId, authId, charsmax(authId));
+
+		server_print("[incom_respawn][warning] Failed to restart player with authID '%s'! Trying again", authId);
+		set_task(0.5, "RespawnPlayerTask", playerId, playerData, 1);
+	}
+}
+
+public OnPlayerSpawn(playerId)
+{
+	if (get_pcvar_num(g_RespawnEnabled) && is_user_alive(playerId))
+	{
+		GiveWeapons(playerId);
+	}
 }
 
 public RemoveGodmodeTask(godmodeData[])
@@ -316,97 +362,60 @@ public WeaponCase(playerId, menu, item)
 		client_print(playerId, print_chat, "[Weapon Menu] Вы должны быть живы для получения оружия!");
 		return PLUGIN_HANDLED;
 	}
-
-	RemovePrimaryAndPistolWeapon(playerId)
 	
 	new data[6], name[64], access, callback;
 	menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback);
 	
-	new weapon_set = str_to_num(data);
+	g_SelectedWeaponsStorage[playerId] = str_to_num(data)
+	server_print("[WeaponCase] %d player selected: %d set", playerId, g_SelectedWeaponsStorage[playerId]);
 
-	switch (weapon_set)
-	{
-		case 1:
-		{
-			give_item(playerId, "weapon_ak47");
-			cs_set_user_bpammo(playerId, CSW_AK47, 210);
-		}
-		case 2:
-		{
-			give_item(playerId, "weapon_m4a1");
-			cs_set_user_bpammo(playerId, CSW_M4A1, 210);
-		}
-		case 3:
-		{
-			give_item(playerId, "weapon_awp");
-			cs_set_user_bpammo(playerId, CSW_AWP, 90);
-		}
-	}
-
-	give_item(playerId, "weapon_deagle");
-	cs_set_user_bpammo(playerId, CSW_DEAGLE, 63);
-	
+	GiveWeapons(playerId);
 	return PLUGIN_HANDLED;
 }
 
-stock RemovePrimaryAndPistolWeapon(playerId)
+stock GiveWeapons(playerId)
 {
-	new weapons[32], num;
-	get_user_weapons(playerId, weapons, num);
-
-	for (new i = 0; i < num; i++)
+	if (g_SelectedWeaponsStorage[playerId] == UNDEFINED_SET)
 	{
-		new weaponId = weapons[i];
+		SetDefaultWeapons(playerId);
+	}
 
-		if (IsPrimaryWeapon(weaponId) || IsPistolWeapon(weaponId))
+	switch (g_SelectedWeaponsStorage[playerId])
+	{
+		case AK47_DEAGLE_SET:
 		{
-			new weaponName[32];
-			get_weaponname(weaponId, weaponName, charsmax(weaponName));
-
-			StripWeapon(playerId, weaponName);
+			rg_give_item(playerId, "weapon_ak47", GT_REPLACE);
+			cs_set_user_bpammo(playerId, WEAPON_AK47, 210);
+		}
+		case M4A1_DEAGLE_SET:
+		{
+			rg_give_item(playerId, "weapon_m4a1", GT_REPLACE);
+			rg_set_user_bpammo(playerId, WEAPON_M4A1, 210);
+		}
+		case AWP_DEAGLE_SET:
+		{
+			rg_give_item(playerId, "weapon_awp", GT_REPLACE);
+			rg_set_user_bpammo(playerId, WEAPON_AWP, 90);
 		}
 	}
-}
 
-stock IsPrimaryWeapon(weaponId)
-{
-	switch (weaponId)
-	{
-		case CSW_AK47, CSW_M4A1, CSW_AWP, CSW_AUG, CSW_SG552, CSW_GALIL, CSW_FAMAS,
-		     CSW_SCOUT, CSW_G3SG1, CSW_SG550, CSW_M249, CSW_UMP45, CSW_MP5NAVY,
-		     CSW_TMP, CSW_P90, CSW_MAC10, CSW_XM1014, CSW_M3:
-			return true;
-	}
+	rg_give_item(playerId, "weapon_deagle", GT_REPLACE);
+	rg_set_user_bpammo(playerId, WEAPON_DEAGLE, 63);
 
-	return false;
-}
-
-stock IsPistolWeapon(weaponId)
-{
-	switch (weaponId)
-	{
-		case CSW_DEAGLE, CSW_USP, CSW_GLOCK18, CSW_P228, CSW_ELITE, CSW_FIVESEVEN:
-			return true;
-	}
-	
-	return false;
-}
-
-stock StripWeapon(playerId, const weapon[])
-{
-	new weapon_ent = find_ent_by_owner(-1, weapon, playerId);
-	if (!weapon_ent)
-		return 0;
-	
-	if (get_user_weapon(playerId) == get_weaponid(weapon))
-		ExecuteHamB(Ham_Weapon_RetireWeapon, weapon_ent);
-	
-	if (!ExecuteHamB(Ham_RemovePlayerItem, playerId, weapon_ent))
-		return 0;
-	
-	ExecuteHamB(Ham_Item_Kill, weapon_ent);
-	
-	set_pev(playerId, pev_weapons, pev(playerId, pev_weapons) & ~(1<<get_weaponid(weapon)));
-	
 	return PLUGIN_HANDLED;
+}
+
+stock SetDefaultWeapons(playerId)
+{
+	switch (get_user_team(playerId))
+	{
+		case CS_TEAM_T:
+		{
+			g_SelectedWeaponsStorage[playerId] = AK47_DEAGLE_SET
+		}
+		case CS_TEAM_CT:
+		{
+			g_SelectedWeaponsStorage[playerId] = M4A1_DEAGLE_SET
+		}
+	}
 }
