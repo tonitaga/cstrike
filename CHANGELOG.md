@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Добавлено испольвание в плагин `incom_print.inc`
 - Добавление контрибьютеру `smayl1ks` админских прав на сервере.
 - Добавление в motd.txt раздела с контрибьютерами
+- Обновление плагина `incom_camera_changer.amxx` (`1.0` -> `1.1`)
+    - Добавлен новый ключ `CAMERA_NAME` в словать `incom_camera_changer.txt`
 
 ## [0.6.0]
 

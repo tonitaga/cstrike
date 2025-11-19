@@ -1,9 +1,10 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <engine>
+#include <incom_print>
 
 #define PLUGIN  "Incomsystem Camera Changer"
-#define VERSION "1.0" 
+#define VERSION "1.1" 
 #define AUTHOR  "Tonitaga"
 
 #define KEY_ENABLE         "incom_camera_changer_enable"
@@ -74,7 +75,7 @@ public ShowCameraMessage(playerId)
 {
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
-		client_print(playerId, print_chat, "[CAMERA] %L", playerId, "CAMERA_MESSAGE")
+		IncomPrint_Client(playerId, "[%L] %L", playerId, "CAMERA_NAME", playerId, "CAMERA_MESSAGE");
 	}
 }
 
@@ -82,7 +83,7 @@ public CameraMenu(playerId)
 {	
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
-		new textStorage[256 char]
+		new textStorage[256]
 		formatex(textStorage, charsmax(textStorage), "\y%L", playerId, "CAMERA_MENU")
 		
 		new menu = menu_create(textStorage, "CameraMenuHandler")

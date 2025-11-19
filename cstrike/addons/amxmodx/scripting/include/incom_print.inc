@@ -1,7 +1,7 @@
-#if defined _incom_skins_included
+#if defined _incom_print_included
     #endinput
 #endif
-#define _incom_skins_included
+#define _incom_print_included
 
 #include <amxmodx>
 #include <cromchat>
