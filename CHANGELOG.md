@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Параметры плагина можно посмотреть в `plugin-incom_gravity.cfg`
 - Рефакторинг способа работы с `CVAR` переменными
     - Изменена работа в плагине `incom_camera_changer.amxx`
+    - Изменена работа в плагине `incom_music.amxx`
 
 ## [0.6.0]
 
