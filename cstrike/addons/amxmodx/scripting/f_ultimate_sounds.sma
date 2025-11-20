@@ -239,12 +239,12 @@ public knife_kill()
 	get_pcvar_string(knife_mode,knifemode,4) 
 	new knifemode_bit = read_flags(knifemode)
 
-	if (knifemode_bit & 2)
-	{
-		for(new i=1;i<=get_maxplayers();i++) 
-			if(is_user_connected(i)==1 )
-				client_cmd(i,"spk misc/female/f_humiliation")
-   	}
+	// if (knifemode_bit & 2)
+	// {
+	// 	for(new i=1;i<=get_maxplayers();i++) 
+	// 		if(is_user_connected(i)==1 )
+	// 			client_cmd(i,"spk misc/female/f_humiliation")
+   	// }
 }
 
 

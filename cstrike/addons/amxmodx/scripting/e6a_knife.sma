@@ -6,6 +6,8 @@
 #define MODELS // Закомментировать если модели не нужны
 #define SOUNS  // Закомментировать если звуки не нужны
 
+new amx_e6a_knife_enable;
+
 #if defined SOUNS
 new const KILL_SOUND[][] =
 {
@@ -47,6 +49,30 @@ public plugin_init()
 	RegisterHookChain(RG_CSGameRules_DeathNotice, "CSGameRules_DeathNotice", true);
 }	
 
+public plugin_cfg()
+{
+    bind_pcvar_num(
+        create_cvar(
+            "amx_e6a_knife_enable", "1",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 1.0,
+            .description = "0 - Плагин отключен^n\
+                            1 - Плагин включен"
+        ),
+        amx_e6a_knife_enable
+    );
+
+    AutoExecConfig();
+}
+
+public OnRoundStart()
+{
+    if (!amx_e6a_knife_enable)
+    {
+        return;
+    }
+}
+
 public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 	#if defined MODELS
 	if (pevInflictor<1)
@@ -79,20 +105,7 @@ public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 #if defined SOUNS
 public play_loud_sound_for_all(sound_index)
 {
-	client_cmd(0, "stopsound");
-	set_task(0.1, "play_delayed_sound", sound_index);
-}
-
-public play_delayed_sound(sound_index)
-{
-	for(new i = 1; i <= get_maxplayers(); i++)
-	{
-		if(is_user_connected(i))
-		{
-			client_cmd(i, "spk ^"%s^"", KILL_SOUND[sound_index]);
-		}
-	}
-	rg_send_audio(0, KILL_SOUND[sound_index], PITCH_NORM);
+    rg_send_audio(0, KILL_SOUND[sound_index], PITCH_NORM);
 }
 #endif
 
