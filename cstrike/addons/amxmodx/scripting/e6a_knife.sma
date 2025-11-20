@@ -65,15 +65,9 @@ public plugin_cfg()
     AutoExecConfig();
 }
 
-public OnRoundStart()
-{
-    if (!amx_e6a_knife_enable)
-    {
-        return;
-    }
-}
-
 public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
+	if (!amx_e6a_knife_enable)
+		return HC_CONTINUE;
 	#if defined MODELS
 	if (pevInflictor<1)
 		ghost_effect(2,iVictim,iVictim)
