@@ -5,23 +5,13 @@
 #define VERSION "3.2"
 #define AUTHOR  "Tonitaga"
 
-#define KEY_ENABLE          "amx_incom_music_enable"
-#define KEY_TYPE            "amx_incom_music_type"
-#define KEY_REQUEST_ENABLE  "amx_incom_music_request_enable"
-#define KEY_REQUEST_TIMEOUT "amx_incom_music_request_timeout"
-
-#define DEFAULT_ENABLE          "1"
-#define DEFAULT_TYPE            "1"
-#define DEFAULT_REQUEST_ENABLE  "1"
-#define DEFAULT_REQUEST_TIMEOUT "60"
-
 new const MUSIC_TYPE_DEFAULT = 1
 new const MUSIC_TYPE_XMAS    = 2
 
-new g_Enable;
-new g_Type;
-new g_RequestEnable;
-new g_RequestTimeout;
+new amx_incom_music_enable;
+new amx_incom_music_type;
+new amx_incom_music_request_timeout;
+new amx_incom_music_request_enable;
 
 #define ADMIN_FLAG ADMIN_IMMUNITY
 
@@ -32,7 +22,7 @@ new g_RequestTimeout;
 
 new g_SongRequested = false;
 new g_SongRequestCounter = 0;
-new g_SongRequestMenuOnHud = 0;
+new g_SongRequestMenuOnHud = false;
 
 new const g_SondRequestTaskId = 20000;
 new const g_MenuDestroyTaskId = 20500;
@@ -132,10 +122,51 @@ public plugin_init()
 
 public plugin_cfg()
 {
-	g_Enable         = create_cvar(KEY_ENABLE, DEFAULT_ENABLE, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
-	g_Type           = create_cvar(KEY_TYPE, DEFAULT_TYPE, _, "Тип музыки^n1 - Incomsystem [Default]^n2 - Incomsystem [XMas]", true, 1.0, true, 2.0);
-	g_RequestTimeout = create_cvar(KEY_REQUEST_TIMEOUT, DEFAULT_REQUEST_TIMEOUT, _, "Максимальное время ожидания между двумя заказами песен", true, 30.0, true, 180.0);
-	g_RequestEnable  = create_cvar(KEY_REQUEST_ENABLE, DEFAULT_REQUEST_ENABLE, _, "Возможность заказать песню ^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_music_enable", "1",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 1.0,
+            .description = "Статус плагина^n\
+                            0 - Отключен^n\
+                            1 - Включен"
+		),
+		amx_incom_music_enable
+	);
+
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_music_type", "1",
+            .has_min = true, .min_val = 1.0,
+            .has_max = true, .max_val = 2.0,
+            .description = "Тип музыки^n\
+                            1 - Incomsystem [Default]^n\
+                            2 - Incomsystem [XMas]"
+		),
+		amx_incom_music_type
+	);
+
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_music_request_timeout", "60",
+            .has_min = true, .min_val = 30.0,
+            .has_max = true, .max_val = 180.0,
+            .description = "Максимальное время ожидания между двумя заказами песен"
+		),
+		amx_incom_music_request_timeout
+	);
+
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_music_request_enable", "1",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 1.0,
+            .description = "Возможность заказать песню^n\
+                            0 - Отключен^n\
+                            1 - Включен"
+		),
+		amx_incom_music_request_enable
+	);
 
 	AutoExecConfig();
 }
@@ -154,11 +185,11 @@ public plugin_precache()
 
 public client_connect(playerId)
 {
-    if (get_pcvar_num(g_Enable))
+    if (amx_incom_music_enable)
     {
         client_cmd(playerId, "stopsound")
 
-        new type = get_pcvar_num(g_Type)
+        new type = amx_incom_music_type;
         if (type == MUSIC_TYPE_DEFAULT)
         {
             PlaySound(playerId, SOUND_OFFSET_GREETING + 0);
@@ -172,7 +203,7 @@ public client_connect(playerId)
 
 public OnAgentChoose(playerId)
 {
-    if (get_pcvar_num(g_Enable))
+    if (amx_incom_music_enable)
     {
         client_cmd(playerId, "stopsound")
     }
@@ -180,7 +211,7 @@ public OnAgentChoose(playerId)
 
 public round_end()
 {
-    if (get_pcvar_num(g_Enable))
+    if (amx_incom_music_enable)
     {
         // Пока песня запрошена, то песни конца раунда не будет
         if (IsSongAlreadyRequested())
@@ -190,7 +221,7 @@ public round_end()
 
         client_cmd(0, "stopsound")
 
-        new type = get_pcvar_num(g_Type)
+        new type = amx_incom_music_type;
         if (type == MUSIC_TYPE_DEFAULT)
         {
             set_task(0.1, "PlayCommonSound")
@@ -282,7 +313,7 @@ public SetSongRequestedData(data[])
 
     if (value)
     {
-        g_SongRequestCounter = get_pcvar_num(g_RequestTimeout);
+        g_SongRequestCounter = amx_incom_music_request_timeout;
         set_task(1.0, "PollSongRequest", g_SondRequestTaskId, .flags="b");
         return;
     }
@@ -301,7 +332,7 @@ public PollSongRequest()
 
 public pointBonus_RequestSong(playerId)
 {
-    if (!get_pcvar_num(g_RequestEnable))
+    if (!amx_incom_music_request_enable)
     {
         IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "REQUEST_DISABLED");
         return false;
@@ -376,17 +407,17 @@ public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
 
 public ShowMusicMenu(playerId)
 {
-    if (get_user_flags(playerId) & ADMIN_FLAG)
-    {
-        ShowMenu(playerId, 0, sizeof g_Sounds, "MenuCase");
-    }
+	if (get_user_flags(playerId) & ADMIN_FLAG)
+	{
+		ShowMenu(playerId, 0, sizeof g_Sounds, "MenuCase");
+	}
 }
 
 public MenuCase(playerId, menu, item)
 {
 	SongRequestMenuOnHud(false);
-    RemoveInvactiveMenuCanceler(playerId);
-	
+	RemoveInvactiveMenuCanceler(playerId);
+
 	if(item == MENU_EXIT)
 	{
 		menu_destroy(menu);
@@ -401,7 +432,7 @@ public ShowMusicRequestMenu(playerId)
     new lhsIndex = SOUND_OFFSET_GREETING;
     new rhsIndex = SOUND_OFFSET_GREETING_XMAS;
 
-    new type = get_pcvar_num(g_Type)
+    new type = amx_incom_music_type;
     if (type == MUSIC_TYPE_XMAS)
     {
         lhsIndex = SOUND_OFFSET_GREETING_XMAS;

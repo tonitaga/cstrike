@@ -7,44 +7,67 @@
 #define VERSION "1.1" 
 #define AUTHOR  "Tonitaga"
 
-#define KEY_ENABLE         "incom_camera_changer_enable"
-#define KEY_CONNECT_CAMERA "incom_camera_changer_connect_camera"
-#define KEY_ENABLE_MESSAGE "incom_camera_changer_message_enable"
-
-#define DEFAULT_ENABLE         "1"
-#define DEFAULT_CONNECT_CAMERA "0"
-#define DEFAULT_ENABLE_MESSAGE "1"
-
 #define CAMERA_COMMAND          "/camera"
 #define CAMERA_COMMAND_SAY      "say /camera"
 #define CAMERA_COMMAND_SAY_TEAM "say_team /camera"
-
-new g_Enable;
-new g_ConnectCamera;
-new g_MessageEnable;
 
 #define FIRST_PERSON_VIEW 0
 #define THIRD_PERSON_VIEW 1
 #define UPLEFT_VIEW       2
 #define TOPDOWN_VIEW      3
 
+new amx_incom_camera_changer_enable;
+new amx_incom_camera_changer_connect_camera;
+new amx_incom_camera_changer_message_enable;
+
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR)
+
+	register_clcmd(CAMERA_COMMAND_SAY,      "CameraMenu")
+	register_clcmd(CAMERA_COMMAND_SAY_TEAM, "CameraMenu")
+
 	register_dictionary("incom_camera_changer.txt")
 }
 
 public plugin_cfg()
 {
-	g_Enable        = create_cvar(KEY_ENABLE, DEFAULT_ENABLE, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
-	g_ConnectCamera = create_cvar(KEY_CONNECT_CAMERA, DEFAULT_CONNECT_CAMERA, _, "Состояние камеры при подключении^n0 - От первого лица^n1 - От третьего лица^n2 - Сверху слева^n3 - Сверху вниз", true, 0.0, true, 3.0);
-	g_MessageEnable = create_cvar(KEY_ENABLE_MESSAGE, DEFAULT_ENABLE_MESSAGE, _, "Включить информационное сообщение^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_camera_changer_enable", "1",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 1.0,
+            .description = "0 - Плагин отключен^n\
+                            1 - Плагин включен"
+		),
+		amx_incom_camera_changer_enable
+	);
 
-	if (get_pcvar_num(g_Enable))
-	{
-		register_clcmd(CAMERA_COMMAND_SAY,      "CameraMenu")
-		register_clcmd(CAMERA_COMMAND_SAY_TEAM, "CameraMenu")
-	}
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_camera_changer_connect_camera", "0",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 3.0,
+            .description = "Состояние камеры при подключении^n\
+							0 - От первого лица^n\
+							1 - От третьего лица^n\
+							2 - Сверху слева^n\
+							3 - Сверху вниз"
+		),
+		amx_incom_camera_changer_connect_camera
+	);
+
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_camera_changer_message_enable", "1",
+            .has_min = true, .min_val = 0.0,
+            .has_max = true, .max_val = 1.0,
+            .description = "Включить информационное сообщение^n\
+							0 - Отключен^n\
+							1 - Включен"
+		),
+		amx_incom_camera_changer_message_enable
+	);
 
 	AutoExecConfig();
 }
@@ -57,10 +80,9 @@ public plugin_precache()
 
 public client_putinserver(playerId)
 {
-	if (get_pcvar_num(g_Enable))
+	if (amx_incom_camera_changer_enable)
 	{
-		new connectCamera = get_pcvar_num(g_ConnectCamera)
-		switch (connectCamera) 
+		switch (amx_incom_camera_changer_connect_camera) 
 		{
 			case FIRST_PERSON_VIEW:	set_view(playerId, FIRST_PERSON_VIEW)
 			case THIRD_PERSON_VIEW:	set_view(playerId, THIRD_PERSON_VIEW)
@@ -68,7 +90,7 @@ public client_putinserver(playerId)
 			case TOPDOWN_VIEW:	    set_view(playerId, TOPDOWN_VIEW)
 		}
 		
-		if (get_pcvar_num(g_MessageEnable))
+		if (amx_incom_camera_changer_message_enable)
 		{
 			set_task(25.0, "ShowCameraMessage", playerId)
 		}
@@ -85,6 +107,11 @@ public ShowCameraMessage(playerId)
 
 public CameraMenu(playerId)
 {	
+	if (!amx_incom_camera_changer_enable)
+	{
+		return;
+	}
+
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
 		new textStorage[256]
