@@ -5,31 +5,34 @@
 <style>
 body{ background:#000; color:#fff; font-family:'Courier New'; margin:10px; }
 .hdr{ color:#f00; font-weight:bold; font-size:22px; }
-.grn{ color:#0f0; }
-.ylw{ color:#ff0; }
-.blue{ color:#08f; }
-.cmd{ background:#112; border:1px dashed #44f; padding:10px; margin:5px 0; }
-hr{ border:1px solid #333; width:80%; }
-.footer{ color:#888; font-size:12px; margin-top:20px; }
+.g{ color:#0f0; }
+.y{ color:#ff0; }
+.b{ color:#08f; }
+hr{ border:1px solid #444 ; width:60%; }
+.ftr{ color:#944; font-size:12px; margin-top:20px; }
 </style>
 </head>
 <body>
 <center>
 <br>
-<div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
+<div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="blue">v0.6.0</div>
-<br><hr><br>
-<div class="grn">play_cs();</div>
-<div class="grn">make_headshot();</div>
-<div class="grn">eat_pizza();</div>
-<br><hr><br>
-<div class="blue">🚀 УЗНАТЬ ВОЗМОЖНОСТИ СЕРВЕРА</div>
+<div class="b">v0.7.0.draft</div>
 <br>
-<div class="cmd"><span class="ylw">/commands</span> - <span class="grn">Посмотреть команды сервера</span></div>
-<br><br>
-<div class="footer">© 2025 INCOMSYSTEM [DEV ZONE] | Powered by Tonitaga</div>
+<span class="y">✉ GitHub</span> - <span class="g">github.com/tonitaga/incomsystem_cstrike</span>
+</a>
+<br>
+<br><hr><br>
+<div class="b">✰ LOOKUP SERVER COMMANDS</div>
+<br>
+<div><span class="y">▫ /commands</span> - <span class="g">Lookup server commands</span></div>
+<br><hr><br>
+<div class=b>✰ CONTRIBUTORS</div>
+<br>
+<span class="g">smayl1ks</span>
+<br><br><hr>
+<div class="ftr">© 2025 INCOMSYSTEM [DEV ZONE] | Powered by Tonitaga</div>
 </center>
 </body>
 </html>

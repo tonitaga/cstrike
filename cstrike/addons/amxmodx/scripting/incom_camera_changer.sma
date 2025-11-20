@@ -1,9 +1,10 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <engine>
+#include <incom_print>
 
 #define PLUGIN  "Incomsystem Camera Changer"
-#define VERSION "1.0" 
+#define VERSION "1.1" 
 #define AUTHOR  "Tonitaga"
 
 #define KEY_ENABLE         "incom_camera_changer_enable"
@@ -13,6 +14,10 @@
 #define DEFAULT_ENABLE         "1"
 #define DEFAULT_CONNECT_CAMERA "0"
 #define DEFAULT_ENABLE_MESSAGE "1"
+
+#define CAMERA_COMMAND          "/camera"
+#define CAMERA_COMMAND_SAY      "say /camera"
+#define CAMERA_COMMAND_SAY_TEAM "say_team /camera"
 
 new g_Enable;
 new g_ConnectCamera;
@@ -37,11 +42,11 @@ public plugin_cfg()
 
 	if (get_pcvar_num(g_Enable))
 	{
-		register_clcmd("say /camera",      "CameraMenu")
-		register_clcmd("say_team /camera", "CameraMenu")
+		register_clcmd(CAMERA_COMMAND_SAY,      "CameraMenu")
+		register_clcmd(CAMERA_COMMAND_SAY_TEAM, "CameraMenu")
 	}
 
-	AutoExecConfig(true, "incom_camera_changer");
+	AutoExecConfig();
 }
 
 public plugin_precache()
@@ -74,7 +79,7 @@ public ShowCameraMessage(playerId)
 {
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
-		client_print(playerId, print_chat, "[CAMERA] %L", playerId, "CAMERA_MESSAGE")
+		IncomPrint_Client(playerId, "[%L] %L", playerId, "CAMERA_NAME", playerId, "CAMERA_USAGE_MESSAGE", CAMERA_COMMAND);
 	}
 }
 
@@ -82,7 +87,7 @@ public CameraMenu(playerId)
 {	
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
-		new textStorage[256 char]
+		new textStorage[256]
 		formatex(textStorage, charsmax(textStorage), "\y%L", playerId, "CAMERA_MENU")
 		
 		new menu = menu_create(textStorage, "CameraMenuHandler")

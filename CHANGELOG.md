@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0.draft]
+
+- Обновления плагина `incom_music.amxx` (`3.0` -> `3.1`)
+    - Добавлены плавные переходы: мягкое начало и затухание в конце.
+    - Добавлены новые новогодние песни.
+    - Игроки с флагом `ADMIN_IMMUNITY` могут в любой момент включать музыку, используя команду `say /music`, и выключать `say /stop_music`.
+    - Убрана задержка перед началом песни, так как появилось мягкое начало
+    - Добавлены песни `Let It Snow!`, `Rockin’ Around the Christmas Tree`, `Last Christmas`, `Code & Counter-Strike`, `Lunch Pizza`.
+    - Теперь можно заказывать песни через бонусное меню `/anew`. Заказ новой песни будет доступен после `amx_incom_music_request_timeout` секунд. 
+    - Добавлена возможность вкл/выкл логики заказа песни: `amx_incom_music_request_enable`.
+    - Добавлен словарь фраз с поддержкой английского и русского языка `incom_music.txt`
+    - Добавлен `incom_print.inc` с удобной функцией печати в чат клиентам
+- Обновления плагина `incom_respawn.amxx` (`1.4.0` -> `1.5.0`)
+    - Добавлен cvar `amx_incom_respawn_random_weapons_enable`. Включает режим TeamDM со случайным оружием
+    - Для работы нового `cvar` необоходимо, чтобы TeamDM был включен: `amx_incom_respawn_enable 1`
+    - Добавлен новый сет оружия `Random` в меню `/weapons`
+    - Добавлен словарь фраз с поддержкой английского и русского языка `incom_respawn.txt`
+    - Добавлено испольвание `incom_print.inc`
+- Добавление контрибьютеру `smayl1ks` админских прав на сервере.
+- Добавление в motd.txt раздела с контрибьютерами и гитхабом.
+- Обновление плагина `incom_camera_changer.amxx` (`1.0` -> `1.1`)
+    - Добавлен новый ключ `CAMERA_NAME` в словать `incom_camera_changer.txt`
+- Добавлено игнорирование файлов `*.pvi` `*.pxp` в `.gitignore`
+- Изменена автогенерация `cfg` файлов для скриптов.
+    - Формат сгенерированного файла теперь такой: `plugin-plugin_name.cfg`
+- Добавлен плагин `incom_gravity.amxx` со случайный изменением гравитации на сервере.
+    - Параметры плагина можно посмотреть в `plugin-incom_gravity.cfg`
+
 ## [0.6.0]
 
 - Добавлен плагин `restmenu_chat.amxx` для админа на запрет оружия. Теперь щит по умолчанию недоступен

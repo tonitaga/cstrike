@@ -1,0 +1,19 @@
+[en]
+INCOM_MUSIC = &x07IncomMusic&x01
+SOUND_AVAILABLE =  Song request &x04available&x01! Try &x07/anew&x01
+SOUND_NOT_AVAILABLE = Song request will be &x04available&x01 after &x07%ds&x01
+ADMIN_STOP_SOUND = ADMIN &x04%s&x01 stopped current song. Song request &x04available&x01!
+PLAYER_STOP_SOUND = Current song stopped for you
+SOUND_REQUESTED = &x04%s&x01 requested sound &x07%s&x01
+SOMEONE_SELECTING_SOUND = Someone selecting song right now
+REQUEST_DISABLED = Song request disabled
+
+[ru]
+INCOM_MUSIC = &x07IncomMusic&x01
+SOUND_AVAILABLE =  Запрос песни &x04доступен&x01! Попробуйте &x07/anew&x01
+SOUND_NOT_AVAILABLE = Запрос песни будет &x04доступен&x01 через &x07%dс&x01
+ADMIN_STOP_SOUND = Админ &x04%s&x01 остановил текущую песню. Запрос песни &x04доступен&x01!
+PLAYER_STOP_SOUND = Текущая песня была выключена для вас
+SOUND_REQUESTED = &x04%s&x01 заказал песню &x07%s&x01
+SOMEONE_SELECTING_SOUND = Кто-то в данный момент уже выбирает песню
+REQUEST_DISABLED = Запрос песни недоступен

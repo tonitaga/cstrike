@@ -1,15 +1,17 @@
 [en]
+CAMERA_NAME = &x07IncomCameraChanger&x01
 CAMERA_MENU = Camera type:
 CAMERA_3RD = 3rd person
 CAMERA_TOPDOWN = Top down
 CAMERA_UPLEFT = Up left
 CAMERA_1ST = 1st person
-CAMERA_MESSAGE = For change camera view write /camera to chat.
+CAMERA_USAGE_MESSAGE = For change camera view say &x04%s&x01 to chat.
 
 [ru]
+CAMERA_NAME = &x07IncomCameraChanger&x01
 CAMERA_MENU = Вид камеры:
 CAMERA_3RD = От третьего лица
 CAMERA_TOPDOWN = Сверху
 CAMERA_UPLEFT = Сверху слева
 CAMERA_1ST = Нормальный вид
-CAMERA_MESSAGE = Для изменения вида камеры пишите /camera в чат.
+CAMERA_USAGE_MESSAGE = Для изменения вида камеры напишите &x04%s&x01 в чат.

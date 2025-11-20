@@ -1,0 +1,15 @@
+[en]
+INCOM_RESPAWN = &x07IncomRespawn&x01
+TEAM_DM_ENABLE = &x04Enabled&x01 Team&x07DM&x01
+TEAM_DM_DISABLE = &x04Disabled&x01 Team&x07DM&x01
+RANDOM_WEAPONS_ENABLE = &x04Enabled&x01 Random &x07Weapons&x01
+RANDOM_WEAPONS_DISABLE = &x04Disabled&x01 Random &x07Weapons&x01
+WEAPONS_NOTIFY = Say &x04%s&x01 to choose weapon
+
+[ru]
+INCOM_RESPAWN = &x07IncomRespawn&x01
+TEAM_DM_ENABLE =Team&x07DM&x01 &x04Включен&x01
+TEAM_DM_DISABLE = Team&x07DM&x01 &x04Отключен&x01
+RANDOM_WEAPONS_ENABLE = Случайное &x07Оружие &x04Включено&x01
+RANDOM_WEAPONS_DISABLE = Случайное &x07Оружие &x04Отключено&x01
+WEAPONS_NOTIFY = Напишите в чат &x04%s&x01 для выбора оружия

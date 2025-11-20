@@ -25,7 +25,7 @@ public plugin_cfg()
 {
     g_Enable = create_cvar(KEY_ENABLE, DEFAULT_ENABLE, _, "Статус плагина^n0 - Отключен^n1 - Включен", true, 0.0, true, 1.0);
 
-    AutoExecConfig(true, "incom_version");
+    AutoExecConfig();
 }
 
 public ShowVersion(playerId)
