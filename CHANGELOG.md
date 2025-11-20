@@ -35,7 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Рефакторинг способа работы с `CVAR` переменными
     - Изменена работа в плагине `incom_camera_changer.amxx`
     - Изменена работа в плагине `incom_music.amxx`
-
 - Добавлен плагин `e6a_knife.amxx` для эффектных убийств с ножа.
 
 ## [0.6.0]
