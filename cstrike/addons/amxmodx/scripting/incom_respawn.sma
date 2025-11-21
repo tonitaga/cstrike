@@ -105,7 +105,7 @@ public plugin_cfg()
 
 public client_connect(playerId)
 {
-    g_SelectedWeaponsStorage[playerId] = UNDEFINED_SET;
+	g_SelectedWeaponsStorage[playerId] = UNDEFINED_SET;
 }
 
 public OnAgentChoose(playerId)
@@ -122,45 +122,47 @@ public OnAgentChoose(playerId)
 
 public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
 {
-    new oldVal = str_to_num(old_value);
-    new newVal = str_to_num(new_value);
-    
-    if (oldVal == 0 && newVal == 1)
-    {
-        set_cvar_num("amx_incom_weapons_delete_enable", 1);
-        set_cvar_float("amx_incom_weapons_delete_time", 5.0);
-        set_cvar_float("amx_incom_respawn_time", 1.0);
+	new oldVal = str_to_num(old_value);
+	new newVal = str_to_num(new_value);
 
-        IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_ENABLE");
-        server_cmd("sv_restart 1");
-    }
-    else if (oldVal == 1 && newVal == 0)
-    {
-        set_cvar_num("amx_incom_weapons_delete_enable", 0);
-        
-        // Останавливаем все задачи и выключаем godmode
-        new players[32], count;
-        get_players(players, count);
-        
-        for (new i = 0; i < count; i++)
-        {
-            new playerId = players[i];
+	if (oldVal == 0 && newVal == 1)
+	{
+		set_cvar_num("amx_incom_weapons_delete_enable", 1);
+		set_cvar_num("amx_incom_kill_streak_reward_enable", 1);
+		set_cvar_float("amx_incom_weapons_delete_time", 5.0);
+		set_cvar_float("amx_incom_respawn_time", 1.0);
 
-            if (task_exists(g_GodmodeTaskOffset + playerId))
-            {
-                remove_task(g_GodmodeTaskOffset + playerId);
-            }
+		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_ENABLE");
+		server_cmd("sv_restart 1");
+	}
+	else if (oldVal == 1 && newVal == 0)
+	{
+		set_cvar_num("amx_incom_weapons_delete_enable", 0);
+		set_cvar_num("amx_incom_kill_streak_reward_enable", 0);
+		
+		// Останавливаем все задачи и выключаем godmode
+		new players[32], count;
+		get_players(players, count);
+		
+		for (new i = 0; i < count; i++)
+		{
+			new playerId = players[i];
 
-            if (is_user_connected(playerId))
-            {
-                StopGodmodeEffects(playerId);
-                SetGodmode(playerId, false);
-            }
-        }
+			if (task_exists(g_GodmodeTaskOffset + playerId))
+			{
+				remove_task(g_GodmodeTaskOffset + playerId);
+			}
 
-        IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_DISABLE");
-        server_cmd("sv_restart 1");
-    }
+			if (is_user_connected(playerId))
+			{
+				StopGodmodeEffects(playerId);
+				SetGodmode(playerId, false);
+			}
+		}
+
+		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_DISABLE");
+		server_cmd("sv_restart 1");
+	}
 }
 
 public OnRandomWeaponsEnabledChanged(cvar, const old_value[], const new_value[])
@@ -223,7 +225,7 @@ public RespawnPlayerTask(playerData[])
 	ExecuteHamB(Ham_CS_RoundRespawn, playerId);
 
 	if (is_user_alive(playerId))
-    {
+	{
 		SetGodmode(playerId, true);
 
 		new Float:godmodeDuration = get_pcvar_float(g_GodmodeTime);
@@ -496,8 +498,8 @@ new const WeaponIdType:g_SecondaryWeaponEnum[] =
 
 new const g_SecondaryWeaponName[][] =
 {
-    "weapon_elite", "weapon_deagle", "weapon_fiveseven",
-    "weapon_usp",   "weapon_glock18"
+	"weapon_elite", "weapon_deagle", "weapon_fiveseven",
+	"weapon_usp",   "weapon_glock18"
 };
 
 new const WeaponIdType:g_PrimaryWeaponEnum[] =
@@ -511,7 +513,7 @@ new const WeaponIdType:g_PrimaryWeaponEnum[] =
 
 new const g_PrimaryWeaponName[][] =
 {
-    "weapon_m249",   "weapon_mp5navy", "weapon_p90",
+	"weapon_m249",   "weapon_mp5navy", "weapon_p90",
 	"weapon_g3sg1",  "weapon_mac10",   "weapon_m4a1",
 	"weapon_famas",  "weapon_aug",     "weapon_ak47",
 	"weapon_sg552",  "weapon_ump45",   "weapon_galil",

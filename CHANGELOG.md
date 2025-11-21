@@ -12,7 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Добавлены новые новогодние песни.
     - Игроки с флагом `ADMIN_IMMUNITY` могут в любой момент включать музыку, используя команду `say /music`, и выключать `say /stop_music`.
     - Убрана задержка перед началом песни, так как появилось мягкое начало
-    - Добавлены песни `Let It Snow!`, `Rockin’ Around the Christmas Tree`, `Last Christmas`, `Code & Counter-Strike`, `Lunch Pizza`, `Дискотека Авария - Новогодняя`
+    - Добавлены песни
+        - `Let It Snow!`, `Rockin’ Around the Christmas Tree`, `Last Christmas`,
+        - `Code & Counter-Strike`, `Lunch Pizza`,
+        - `Дискотека Авария - Новогодняя`, `Верка Сердючка - Новогодняя`, `Андрей Губин - Зима холода`
     - Теперь можно заказывать песни через бонусное меню `/anew`. Заказ новой песни будет доступен после `amx_incom_music_request_timeout` секунд. 
     - Добавлена возможность вкл/выкл логики заказа песни: `amx_incom_music_request_enable`.
     - Добавлен словарь фраз с поддержкой английского и русского языка `incom_music.txt`
@@ -46,6 +49,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Доработка словаря `incom_version.txt` с использованием `incom_print.inc`
 - Обновление плагинов `incom_skins_*.amxx`
     - Добавление словаря `incom_skins.txt` с использованием `incom_print.inc`
+- Добавлен плагин `incom_kill_streak_reward.amxx`. Для выдачи награды за серию убийств.
+    - По умолчанию выключен.
+    - Включается при включении режима `TeamDM` `amx_incom_respawn_enable 1`
 
 ## [0.6.0]
 

@@ -40,7 +40,9 @@ new const g_Sounds[][] =
     "incom/greeting_xmas_let_it_snow",
     "incom/greeting_xmas_rocking_around",
     "incom/greeting_xmas_last_christmas",
-    "incom/greeting_xmas_avaria",
+    "incom/greeting_xmas_avaria_new_year",
+    "incom/greeting_xmas_verka_new_year",
+    "incom/greeting_xmas_zima_holoda",
 
     ///> Incomsystem [Default]
     "incom/roundend1_v2",
@@ -78,7 +80,9 @@ new const g_SoundsNames[][] =
     "Let It Snow!",
     "Rockin Around The Christmas Tree",
     "Wham! Last Christmas",
-    "Avaria - New Year",
+    "Дискотека Авария - Новогодняя",
+    "Верка Сердючка - Новогодняя",
+    "Андрей Губин - Зима холода",
 
     ///> Incomsystem [Default]
     "Roundend #1",
@@ -104,8 +108,9 @@ new const g_SoundsNames[][] =
 
 #define SOUND_OFFSET_GREETING      0  // g_Sounds[0]
 #define SOUND_OFFSET_GREETING_XMAS 3  // g_Sounds[3]
-#define SOUND_OFFSET_DEFAULT       8  // g_Sounds[8]
-#define SOUND_OFFSET_XMAS          17 // g_Sounds[17]
+#define SOUND_OFFSET_DEFAULT       10 // g_Sounds[10]
+#define SOUND_OFFSET_XMAS          19 // g_Sounds[19]
+#define SOUND_OFFSET_MAX           (sizeof g_SoundsNames)
 
 public plugin_init() 
 { 
@@ -238,13 +243,17 @@ public round_end()
 
 public PlayCommonSound()
 {
-    new rand = random_num(0,8)
+    static soundsCount = (SOUND_OFFSET_XMAS - SOUND_OFFSET_DEFAULT) - 1;
+
+    new rand = random_num(0,soundsCount)
     PlaySound(0, SOUND_OFFSET_DEFAULT + rand);
 }
 
 public PlayXMasSound()
 {
-    new rand = random_num(0,7)
+    static soundsCount = (SOUND_OFFSET_MAX - SOUND_OFFSET_XMAS) - 1;
+
+    new rand = random_num(0,soundsCount)
     PlaySound(0, SOUND_OFFSET_XMAS + rand);
 }
 
