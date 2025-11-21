@@ -502,22 +502,20 @@ new const g_SecondaryWeaponName[][] =
 
 new const WeaponIdType:g_PrimaryWeaponEnum[] =
 {
-	WEAPON_M249,   WEAPON_SG550,  WEAPON_MP5N,
-	WEAPON_P90,    WEAPON_G3SG1,  WEAPON_MAC10,
-	WEAPON_M4A1,   WEAPON_FAMAS,  WEAPON_AUG,
-	WEAPON_AK47,   WEAPON_SG552,  WEAPON_UMP45,
-	WEAPON_GALIL,  WEAPON_XM1014, WEAPON_SCOUT,
-	WEAPON_AWP,    WEAPON_M3
+	WEAPON_M249,   WEAPON_MP5N,  WEAPON_P90,
+	WEAPON_G3SG1,  WEAPON_MAC10, WEAPON_M4A1,
+	WEAPON_FAMAS,  WEAPON_AUG,   WEAPON_AK47,
+	WEAPON_SG552,  WEAPON_UMP45, WEAPON_GALIL,
+	WEAPON_XM1014, WEAPON_AWP
 };
 
 new const g_PrimaryWeaponName[][] =
 {
-    "weapon_m249",   "weapon_sg550",  "weapon_mp5navy",
-    "weapon_p90",    "weapon_g3sg1",  "weapon_mac10",
-    "weapon_m4a1",   "weapon_famas",  "weapon_aug",
-    "weapon_ak47",   "weapon_sg552",  "weapon_ump45",
-    "weapon_galil",  "weapon_xm1014", "weapon_scout",
-    "weapon_awp",    "weapon_m3"
+    "weapon_m249",   "weapon_mp5navy", "weapon_p90",
+	"weapon_g3sg1",  "weapon_mac10",   "weapon_m4a1",
+	"weapon_famas",  "weapon_aug",     "weapon_ak47",
+	"weapon_sg552",  "weapon_ump45",   "weapon_galil",
+	"weapon_xm1014", "weapon_awp"
 };
 
 stock GiveRandomWeapons(playerId)

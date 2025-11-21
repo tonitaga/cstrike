@@ -44,16 +44,12 @@ sv_downloadurl "http://192.168.0.1:8088/cstrike"
 
 ```
 amx_incom_respawn_enable 1
-amx_incom_weapons_delete_time 5.0
-sv_restart 1
 ```
 
 - Для отключения режима:
 
 ```
 amx_incom_respawn_enable 0
-amx_incom_weapons_delete_time 60.0
-sv_restart 1
 ```
 
 ## Как управлять сервером со стороны клиента?

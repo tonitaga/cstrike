@@ -4,7 +4,7 @@
 #include <incom_skins>
 
 new const PLUGIN[]       = "Incomsystem Knife Menu";
-new const VERSION[]      = "2.1";
+new const VERSION[]      = "2.2";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-knife";
 
@@ -13,8 +13,7 @@ new const Models_V[][] =
 	"models/v_knife.mdl",
 
 	// Ножи Karambit
-	"models/incom/knife/karambit/lore/v_knife.mdl",
-	"models/incom/knife/karambit/doppler_emerald/v_knife.mdl",
+	"models/incom/knife/karambit/doppler_emerald_v2/v_knife.mdl",
 	"models/incom/knife/karambit/fade/v_knife.mdl",
 
 	// Ножи Butterfly
@@ -36,7 +35,6 @@ new const ModelNames[][] =
     "Knife [DEFAULT]",
 
 	// Ножи Karambit
-	"Knife Karambit Lore",
 	"Knife Karambit Doppler Emerald",
 	"Knife Karambit Fade",
 
@@ -61,7 +59,7 @@ new Handle:g_DbHandle;
 new const TABLE_NAME[] = "knife";
 
 ///> Индекс скина по умолчанию
-new const DEFAULT_SKIN = 8; // "Knife Bayonet Chang Specialist"
+new const DEFAULT_SKIN = 1;
 
 new SkinStorage[33];
 
@@ -109,12 +107,11 @@ public IncomMenu(id)
 {
 	new menu = menu_create("\y>>>>> \rKnife skin selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "IncomCase")
 	
-	menu_additem(menu, "Knife \r[DEFAULT]^n",                "1", 0)
+	menu_additem(menu, "Knife \r[DEFAULT]^n", "1", 0)
 
 	// Ножи Karambit
-	menu_additem(menu, "\yKnife \wKarambit Lore",            "2", 0)
-	menu_additem(menu, "\yKnife \wKarambit Doppler Emerald", "3", 0)
-	menu_additem(menu, "\yKnife \wKarambit Fade",            "4", 0)
+	menu_additem(menu, "\yKnife \wKarambit Doppler Emerald", "2", 0)
+	menu_additem(menu, "\yKnife \wKarambit Fade",            "3", 0)
 
 	// Ножи Butterfly
 	menu_additem(menu, "\yKnife \wButterfly Fade",        "100", 0)

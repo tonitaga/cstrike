@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Изменена работа в плагине `incom_camera_changer.amxx`
     - Изменена работа в плагине `incom_music.amxx`
 - Добавлен плагин `e6a_knife.amxx` для эффектных убийств с ножа.
+- Добавлено отключение плагина `mapchooser.amxx`.
+    - В сборке, начиная с `0.4.0` есть модульный менеджер карт `map_manager*.amxx`
+- Добавлено отключение плагина `f_ultimate_sounds.amxx`
+- Добавлен плагин `incom_reset_score.amxx`. Старый `resetscore.amxx` удален
+- Изменение скина в плагине `incom_skins_knife.amxx`
+    - Скин `Karambit Doppler Emerald` был заменен на другую фазу
+- Удалены оружия `WEAPON_SCOUT` `WEAPON_M3` `WEAPON_SG550` из режима со случайным оружием
 
 ## [0.6.0]
 

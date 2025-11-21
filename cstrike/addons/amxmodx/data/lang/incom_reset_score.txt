@@ -1,0 +1,7 @@
+[en]
+INCOM_RESET_SCORE = &x07IncomResetScore&x01
+RESET_SCORE_DONE = The score is &x04reset&x01!
+
+[ru]
+INCOM_RESET_SCORE = &x07IncomResetScore&x01
+RESET_SCORE_DONE = Счет &x04обнулен&x01!
