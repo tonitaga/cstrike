@@ -82,13 +82,13 @@ public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 		return HC_CONTINUE
 
 	if(iKiller == pevInflictor && FClassnameIs(get_member(iKiller, m_pActiveItem),"weapon_knife") || FClassnameIs(pevInflictor, "weapon_knife") ) {
-		
-		new cur_type = random_num(0, sizeof(KILL_SOUND) - 1); 
+		new sound_type = random_num(0, sizeof(KILL_SOUND) - 1);
 		#if defined SOUNS
-		play_loud_sound_for_all(cur_type);
+		play_loud_sound_for_all(sound_type);
 		#endif
 		#if defined MODELS
-		ghost_effect(cur_type,pevInflictor,iVictim)
+		new model_type = random_num(0, sizeof(ENTITY_MODEL) - 1);
+		ghost_effect(model_type,pevInflictor,iVictim)
 		#endif
 
     } 
@@ -104,7 +104,7 @@ public play_loud_sound_for_all(sound_index)
 #endif
 
 #if defined MODELS
-public ghost_effect(cur_type,pevInflictor,iVictim)
+public ghost_effect(model_type,pevInflictor,iVictim)
 {
 		new Float: vecOrigin[3];
 		new Float: vecVelocity[3];
@@ -126,7 +126,7 @@ public ghost_effect(cur_type,pevInflictor,iVictim)
 			vecAngles[1] += 180;
 		}
 		
-		engfunc(EngFunc_SetModel, iEntity, ENTITY_MODEL[cur_type]);
+		engfunc(EngFunc_SetModel, iEntity, ENTITY_MODEL[model_type]);
 		engfunc(EngFunc_SetSize, iEntity, {-10.0, -10.0, -10.0}, {10.0, 10.0, 10.0});
 
 		set_entvar(iEntity, var_origin, vecOrigin);
