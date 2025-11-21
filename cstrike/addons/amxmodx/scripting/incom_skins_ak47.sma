@@ -2,9 +2,10 @@
 #include <cstrike>
 #include <cromchat>
 #include <incom_skins>
+#include <incom_print>
 
 new const PLUGIN[]       = "Incomsystem AK47 Menu";
-new const VERSION[]      = "2.2";
+new const VERSION[]      = "2.3";
 new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-ak47";
 
@@ -82,6 +83,8 @@ public plugin_init()
 	g_DbHandle = IncomSkins_GetHandle();
 
 	IncomSkins_CreateTable(g_DbHandle, TABLE_NAME);
+
+	register_dictionary("incom_skins.txt");
 }
 
 public plugin_end()
@@ -149,11 +152,8 @@ public IncomCase(id, menu, item)
 		return 1;
 	}
 
-	new nick[33];
-	get_user_name(id, nick, 32);
-
 	SkinStorage[id] = item;
-	CC_SendMessage(id, "&x03%s &x01You Chouse &x04%s&x01", nick, ModelNames[item]);
+	IncomPrint_Client(id, "[%L] %L", id, "INCOM_SKINS", id, "SKIN_SELECTED", ModelNames[item]);
 
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
 	IncomChangeCurrentWeapon(id);

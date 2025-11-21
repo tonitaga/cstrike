@@ -44,6 +44,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлен include файл `incom_print.inc` с удобной функцией печати информации клиентам
 - Обновления плагина `incom_version.amxx` (`1.0` -> `1.1`)
     - Доработка словаря `incom_version.txt` с использованием `incom_print.inc`
+- Обновление плагинов `incom_skins_*.amxx`
+    - Добавление словаря `incom_skins.txt` с использованием `incom_print.inc`
 
 ## [0.6.0]
 

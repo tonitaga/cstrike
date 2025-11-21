@@ -1,0 +1,7 @@
+[ru]
+INCOM_SKINS = &x07IncomSkins&x01
+SKIN_SELECTED = Ваш выбор &x04%s&x01
+
+[en]
+INCOM_SKINS = &x07IncomSkins&x01
+SKIN_SELECTED = Your choice is &x04%s&x01
