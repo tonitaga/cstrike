@@ -1,0 +1,23 @@
+[ru]
+RANDOM_MODELS = &x07RandomModels&x01
+MODE_ENABLED = Режим случайных моделей &x07включен&x01! До &x04%d&x01 игроков получат особые модели на раунд
+MODE_DISABLED = Режим случайных моделей &x07выключен&x01
+NEW_ROUND_STARTED = Новый раунд! До &x04%d&x01 игроков получат &x07случайные модели&x01
+YOU_GOT_MODEL = Вам выпала особая модель: &x07%s&x01
+YOU_HAVE_SPECIAL_MODEL = В этом раунде у вас &x07особенная модель&x01!
+YOU_HAVE_DEFAULT_MODEL = В этом раунде у вас &x07стандартная модель&x01
+TOTAL_MODELS_IN_ROTATION = Всего моделей в ротации: &x04%d&x01
+MAX_PLAYERS_WITH_MODELS = Максимум игроков с моделями: &x04%d&x01
+MODEL_CHANCE = Шанс получения модели: &x04%d%%&x01
+
+[en]
+RANDOM_MODELS = &x07RandomModels&x01
+MODE_ENABLED = Random models mode &x07enabled&x01! Up to &x04%d&x01 players will get special models each round
+MODE_DISABLED = Random models mode &x07disabled&x01
+NEW_ROUND_STARTED = New round! Up to &x04%d&x01 players will get &x07random models&x01
+YOU_GOT_MODEL = You got a special model: &x07%s&x01
+YOU_HAVE_SPECIAL_MODEL = You have a &x07special model&x01 this round!
+YOU_HAVE_DEFAULT_MODEL = You have a &x07default model&x01 this round
+TOTAL_MODELS_IN_ROTATION = Total models in rotation: &x04%d&x01
+MAX_PLAYERS_WITH_MODELS = Maximum players with models: &x04%d&x01
+MODEL_CHANCE = Model chance: &x04%d%%&x01
