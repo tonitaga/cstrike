@@ -205,6 +205,11 @@ public client_connect(playerId)
     }
 }
 
+public client_disconnected(playerId)
+{
+	StopSound(playerId);
+}
+
 public client_putinserver(playerId)
 {
     StopSound(playerId);
