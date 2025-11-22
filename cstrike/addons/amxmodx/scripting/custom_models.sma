@@ -135,7 +135,7 @@ public plugin_cfg()
 			"amx_random_models_max_players", "1",
 			.has_min = true, .min_val = 1.0,
 			.has_max = true, .max_val = 32.0,
-			.description = "Максимальное количество игроков в КАЖДОЙ команде, которые получат случайные модели за раунд"
+			.description = "Максимальное количество игроков, которые получат случайные модели за раунд"
 		),
 		amx_random_models_max_players
 	);
