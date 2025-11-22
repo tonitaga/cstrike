@@ -36,7 +36,8 @@ new const g_Sounds[][] =
     "incom/greeting_code_and_cs.mp3",
 
     ///> Greeting sounds [XMas]
-    "incom/greeting_xmas.mp3",
+    "incom/greeting_xmas_incom.mp3",
+    "incom/greeting_xmas_incom_new_year_code.mp3",
     "incom/greeting_xmas_let_it_snow.mp3",
     "incom/greeting_xmas_rocking_around.mp3",
     "incom/greeting_xmas_last_christmas.mp3",
@@ -71,18 +72,19 @@ new const g_Sounds[][] =
 new const g_SoundsNames[][] =
 {
     ///> Greeting sounds
-    "Incom Greeting",
-    "Lunch Pizza",
-    "Code & Counter-Strike",
+    "Antonk – Incomsystem Anthem",
+    "Antonk – Пицца в обед",
+    "Antonk – Код и Counter-Strike",
 
     ///> Greeting sounds [XMas]
-    "Incom XMas Greeting",
-    "Let It Snow!",
-    "Rockin Around The Christmas Tree",
-    "Wham! Last Christmas",
-    "Дискотека Авария - Новогодняя",
-    "Верка Сердючка - Новогодняя",
-    "Андрей Губин - Зима холода",
+    "Tonitaga – Новогодняя",
+    "Tonitaga – Новогодний Код",
+    "Dean Martin – Let It Snow!",
+    "Brenda Lee – Rockin Around The Christmas Tree",
+    "Wham! – Last Christmas",
+    "Дискотека Авария – Новогодняя",
+    "Верка Сердючка – Новогодняя",
+    "Андрей Губин – Зима холода",
 
     ///> Incomsystem [Default]
     "Roundend #1",
@@ -108,12 +110,12 @@ new const g_SoundsNames[][] =
 
 #define SOUND_OFFSET_GREETING      0  // g_Sounds[0]
 #define SOUND_OFFSET_GREETING_XMAS 3  // g_Sounds[3]
-#define SOUND_OFFSET_DEFAULT       10 // g_Sounds[10]
-#define SOUND_OFFSET_XMAS          19 // g_Sounds[19]
+#define SOUND_OFFSET_DEFAULT       11 // g_Sounds[11]
+#define SOUND_OFFSET_XMAS          20 // g_Sounds[20]
 #define SOUND_OFFSET_MAX           (sizeof g_SoundsNames)
 
 public plugin_init() 
-{ 
+{
     register_plugin(PLUGIN, VERSION, AUTHOR)
     
     register_logevent("round_end", 2, "1=Round_End")
