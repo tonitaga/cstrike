@@ -419,7 +419,7 @@ public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
     menu_setprop(menu, MPROP_EXIT, MEXIT_ALL)
     menu_display(playerId, menu, 0)
 
-    MakeInactiveMenuCanceler(playerId, 10.0);
+    MakeInactiveMenuCanceler(playerId, 15.0);
 }
 
 public ShowMusicMenu(playerId)
