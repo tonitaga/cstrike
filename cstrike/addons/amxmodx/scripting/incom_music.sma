@@ -31,39 +31,39 @@ new const g_MenuDestroyTaskId = 20500;
 new const g_Sounds[][] =
 {
     ///> Greeting sounds
-    "incom/greeting",
-    "incom/greeting_lunch_pizza",
-    "incom/greeting_code_and_cs",
+    "incom/greeting.mp3",
+    "incom/greeting_lunch_pizza.mp3",
+    "incom/greeting_code_and_cs.mp3",
 
     ///> Greeting sounds [XMas]
-    "incom/greeting_xmas",
-    "incom/greeting_xmas_let_it_snow",
-    "incom/greeting_xmas_rocking_around",
-    "incom/greeting_xmas_last_christmas",
-    "incom/greeting_xmas_avaria_new_year",
-    "incom/greeting_xmas_verka_new_year",
-    "incom/greeting_xmas_zima_holoda",
+    "incom/greeting_xmas.mp3",
+    "incom/greeting_xmas_let_it_snow.mp3",
+    "incom/greeting_xmas_rocking_around.mp3",
+    "incom/greeting_xmas_last_christmas.mp3",
+    "incom/greeting_xmas_avaria_new_year.mp3",
+    "incom/greeting_xmas_verka_new_year.mp3",
+    "incom/greeting_xmas_zima_holoda.mp3",
 
     ///> Incomsystem [Default]
-    "incom/roundend1_v2",
-    "incom/roundend2_v2",
-    "incom/roundend3_v2",
-    "incom/roundend4_v2",
-    "incom/roundend5_v2",
-    "incom/roundend6_v2",
-    "incom/roundend7_v2",
-    "incom/roundend8_v2",
-    "incom/roundend9_v2",
+    "incom/roundend1_v2.mp3",
+    "incom/roundend2_v2.mp3",
+    "incom/roundend3_v2.mp3",
+    "incom/roundend4_v2.mp3",
+    "incom/roundend5_v2.mp3",
+    "incom/roundend6_v2.mp3",
+    "incom/roundend7_v2.mp3",
+    "incom/roundend8_v2.mp3",
+    "incom/roundend9_v2.mp3",
 
     ///> Incomsystem [XMas]
-    "incom/roundend1_xmas_v2",
-    "incom/roundend2_xmas",
-    "incom/roundend3_xmas",
-    "incom/roundend4_xmas",
-    "incom/roundend5_xmas",
-    "incom/roundend6_xmas",
-    "incom/roundend7_xmas",
-    "incom/roundend8_xmas"
+    "incom/roundend1_xmas_v2.mp3",
+    "incom/roundend2_xmas.mp3",
+    "incom/roundend3_xmas.mp3",
+    "incom/roundend4_xmas.mp3",
+    "incom/roundend5_xmas.mp3",
+    "incom/roundend6_xmas.mp3",
+    "incom/roundend7_xmas.mp3",
+    "incom/roundend8_xmas.mp3"
 };
 
 ///> Для отображения имени в меню
@@ -118,12 +118,10 @@ public plugin_init()
     
     register_logevent("round_end", 2, "1=Round_End")
 
-    register_clcmd("joinclass", "OnAgentChoose");
-
     register_clcmd(MUSIC_COMMAND_SAY, "ShowMusicMenu")
     register_clcmd(MUSIC_COMMAND_SAY_TEAM, "ShowMusicMenu")
-    register_clcmd(MUSIC_STOP_COMMAND_SAY, "StopSound")
-    register_clcmd(MUSIC_STOP_COMMAND_SAY_TEAM, "StopSound")
+    register_clcmd(MUSIC_STOP_COMMAND_SAY, "HandleStopSound")
+    register_clcmd(MUSIC_STOP_COMMAND_SAY_TEAM, "HandleStopSound")
 
     register_dictionary("incom_music.txt")
 }
@@ -181,11 +179,9 @@ public plugin_cfg()
 
 public plugin_precache()
 {
-    new sound[64];
     for (new i; i < sizeof g_Sounds; ++i)
     {
-        formatex(sound, charsmax(sound), "%s.wav", g_Sounds[i]);
-        precache_sound(sound);
+        precache_sound(g_Sounds[i]);
     }
 
     return PLUGIN_CONTINUE
@@ -195,7 +191,7 @@ public client_connect(playerId)
 {
     if (amx_incom_music_enable)
     {
-        client_cmd(playerId, "stopsound")
+        StopSound(playerId);
 
         new type = amx_incom_music_type;
         if (type == MUSIC_TYPE_DEFAULT)
@@ -209,12 +205,9 @@ public client_connect(playerId)
     }
 }
 
-public OnAgentChoose(playerId)
+public client_putinserver(playerId)
 {
-    if (amx_incom_music_enable)
-    {
-        client_cmd(playerId, "stopsound")
-    }
+    StopSound(playerId);
 }
 
 public round_end()
@@ -227,7 +220,7 @@ public round_end()
             return;
         }
 
-        client_cmd(0, "stopsound")
+        StopSound(0);
 
         new type = amx_incom_music_type;
         if (type == MUSIC_TYPE_DEFAULT)
@@ -259,17 +252,17 @@ public PlayXMasSound()
 
 public PlaySound(playerId, soundId)
 {
-    new sound[64];
-    formatex(sound, charsmax(sound), "spk %s", g_Sounds[soundId]);
+    new sound[128];
+    formatex(sound, charsmax(sound), "mp3 play sound/%s", g_Sounds[soundId]);
 
     client_cmd(playerId, sound);
 }
 
-public StopSound(playerId)
+public HandleStopSound(playerId)
 {
     if (get_user_flags(playerId) & ADMIN_FLAG)
     {
-        client_cmd(0, "stopsound")
+        StopSound(0);
 
         if (!IsSongAlreadyRequested())
         {
@@ -285,9 +278,14 @@ public StopSound(playerId)
     }
     else
     {
-        client_cmd(playerId, "stopsound")
+        StopSound(playerId);
         IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "PLAYER_STOP_SOUND");
     }
+}
+
+stock StopSound(playerId)
+{
+    client_cmd(playerId, "stopsound; mp3 stop");
 }
 
 stock IsSongRequestMenuOnHud()
@@ -478,7 +476,7 @@ public CommonMenuCase(playerId, menu, item)
 	menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback)
 	new soundId = str_to_num(data)
 
-	client_cmd(0, "stopsound")
+    StopSound(0);
 	PlaySound(0, soundId);
 
 	get_user_name(playerId, name, charsmax(name));
