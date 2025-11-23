@@ -322,7 +322,11 @@ bool:is_user_steam(id)
 
 public client_disconnected(id)
 {
-	// Очищаем данные игрока
+	if (!hasStandardModels(id) && g_RandomModelCnt > 0)
+	{
+		g_RandomModelCnt--;
+	}
+
 	g_szPlayerModel[id][1][0] = EOS;
 	g_szPlayerModel[id][2][0] = EOS;
 	g_iStandardModelId[id] = -1;
