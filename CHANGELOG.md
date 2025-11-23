@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлена подгрузка новогодних плагинов в `plugins.ini`
 - Изменен тип музыки в `plugin-incom_music.cfg`. Выставлен тип `[XMas]`
 - Выставлена карта `$2000$_xmas` как карта запуска по умолчанию
+- Изменен список запускаемых карт при помощи менеджера.
 
 ## [0.7.0]
 
