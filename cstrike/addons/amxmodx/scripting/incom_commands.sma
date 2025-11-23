@@ -18,6 +18,6 @@ public plugin_init() {
 }
 
 public ShowCommands(playerId) {
-    show_motd(playerId, g_CommandsHtmlFile, "INCOMSYSTEM [DEV ZONE]")
+    show_motd(playerId, g_CommandsHtmlFile, "INCOMSYSTEM [XMAS ZONE]")
     return PLUGIN_HANDLED
 }
