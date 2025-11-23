@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Выставлена карта `$2000$_xmas` как карта запуска по умолчанию
 - Изменен список запускаемых карт при помощи менеджера.
 - Изменено имя `INCOMSYSTEM [DEV ZONE]` на `INCOMSYSTEM [XMAS ZONE]`
+- Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 
 ## [0.7.0]
 
