@@ -1,7 +1,7 @@
 [ru]
 MODE_NAME = &x07RandomModels&x01
-PLAYER_GOT_MODEL = Игроку &x07%s&x01 выпала особая модель
+PLAYER_GOT_MODEL = Игроку &x04%s&x01 выпала особая модель
 
 [en]
 MODE_NAME = &x07RandomModels&x01
-PLAYER_GOT_MODEL = Player &x07%s&x01 got a special model
+PLAYER_GOT_MODEL = Player &x04%s&x01 got a special model
