@@ -17,9 +17,6 @@
 
 #define ADMIN_FLAG ADMIN_IMMUNITY
 
-#define RANDOM_MODELS_COMMAND_SAY           "say /random_models"
-#define RANDOM_MODELS_COMMAND_SAY_TEAM      "say_team /random_models"
-
 enum _:MDL { ACCESS[32], MDL_T[64], MDL_CT[64] }	// ip, steam, flag, #, *. # - steam; * - всем 
 
 #define MAX_MDL 64
@@ -94,14 +91,7 @@ public plugin_init()
 
 	register_logevent("event_round_start", 2, "1=Round_Start");
 
-	// register_clcmd(RANDOM_MODELS_COMMAND_SAY, "ShowRandomModelsMenu");
-	// register_clcmd(RANDOM_MODELS_COMMAND_SAY_TEAM, "ShowRandomModelsMenu");
-
-	// Команды для изменения настроек
-	// register_clcmd("set_max_players", "cmdSetMaxPlayers");
-	// register_clcmd("set_model_chance", "cmdSetModelChance");
-
-	// register_dictionary("random_models.txt");
+	register_dictionary("custom_models.txt");
 }
 
 public plugin_cfg()
@@ -225,17 +215,17 @@ public changePlayerModel(id)
 	if (!hasStandardModels(id))
 	{
 		setDefaultModel(id);
+		return;
 	}
 
 	if (amx_random_models_enable && g_CurrentRandomModelsCount < amx_random_models_max_players)
 	{
 		if (random_num(1, 100) <= amx_random_models_chance)
 		{
+			setRandomModel(id);
 			new player_name[32];
 			get_user_name(id, player_name, charsmax(player_name));
-			//IncomPrint_Client(0, "[%L] %L", 0, "RANDOM_MODELS", 0, "YOU_GOT_MODEL", player_name, model_name);
-            setRandomModel(id);
-			client_print(0, print_chat, "[RandomModels] Игроку ^"%s^" выпала случайная модель", player_name);
+			IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
 			g_CurrentRandomModelsCount++;
 		}
 	}
