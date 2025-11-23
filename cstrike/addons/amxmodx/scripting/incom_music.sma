@@ -3,7 +3,7 @@
 #include <reapi>
 
 #define PLUGIN  "Incomsystem music"
-#define VERSION "3.2"
+#define VERSION "4.0"
 #define AUTHOR  "Tonitaga"
 
 new const MUSIC_TYPE_DEFAULT = 1
