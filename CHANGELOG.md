@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Изменено имя `INCOMSYSTEM [DEV ZONE]` на `INCOMSYSTEM [XMAS ZONE]`
 - Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 - Добавлено включение новогодних моделей оружия в плагины `incom_skins_*.amxx`
+- Добавлена замена моделей в `weapons_replacement.ini`
 
 ## [0.7.0]
 
