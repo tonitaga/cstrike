@@ -8,9 +8,10 @@
 #include <parse_color>
 #include <incom_print>
 #include <reapi>
+#include <string>
 
 #define PLUGIN  "Incomsystem Respawn"
-#define VERSION "1.5.0"
+#define VERSION "1.6.0"
 #define AUTHOR  "Tonitaga"
 
 #define WEAPONS_COMMAND          "/weapons"
@@ -68,6 +69,8 @@ new g_NotifyAboutWeaponSelectTaskId = 12472;
 
 new g_SelectedWeaponsStorage[33];
 
+new weapon_choose_blocked_by_map = false;
+
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
@@ -75,13 +78,13 @@ public plugin_init()
 	register_event("DeathMsg", "OnPlayerDeath", "a");
 	register_clcmd("joinclass", "OnAgentChoose");
 
-	register_clcmd(WEAPONS_COMMAND_SAY,      "MakeShowWeaponsMenuTask");
-	register_clcmd(WEAPONS_COMMAND_SAY_TEAM, "MakeShowWeaponsMenuTask");
+	register_clcmd(WEAPONS_COMMAND_SAY,      "ShowWeaponsMenu");
+	register_clcmd(WEAPONS_COMMAND_SAY_TEAM, "ShowWeaponsMenu");
 
 	set_task(120.0, "NotifyAboutWeaponSelect", g_NotifyAboutWeaponSelectTaskId, .flags = "b");
 
 	RegisterHam(Ham_TakeDamage, "player", "OnPlayerTakeDamage");
-	RegisterHam(Ham_Spawn, "player", "OnPlayerSpawn");
+	RegisterHookChain(RG_CBasePlayer_OnSpawnEquip, "CBasePlayer_OnSpawnEquip_Post", true);
 
 	register_dictionary("incom_respawn.txt");
 }
@@ -101,6 +104,11 @@ public plugin_cfg()
 	hook_cvar_change(g_RandomWeaponsEnabled, "OnRandomWeaponsEnabledChanged");
 
 	AutoExecConfig();
+}
+
+public plugin_precache()
+{
+	CheckCurrentMap();
 }
 
 public client_connect(playerId)
@@ -192,7 +200,17 @@ public OnRandomWeaponsEnabledChanged(cvar, const old_value[], const new_value[])
 
 public NotifyAboutWeaponSelect()
 {
-	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
+	if (!get_pcvar_num(g_RespawnEnabled))
+	{
+		return;
+	}
+
+	if (IsWeaponsChooseBlockedByMap())
+	{
+		return;
+	}
+
+	if (get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
 		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "WEAPONS_NOTIFY", WEAPONS_COMMAND);
 	}
@@ -240,8 +258,6 @@ public RespawnPlayerTask(playerData[])
 		{
 			ShowHudMessage(playerId, "Вы неуязвимы", godmodeDuration)
 		}
-
-		GiveWeapons(playerId);
 	}
 	else
 	{
@@ -253,14 +269,21 @@ public RespawnPlayerTask(playerData[])
 	}
 }
 
-public OnPlayerSpawn(playerId)
+public CBasePlayer_OnSpawnEquip_Post(playerId)
 {
-	if (get_pcvar_num(g_RespawnEnabled) && is_user_alive(playerId))
+	if (!get_pcvar_num(g_RespawnEnabled))
 	{
-		if (!get_pcvar_num(g_RandomWeaponsEnabled) && !g_SelectedWeaponsStorage[playerId] == RANDOM_SET)
-		{
-			GiveWeapons(playerId);
-		}
+		return;
+	}
+
+	if (IsWeaponsChooseBlockedByMap())
+	{
+		return;
+	}
+
+	if (is_user_alive(playerId))
+	{
+		GiveWeapons(playerId);
 	}
 }
 
@@ -373,20 +396,19 @@ stock StopGodmodeEffects(playerId)
 	}
 }
 
-public MakeShowWeaponsMenuTask(playerId)
-{
-	if (get_pcvar_num(g_RespawnEnabled) && get_pcvar_num(g_WeaponsChooseEnabled))
-	{
-		if (is_user_connected(playerId) && is_user_alive(playerId))
-		{
-			set_task(0.1, "ShowWeaponsMenu", playerId);
-		}
-	}
-}
-
 public ShowWeaponsMenu(playerId)
 {
-	if (get_pcvar_num(g_RespawnEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
+	if (!get_pcvar_num(g_RespawnEnabled))
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	if (IsWeaponsChooseBlockedByMap())
+	{
+		return PLUGIN_HANDLED;
+	}
+
+	if (get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
 		new menu = menu_create("\y>>>>> \rWeapon selection menu \y<<<<<^n \dby >>\rTonitaga\d<<", "WeaponCase")
 
@@ -409,18 +431,16 @@ public WeaponCase(playerId, menu, item)
 		return PLUGIN_HANDLED;
 	}
 	
-	if (!is_user_alive(playerId) || cs_get_user_team(playerId) == CS_TEAM_SPECTATOR)
-	{
-		client_print(playerId, print_chat, "[Weapon Menu] Вы должны быть живы для получения оружия!");
-		return PLUGIN_HANDLED;
-	}
-	
 	new data[6], name[64], access, callback;
 	menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback);
 	
 	g_SelectedWeaponsStorage[playerId] = str_to_num(data)
 
-	GiveWeapons(playerId);
+	if (is_user_alive(playerId))
+	{
+		GiveWeapons(playerId);
+	}
+
 	return PLUGIN_HANDLED;
 }
 
@@ -465,13 +485,22 @@ stock GiveWeapons(playerId)
 
 stock GiveWeaponsToAllPlayers()
 {
+	if (IsWeaponsChooseBlockedByMap())
+	{
+		return;
+	}
+
 	new players[MAX_PLAYERS],playersCount;
 
 	get_players(players, playersCount);
 	for (new i = 0; i < playersCount; ++i)
 	{
 		new playerId = players[i];
-		GiveWeapons(playerId);
+
+		if (is_user_alive(playerId))
+		{
+			GiveWeapons(playerId);
+		}
 	}
 }
 
@@ -535,4 +564,35 @@ stock GiveRandomWeapons(playerId)
 
 	rg_give_item(playerId, g_SecondaryWeaponName[rand], GT_REPLACE);
 	rg_set_user_bpammo(playerId, g_SecondaryWeaponEnum[rand], AMMO_COUNT);
+}
+
+stock IsWeaponsChooseBlockedByMap()
+{
+	return weapon_choose_blocked_by_map;
+}
+
+stock CheckCurrentMap()
+{
+	new mapname[128];
+	get_mapname(mapname, charsmax(mapname));
+
+	strtolower(mapname);
+
+	new const blocked_maps[][] = {
+		"awp",
+		"35hp"
+	};
+
+	for (new i = 0; i < sizeof(blocked_maps); i++)
+	{
+		if (containi(mapname, blocked_maps[i]) != -1)
+		{
+			weapon_choose_blocked_by_map = true;
+			server_print("[IncomRespawn] Weapons choose or equip disabled via map");
+			return;
+		}
+	}
+
+	// Не блокируем выдачу оружия
+	weapon_choose_blocked_by_map = false;
 }
