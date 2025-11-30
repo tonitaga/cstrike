@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Обновление плагина `custom_models` (`1.0` -> `1.1`)
     - Формат записи в файле `random_models.ini` теперь в виде `"model_t" "model_ct"`.
     - Добавлена совместимость с плагином `incom_respawn.amxx`.
+    - В режиме Team DM информация о получении уникальной модели отображаются только для игрока, который её получил
 - Добавлена карта `de_dust2_2x2_xmas_incom`
 
 ## [0.7.0]

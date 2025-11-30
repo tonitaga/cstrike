@@ -251,6 +251,11 @@ public changePlayerModel(id)
 
 				IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
 			}
+			else
+			{
+				// В режиме TeamDM печатает только самому игроку
+				IncomPrint_Client(id, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "YOU_GOT_MODEL");
+			}
 
 			g_CurrentRandomModelsCount++;
 		}
