@@ -90,6 +90,7 @@ public plugin_init()
 	register_forward(FM_SetClientKeyValue, "fwd_SetClientKeyValue_Pre", false);
 
 	register_logevent("event_round_start", 2, "1=Round_Start");
+	register_event("DeathMsg", "HandleDeathEvent", "a", "1>0");
 
 	register_dictionary("custom_models.txt");
 }
@@ -202,6 +203,21 @@ public fwd_HamSpawn_Post(id)
 	applyPlayerModel(id);
 }
 
+public HandleDeathEvent()
+{
+	if (!amx_random_models_enable)
+	{
+		return;
+	}
+
+	new victimId = read_data(2);
+	if (!hasStandardModels(victimId) && g_CurrentRandomModelsCount > 0)
+	{
+		// Если у умершего игрока была случайная модель, уменьшаем счетчик.
+		g_CurrentRandomModelsCount--;
+	}
+}
+
 public setDefaultModel(id)
 {
 	if (g_iStandardModelId[id] != -1)
@@ -223,9 +239,19 @@ public changePlayerModel(id)
 		if (random_num(1, 100) <= amx_random_models_chance)
 		{
 			setRandomModel(id);
-			new player_name[32];
-			get_user_name(id, player_name, charsmax(player_name));
-			IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
+
+			new teamDeathmatchEnabled = get_cvar_num("amx_incom_respawn_enable");
+
+			// В режиме TeamDM не печатаем информацию о случайных моделях, чтобы не спамить в чат
+			// Если указать больше двух моделей, то в чате будет слишком много сообщений о том, что модель кому-то выпала.
+			if (!teamDeathmatchEnabled)
+			{
+				new player_name[32];
+				get_user_name(id, player_name, charsmax(player_name));
+
+				IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
+			}
+
 			g_CurrentRandomModelsCount++;
 		}
 	}

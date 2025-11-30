@@ -21,7 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Обновления плагина `incom_kill_streak_reward.amxx` (`1.0` -> `2.0`)
     - Добавлено сохранение серии убийств в базу данных
     - Добавлена клиентская команда `/killstreak`, позволяет посмотреть Top10 серий убийств.
-- Обновление плагина `custom_models` с чтением из файла `random_models.ini`. Теперь формат в виде `"model_t" "model_ct"`
+- Обновление плагина `custom_models` (`1.0` -> `1.1`)
+    - Формат записи в файле `random_models.ini` теперь в виде `"model_t" "model_ct"`.
+    - Добавлена совместимость с плагином `incom_respawn.amxx`.
 
 ## [0.7.0]
 
