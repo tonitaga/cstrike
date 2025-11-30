@@ -81,9 +81,11 @@
 		* Бамп версии
 	0.0.25f (01.11.2024):
 		* Добавлен квар HealthNade_BaseWeapon (возможность переопределить оружие-основу)
+	0.0.26f (29.11.2025):
+		* Добавлена возможность отключать выдачу гранаты только на ножевых картах
 */
 
-new const PLUGIN_VERSION[] = "0.0.25f";
+new const PLUGIN_VERSION[] = "0.0.26f";
 
 #pragma semicolon 1
 
@@ -114,6 +116,7 @@ enum E_Cvars {
 	Cvar_Give_MinRound,
 	Float:Cvar_EquipDelay,
 	bool:Cvar_ReplaceSmokegren,
+	booo:Cvar_BlockEquipOnKnifeMaps,
 	bool:Cvar_Msg_FullHp,
 	bool:Cvar_Msg_UsageHint,
 	E_NadeDropType:Cvar_NadeDrop,
@@ -125,6 +128,9 @@ enum E_Cvars {
 }
 new gCvars[E_Cvars];
 #define Cvar(%1) gCvars[Cvar_%1]
+
+///> Текущая карта - Ножевая
+new is_knife_map = false;
 
 new const CFG_FILENAME[] = "plugins/HealthNade.cfg"; // comment to disable .cfg loading
 new const DICTIONARY_FILENAME[] = "HealthNade.ini";
@@ -190,6 +196,8 @@ public plugin_precache() {
 	SpriteCylinder = precache_model("sprites/shockwave.spr");
 
 	precache_sound(SOUND_EXPLODE);
+
+	CheckCurrentMap();
 
 #if WEAPON_NEW_ID != WEAPON_GLOCK
 	MsgIdWeaponList = get_user_msgid("WeaponList");
@@ -317,6 +325,11 @@ public CBasePlayer_OnSpawnEquip_Post(const id) {
 	ExecuteForward(g_fwdCanEquip, iRet, id);
 
 	if(iRet) {
+		return;
+	}
+
+	if (Cvar(BlockEquipOnKnifeMaps) && IsKnifeMap())
+	{
 		return;
 	}
 
@@ -960,6 +973,12 @@ InitCvars() {
 		"Base weapon"
 	), Cvar(BaseWeapon), charsmax(Cvar(BaseWeapon)));
 
+	bind_pcvar_num(create_cvar(
+		"HealthNade_BlockEquipOnKnifeMaps", "1", FCVAR_NONE,
+		"Блокировать выдачу Хилки при спавне на ножевых картах",
+		true, 0.0, true, 1.0
+	), Cvar(BlockEquipOnKnifeMaps));
+
 	bind_pcvar_num(get_cvar_pointer("mp_nadedrops"), g_iCvarNadeDrops);
 }
 
@@ -1124,4 +1143,34 @@ public _HealthNade_HasNade() {
 	}
 
 	return bool:(get_member(pPlayer, m_rgAmmo, AMMO_ID));
+}
+
+stock IsKnifeMap()
+{
+	return is_knife_map;
+}
+
+stock CheckCurrentMap()
+{
+	new mapname[128];
+	get_mapname(mapname, charsmax(mapname));
+
+	strtolower(mapname);
+
+	new const blocked_maps[][] = {
+		"35hp",
+		"knife"
+	};
+
+	for (new i = 0; i < sizeof(blocked_maps); i++)
+	{
+		if (containi(mapname, blocked_maps[i]) != -1)
+		{
+			is_knife_map = true;
+			server_print("[Reapi_HealthNade] Healthnade equip on spawn disabled via map");
+			return;
+		}
+	}
+
+	is_knife_map = false;
 }

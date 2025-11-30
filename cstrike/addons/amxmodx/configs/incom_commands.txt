@@ -4,10 +4,10 @@
 <title>INCOMSYSTEM [DEV ZONE]</title>
 <style>
 body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
-.hdr{ color:#f00; font-weight:bold; font-size:22px; }
+.hdr{color:#f00; font-weight:bold; font-size:22px;}
 .y{color:#ff0}
 .g{color:#0f0}
-.b{ color:#08f;}
+.b{color:#08f}
 .cmds{background:#112;border:1px dashed #44f;padding:15px;margin:10px;max-width:500px}
 </style>
 </head>
@@ -17,19 +17,20 @@ body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 <div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="b">v0.7.0</div>
+<div class="b">v0.7.1</div>
 <br><hr><br>
 <div class=cmds><table>
-<tr><td class=y>/stop_music</td><td class=g>- Отключить текущий звук</td></tr>
-<tr><td class=y>/skins-menu</td><td class=g>- Меню выбора скинов</td></tr>
-<tr><td class=y>/weapons</td><td class=g>- Меню выбора оружия в TDM</td></tr>
-<tr><td class=y>/buy_molotov</td><td class=g>- Покупка гранаты "Молотов"</td></tr>
-<tr><td class=y>/version</td><td class=g>- Версия сервера</td></tr>
-<tr><td class=y>/maps</td><td class=g>- Номинировать карту на голосование</td></tr>
-<tr><td class=y>/rs</td><td class=g>- Сбросить текущий счет</td></tr>
-<tr><td class=y>/rankstats</td><td class=g>- Личная статистика</td></tr>
-<tr><td class=y>/top15</td><td class=g>- Топ 15 сервера</td></tr>
-<tr><td class=y>/anew</td><td class=g>- Бонусный магазин</td></tr>
+<tr><td class=y>/stop_music</td><td class=g>- Disable current sound</td></tr>
+<tr><td class=y>/skins-menu</td><td class=g>- Show skins menu</td></tr>
+<tr><td class=y>/weapons</td><td class=g>- Weapons choose in TDM</td></tr>
+<tr><td class=y>/killstreak</td><td class=g>- Top 10 Killstreak</td></tr>
+<tr><td class=y>/buy_molotov</td><td class=g>- "Molotov" buy</td></tr>
+<tr><td class=y>/version</td><td class=g>- Server version</td></tr>
+<tr><td class=y>/maps</td><td class=g>- Nominate map for voting</td></tr>
+<tr><td class=y>/rs</td><td class=g>- Reset score</td></tr>
+<tr><td class=y>/rankstats</td><td class=g>- Own stats</td></tr>
+<tr><td class=y>/top15</td><td class=g>- Top 15 Players</td></tr>
+<tr><td class=y>/anew</td><td class=g>- Bonus shop</td></tr>
 </table></div>
 </center>
 </body>
