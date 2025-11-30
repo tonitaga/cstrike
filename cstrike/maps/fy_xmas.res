@@ -1,0 +1,10 @@
+maps/fy_xmas.bsp
+maps/fy_xmas.res
+maps/fy_xmas.txt
+models/gift1.mdl
+models/gift2.mdl
+models/gift3.mdl
+models/gift4.mdl
+models/gift5.mdl
+models/roflag.mdl
+models/x-mas.mdl
