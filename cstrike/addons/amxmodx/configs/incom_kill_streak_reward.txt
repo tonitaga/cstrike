@@ -1,0 +1,46 @@
+<html>
+<head>
+<meta charset=UTF-8>
+<title>INCOMSYSTEM [DEV ZONE]</title>
+<style>
+body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
+.hdr{color:#f00; font-weight:bold; font-size:22px; }
+.y{color:#ff0}
+.g{color:#0f0}
+.gold{color:#ffd700}
+.gray{color:#c0c0c0}
+.bronze{color:#cd7f32}
+.b{color:#08f}
+.r{color:#f00}
+.streak{color:#0f0; font-size:22px; margin-top:15px;}
+.cmds{background:#112;padding:15px;margin:10px;max-width:500px}
+.col{padding:12px 15px; font-size:20px; color:#08f; font-weight:bold;}
+.cmds table{border-spacing: 20px 0; text-align: center;}
+.col, .cmds td {text-align: center;}
+.sep-row {height: 20px;}
+.sep-row td {border-top: 2px solid #444; padding: 0;}
+</style>
+</head>
+<body>
+<center>
+<br>
+<div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
+<br>
+<div>/* Powered by Tonitaga */</div>
+<div class="b">v0.7.1</div>
+<div class="streak">Top10 Killstreak</div>
+<br><hr><br>
+<div class=cmds><table>
+<thead>
+<tr>
+<th class=col>Место</th>
+<th class=col>Имя</th>
+<th class=col>Серия</th></tr>
+</thead>
+<tbody>
+%s
+</tbody>
+</table></div>
+</center>
+</body>
+</html>
