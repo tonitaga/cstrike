@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлена карта `de_dust2_2x2_xmas_incom`
 - Обновление плагина `aes_bonus_cstrike` (`0.5.9.1` -> `0.6.0.0`)
     - Отключение бонусов в начале раунда на ножевых картах. Регулируется при помощи `aes_block_round_bonus_on_knife_maps`
+- Обновление `incom_commands.txt`
+    - Добавление информации о команде `/killstreak`
+    - Вся информация переведена на английский
 
 ## [0.7.0]
 
