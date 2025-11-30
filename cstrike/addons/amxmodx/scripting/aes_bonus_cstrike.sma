@@ -13,9 +13,9 @@
 #include <reapi>
 
 #define PLUGIN "AES: Bonus CSTRIKE"
-#define VERSION "0.5.9.1 [REAPI]"
-#define AUTHOR "serfreeman1337/sonyx"
-#define LASTUPDATE "12, March (03), 2018"
+#define VERSION "0.6.0.0 [REAPI]"
+#define AUTHOR "serfreeman1337/sonyx + Tonitaga"
+#define LASTUPDATE "30, November (11), 2025"
 
 #if AMXX_VERSION_NUM < 183
 	#include <colorchat>
@@ -50,6 +50,8 @@ new const Float:g_flCoords[][] = { {0.55, 0.55}, {0.5, 0.55}, {0.55, 0.5}, {0.45
 new g_players[MAX_PLAYERS + 1];
 new bool: g_PointDam[MAX_PLAYERS + 1] = false;
 
+new g_RoundBonusDisabled = false;
+
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
@@ -60,6 +62,11 @@ public plugin_init()
 
 	g_iSyncMsg = CreateHudSyncObj();
 	g_iSyncMsg2 = CreateHudSyncObj();
+}
+
+public plugin_precache()
+{
+	CheckCurrentMap();
 }
 
 public client_disconnected(id)
@@ -122,8 +129,10 @@ public deSetNade(id)
 
 public roundBonus_GiveDefuser(id,cnt)
 {
-	if(!cnt)
+	if (IsRoundBonusDisabled() || !cnt)
+	{
 		return false;
+	}
 
 	if(get_member(id, m_iTeam) != TEAM_CT)
 		return false;
@@ -135,8 +144,10 @@ public roundBonus_GiveDefuser(id,cnt)
 
 public roundBonus_GiveNV(id,cnt)
 {
-	if(!cnt)
+	if (IsRoundBonusDisabled() || !cnt)
+	{
 		return false;
+	}
 
 	set_member(id, m_bHasNightVision, 1);
 
@@ -145,8 +156,10 @@ public roundBonus_GiveNV(id,cnt)
 
 public roundBonus_Dmgr(id,DamagerModes:cnt)
 {
-	if(cnt <= Disable)
+	if (IsRoundBonusDisabled() || cnt <= Disable)
+	{
 		return false;
+	}
 
 	g_PointDam[id] = true;
 	g_ModeDam[id] = (ModeAll < cnt <= ModeIfVisible) ? cnt : ModeAll;
@@ -261,7 +274,46 @@ public pointBonus_Set200CP(id)
 	GiveArmor(id, 200);
 
 public roundBonus_GiveArmor(id,cnt)
-	GiveArmor(id,cnt);
+{
+	if (!IsRoundBonusDisabled())
+	{
+		GiveArmor(id,cnt);
+	}
+}
 
 public roundBonus_GiveHP(id,cnt)
-	GiveHP(id,cnt);
+{
+	if (!IsRoundBonusDisabled())
+	{
+		GiveHP(id,cnt);
+	}
+}
+
+stock IsRoundBonusDisabled()
+{
+	return g_RoundBonusDisabled;
+}
+
+stock CheckCurrentMap()
+{
+	new mapname[128];
+	get_mapname(mapname, charsmax(mapname));
+
+	strtolower(mapname);
+
+	new const blocked_maps[][] = {
+		"35hp"
+	};
+
+	for (new i = 0; i < sizeof(blocked_maps); i++)
+	{
+		if (containi(mapname, blocked_maps[i]) != -1)
+		{
+			g_RoundBonusDisabled = true;
+			server_print("[AesBonusCstrike] Round bonus disabled via knife map");
+			return;
+		}
+	}
+
+	g_RoundBonusDisabled = false;
+}
