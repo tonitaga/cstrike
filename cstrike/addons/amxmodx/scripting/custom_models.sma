@@ -12,7 +12,7 @@
 #include <incom_print>
 
 #define PLUGIN  "Incomsystem Custom Models"
-#define VERSION "1.0"
+#define VERSION "1.1"
 #define AUTHOR  "smayl1ks and ... Neygomon"
 
 #define ADMIN_FLAG ADMIN_IMMUNITY
@@ -344,13 +344,11 @@ stock PrecacheRandomModels(configFile[])
 		fgets(file, line, charsmax(line));
 
 		// Пропускаем пустые строки и комментарии
-		trim(line);
 		if (!line[0] || line[0] == ';' || line[0] == '^n')
+		{
 			continue;
+		}
 
-		remove_quotes(line);
-		trim(line);
-		
 		// Парсим пару моделей
 		if (parse(line, model_t, charsmax(model_t), model_ct, charsmax(model_ct)) == 2)
 		{
