@@ -18,7 +18,7 @@ hr{ border:1px solid #444 ; width:60%; }
 <div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="b">v0.7.1</div>
+<div class="b">v0.7.2</div>
 <br>
 <span class="y">✰ GitHub</span> - <span class="g">github.com/tonitaga/incomsystem_cstrike</span>
 </a>
