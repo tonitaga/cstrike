@@ -18,7 +18,7 @@
 #endif // SUPPORT_HEALTHNADE
 
 new const PLUGIN[]		= "Incomsystem Kill Streak Reward";
-new const VERSION[]		= "2.0";
+new const VERSION[]		= "3.0";
 new const AUTHOR[]		= "Tonitaga";
 
 ///> Название конфигурационного файла
@@ -31,8 +31,10 @@ new const MOTD_FILE[] = "incom_kill_streak_reward.txt";
 new g_PrecachedMotdContent[2048];
 
 ///> CVAR переменные
+new       amx_incom_kill_streak_enable;
 new       amx_incom_kill_streak_reward_enable;
 new Float:amx_incom_kill_streak_reward_max_health;
+new       amx_incom_kill_streak_reward_block_health_on_knife_maps;
 
 new       maxKillStreak = 0;          ///< Наибольшая серия убийств
 new const minKillStreakForUpdate = 3; ///< Минимальная серия для начала уведомления в чат
@@ -52,8 +54,17 @@ new const HEALTH_GRENADE[]  = "weapon_healthgrenade";  ///< Фиктивное �
 ///> Handle на базу данных
 new Handle:g_DbHandle = Empty_Handle;
 
-///> Наименование таблицы
-new const KILL_STREAK_TABLE_NAME[] = "incom_kill_streak";
+///> Наименование базы данных и таблиц
+new const KILL_STREAK_DB_NAME[]           = "incom_kill_streak";
+new const KILL_STREAK_AWP_TABLE_NAME[]    = "incom_kill_streak_awp";
+new const KILL_STREAK_KNIFE_TABLE_NAME[]  = "incom_kill_streak_knife";
+new const KILL_STREAK_COMMON_TABLE_NAME[] = "incom_kill_streak_common"; 
+
+///> Текущее название используемой таблицы в зависимости от карты
+new g_TableName[128];
+new g_TableDesc[128];
+
+new is_knife_map = false;
 
 new const KILL_STREAK_COMMAND_SAY[]      = "say /killstreak";
 new const KILL_STREAK_COMMAND_SAY_TEAM[] = "say_team /killstreak";
@@ -68,18 +79,28 @@ public plugin_init()
 	register_clcmd(KILL_STREAK_COMMAND_SAY_TEAM, "OnKillStreakCommand")
 
 	register_dictionary("incom_kill_streak_reward.txt")
-
-	CreateKillStreakTable();
 }
 
 public plugin_cfg()
 {
 	bind_pcvar_num(
 		create_cvar(
-			"amx_incom_kill_streak_reward_enable", "0",
+			"amx_incom_kill_streak_enable", "1",
 			.has_min = true, .min_val = 0.0,
 			.has_max = true, .max_val = 1.0,
 			.description = "Статус плагина^n\
+							0 - Отключен^n\
+							1 - Включен"
+		),
+		amx_incom_kill_streak_enable
+	);
+
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_kill_streak_reward_enable", "0",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "Включить награды за серию убийств^n\
 							0 - Отключен^n\
 							1 - Включен"
 		),
@@ -96,6 +117,18 @@ public plugin_cfg()
 		amx_incom_kill_streak_reward_max_health
 	);
 
+	bind_pcvar_num(
+		create_cvar(
+			"amx_incom_kill_streak_reward_block_health_on_knife_maps", "1",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "Блокировать выдачу HP на ножевых картах^n\
+							0 - Отключен^n\
+							1 - Включен"
+		),
+		amx_incom_kill_streak_reward_block_health_on_knife_maps
+	);
+
 	AutoExecConfig();
 }
 
@@ -107,6 +140,8 @@ public plugin_precache()
 	CreateArrays();
 	PrecacheKillStreakConfig(configDir);
 	PrecacheKillStreakMotdFile(configDir);
+
+	CreateKillStreakTable();
 }
 
 public plugin_end()
@@ -127,13 +162,19 @@ public client_connect(playerId)
 
 public client_disconnected(playerId)
 {
+	if (!amx_incom_kill_streak_enable)
+	{
+		return;
+	}
+
+	SavePlayerKillStreak(playerId, GetKillStreak(playerId));
 	ResetKillStreak(playerId);
 	ResetMaxKillStreak(playerId);
 }
 
 public HandleDeathEvent()
 {
-	if (!amx_incom_kill_streak_reward_enable)
+	if (!amx_incom_kill_streak_enable)
 	{
 		return;
 	}
@@ -146,8 +187,12 @@ public HandleDeathEvent()
 	{
 		IncreaseKillStreak(killerId);
 
-		// Используем небольшую задержку для выдачи награды
-		set_task(0.25, "HandleKillStreak", killerId);
+		// Выдаем награды только если они включены
+		if (amx_incom_kill_streak_reward_enable)
+		{
+			// Используем небольшую задержку для выдачи награды
+			set_task(0.25, "HandleKillStreak", killerId);
+		}
 	}
 
 	new victimKills = GetKillStreak(victimId);
@@ -207,7 +252,7 @@ public HandleKillStreak(playerId)
 			new rewardArmor = ArrayGetCell(g_KillStreakRewardArmor, i);
 			if (rewardArmor != 0)
 			{
-				GiveRewardArmor(playerId, rewardHealth);
+				GiveRewardArmor(playerId, rewardArmor);
 			}
 		}
 	}
@@ -249,6 +294,12 @@ stock GiveRewardItem(playerId, const rewardItem[])
 
 stock GiveRewardHealth(playerId, rewardHealth)
 {
+	// Выходим, так как текущая карта "Ножевая" и выдача HP заблокирована
+	if (amx_incom_kill_streak_reward_block_health_on_knife_maps && is_knife_map)
+	{
+		return;
+	}
+
 	if (!is_user_alive(playerId))
 	{
 		return;
@@ -491,7 +542,7 @@ stock SavePlayerKillStreak(playerId, killstreak)
 		ON CONFLICT(`steam_id`) DO UPDATE SET \
 			`player_name` = excluded.`player_name`, \
 			`killstreak` = CASE WHEN excluded.`killstreak` > `killstreak` THEN excluded.`killstreak` ELSE `killstreak` END;",
-		KILL_STREAK_TABLE_NAME,
+		g_TableName,
 		authid,
 		escapedName,
 		killstreak
@@ -502,11 +553,13 @@ stock SavePlayerKillStreak(playerId, killstreak)
 
 public OnKillStreakCommand(playerId)
 {
+	if (!amx_incom_kill_streak_enable)
+	{
+		return;
+	}
+
 	new query[512];
-	formatex(query, charsmax(query),
-		"SELECT `player_name`, `killstreak` FROM `%s` ORDER BY `killstreak` DESC LIMIT 10;",
-		KILL_STREAK_TABLE_NAME
-	);
+	formatex(query, charsmax(query), "SELECT `player_name`, `killstreak` FROM `%s` ORDER BY `killstreak` DESC LIMIT 10;", g_TableName);
 
 	new data[1];
 	data[0] = playerId;
@@ -574,7 +627,8 @@ public KillStreakTopHandle(failstate, Handle:query, error[], errcode, data[], si
 	new motd[2048];
 	copy(motd, charsmax(motd), g_PrecachedMotdContent);
 	
-	replace(motd, charsmax(motd), "%s", tableContent);
+	replace(motd, charsmax(motd), "%DESCRIPTION%", g_TableDesc);
+	replace(motd, charsmax(motd), "%CONTENT%", tableContent);
 
 	show_motd(playerId, motd, "Top10 Killstreak");
 }
@@ -583,11 +637,34 @@ stock CreateKillStreakTable()
 {
 	SQL_SetAffinity("sqlite");
 
-	g_DbHandle = SQL_MakeDbTuple("", "", "", KILL_STREAK_TABLE_NAME);
+	g_DbHandle = SQL_MakeDbTuple("", "", "", KILL_STREAK_DB_NAME);
 	if (g_DbHandle == Empty_Handle)
 	{
 		server_print("[IncomKillStreak] Error on making db tuple");
 		return;
+	}
+
+	is_knife_map = false;
+
+	new mapname[128];
+	get_mapname(mapname, charsmax(mapname));
+
+	strtolower(mapname);
+	if (containi(mapname, "35hp") != -1)
+	{
+		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_KNIFE_TABLE_NAME);
+		copy(g_TableDesc, charsmax(g_TableDesc), "TOP Knife Killstreaks");
+		is_knife_map = true;
+	}
+	else if (containi(mapname, "awp") != -1)
+	{
+		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_AWP_TABLE_NAME);
+		copy(g_TableDesc, charsmax(g_TableDesc), "TOP AWP Killstreaks");
+	}
+	else
+	{
+		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_COMMON_TABLE_NAME);
+		copy(g_TableDesc, charsmax(g_TableDesc), "TOP Common Killstreaks");
 	}
 
 	new query[512];
@@ -597,7 +674,7 @@ stock CreateKillStreakTable()
 			`player_name` VARCHAR(128),			\
 			`killstreak` INTEGER				\
 		);",
-		KILL_STREAK_TABLE_NAME
+		g_TableName
 	);
 
 	SQL_ThreadQuery(g_DbHandle, "KillStreakIgnoreHandle", query);

@@ -27,8 +27,8 @@ body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 <div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="b">v0.7.1</div>
-<div class="streak">Top10 Killstreak</div>
+<div class="b">v0.7.2</div>
+<div class="streak">%DESCRIPTION%</div>
 <br><hr><br>
 <div class=cmds><table>
 <thead>
@@ -38,7 +38,7 @@ body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 <th class=col>Серия</th></tr>
 </thead>
 <tbody>
-%s
+%CONTENT%
 </tbody>
 </table></div>
 </center>

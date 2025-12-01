@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.1.xmas]
+## [0.7.2.xmas]
 
 - Добавлена подгрузка новогодних плагинов в `plugins.ini`
 - Изменен тип музыки в `plugin-incom_music.cfg`. Выставлен тип `[XMas]`
@@ -15,6 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 - Добавлено включение новогодних моделей оружия в плагины `incom_skins_*.amxx`
 - Добавлена замена моделей в `weapons_replacement.ini`
+
+## [0.7.2]
+- Обновления плагина `incom_kill_streak_reward.amxx` (`2.0` -> `3.0`)
+    - Добавлены разные статистики в зависимости от типа карты (обычная, ножевая, awp-карта)
+    - Добавлена возможность отключать награды за серию убийств `amx_incom_kill_streak_reward_enable`
+    - Добавлена возможность отключать выдачу HP за серию убийств на ножевых картах `amx_incom_kill_streak_reward_block_health_on_knife_maps`
+- Добавлено отключение `restmenu` плагинов в `plugins.ini`
 
 ## [0.7.1]
 - Добавлены карты `fy_xmas` `awp_india_xmas` `35hp_xmas`
