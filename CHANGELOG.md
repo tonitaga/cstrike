@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Добавлены разные статистики в зависимости от типа карты (обычная, ножевая, awp-карта)
     - Добавлена возможность отключать награды за серию убийств `amx_incom_kill_streak_reward_enable`
     - Добавлена возможность отключать выдачу HP за серию убийств на ножевых картах `amx_incom_kill_streak_reward_block_health_on_knife_maps`
+- Добавлено отключение `restmenu` плагинов в `plugins.ini`
 
 ## [0.7.1]
 - Добавлены карты `fy_xmas` `awp_india_xmas` `35hp_xmas`
