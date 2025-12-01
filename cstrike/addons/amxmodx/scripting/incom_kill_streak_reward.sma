@@ -64,6 +64,8 @@ new const KILL_STREAK_COMMON_TABLE_NAME[] = "incom_kill_streak_common";
 new g_TableName[128];
 new g_TableDesc[128];
 
+new is_knife_map = false;
+
 new const KILL_STREAK_COMMAND_SAY[]      = "say /killstreak";
 new const KILL_STREAK_COMMAND_SAY_TEAM[] = "say_team /killstreak";
 
@@ -241,13 +243,10 @@ public HandleKillStreak(playerId)
 				GiveRewardItem(playerId, rewardItem);
 			}
 
-			if (!amx_incom_kill_streak_reward_block_health_on_knife_maps)
+			new rewardHealth = ArrayGetCell(g_KillStreakRewardHealth, i);
+			if (rewardHealth != 0)
 			{
-				new rewardHealth = ArrayGetCell(g_KillStreakRewardHealth, i);
-				if (rewardHealth != 0)
-				{
-					GiveRewardHealth(playerId, rewardHealth);
-				}
+				GiveRewardHealth(playerId, rewardHealth);
 			}
 
 			new rewardArmor = ArrayGetCell(g_KillStreakRewardArmor, i);
@@ -295,6 +294,12 @@ stock GiveRewardItem(playerId, const rewardItem[])
 
 stock GiveRewardHealth(playerId, rewardHealth)
 {
+	// Выходим, так как текущая карта "Ножевая" и выдача HP заблокирована
+	if (amx_incom_kill_streak_reward_block_health_on_knife_maps && is_knife_map)
+	{
+		return;
+	}
+
 	if (!is_user_alive(playerId))
 	{
 		return;
@@ -639,6 +644,8 @@ stock CreateKillStreakTable()
 		return;
 	}
 
+	is_knife_map = false;
+
 	new mapname[128];
 	get_mapname(mapname, charsmax(mapname));
 
@@ -647,6 +654,7 @@ stock CreateKillStreakTable()
 	{
 		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_KNIFE_TABLE_NAME);
 		copy(g_TableDesc, charsmax(g_TableDesc), "TOP Knife Killstreaks");
+		is_knife_map = true;
 	}
 	else if (containi(mapname, "awp") != -1)
 	{
