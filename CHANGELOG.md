@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2]
+- Обновления плагина `incom_kill_streak_reward.amxx` (`2.0` -> `3.0`)
+    - Добавлены разные статистики в зависимости от типа карты (обычная, ножевая, awp-карта)
+    - Добавлена возможность отключать награды за серию убийств `amx_incom_kill_streak_reward_enable`
+    - Добавлена возможность отключать выдачу HP за серию убийств на ножевых картах `amx_incom_kill_streak_reward_block_health_on_knife_maps`
+
 ## [0.7.1]
 - Добавлены карты `fy_xmas` `awp_india_xmas` `35hp_xmas`
 - Обновления плагина `incom_respawn.amxx` (`1.5.0` -> `1.6.0`)
