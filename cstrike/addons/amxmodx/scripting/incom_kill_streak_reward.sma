@@ -48,6 +48,8 @@ new Array:g_KillStreakRewardArmor;	 ///< Массив с наградой в в�
 new const MOLOTOV_GRENADE[] = "weapon_molotovgrenade"; ///< Фиктивное наименование для гранаты "Молотов"
 new const HEALTH_GRENADE[]  = "weapon_healthgrenade";  ///< Фиктивное наименование для гранаты "Хилка"
 
+new const minKillStreakForNotify = 2; ///< Минимальная серия для начала уведомления в чат
+
 ///> Handle на базу данных
 new Handle:g_DbHandle = Empty_Handle;
 
@@ -483,6 +485,10 @@ stock GetMaxKillStreak(playerId)
 stock UpdateMaxKillStreak(playerId, killstreak)
 {
 	g_MaxKills[playerId] = killstreak;
+	if (killstreak >= minKillStreakForNotify)
+	{
+		IncomPrint_Client(playerId, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "YOUR_BEST_STREAK", killstreak);
+	}
 }
 
 stock ResetMaxKillStreak(playerId)
