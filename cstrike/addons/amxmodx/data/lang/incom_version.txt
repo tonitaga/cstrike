@@ -1,7 +1,7 @@
 [ru]
 INCOM_VERSION = &x07IncomVersion&x01
-VERSION_MESSAGE = v&x040.7.2&x01. By Tonitaga
+VERSION_MESSAGE = v&x040.7.3&x01. By Tonitaga
 
 [en]
 INCOM_VERSION = &x07IncomVersion&x01
-VERSION_MESSAGE = v&x040.7.2&x01. By Tonitaga
+VERSION_MESSAGE = v&x040.7.3&x01. By Tonitaga

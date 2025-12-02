@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3]
+- Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
+    - Система таблиц: Теперь таблица одна. Добавлена колонка с названием карты.
+    - Статистика: Ведется для каждой карты. Можно посмотреть общий топ.
+    - Команды: `/mapstreak` — статистика по картам, `/topstreak` — общий топ.
+
 ## [0.7.2]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`2.0` -> `3.0`)
     - Добавлены разные статистики в зависимости от типа карты (обычная, ножевая, awp-карта)

@@ -17,13 +17,13 @@ body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 <div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="b">v0.7.2</div>
+<div class="b">v0.7.3</div>
 <br><hr><br>
 <div class=cmds><table>
 <tr><td class=y>/stop_music</td><td class=g>- Disable current sound</td></tr>
 <tr><td class=y>/skins-menu</td><td class=g>- Show skins menu</td></tr>
 <tr><td class=y>/weapons</td><td class=g>- Weapons choose in TDM</td></tr>
-<tr><td class=y>/killstreak</td><td class=g>- Top 10 Killstreak</td></tr>
+<tr><td class=y>/mapstreak /topstreak</td><td class=g>- Top Killstreak</td></tr>
 <tr><td class=y>/buy_molotov</td><td class=g>- "Molotov" buy</td></tr>
 <tr><td class=y>/version</td><td class=g>- Server version</td></tr>
 <tr><td class=y>/maps</td><td class=g>- Nominate map for voting</td></tr>
