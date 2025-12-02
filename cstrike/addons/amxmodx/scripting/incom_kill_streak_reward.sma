@@ -18,7 +18,7 @@
 #endif // SUPPORT_HEALTHNADE
 
 new const PLUGIN[]		= "Incomsystem Kill Streak Reward";
-new const VERSION[]		= "3.0";
+new const VERSION[]		= "3.1";
 new const AUTHOR[]		= "Tonitaga";
 
 ///> Название конфигурационного файла
@@ -36,9 +36,6 @@ new       amx_incom_kill_streak_reward_enable;
 new Float:amx_incom_kill_streak_reward_max_health;
 new       amx_incom_kill_streak_reward_block_health_on_knife_maps;
 
-new       maxKillStreak = 0;          ///< Наибольшая серия убийств
-new const minKillStreakForUpdate = 3; ///< Минимальная серия для начала уведомления в чат
-
 ///> Серия убийств игроков
 new g_Kills[33] = { 0, ... };
 new g_MaxKills[33] = { 0, ... };
@@ -51,23 +48,36 @@ new Array:g_KillStreakRewardArmor;	 ///< Массив с наградой в в�
 new const MOLOTOV_GRENADE[] = "weapon_molotovgrenade"; ///< Фиктивное наименование для гранаты "Молотов"
 new const HEALTH_GRENADE[]  = "weapon_healthgrenade";  ///< Фиктивное наименование для гранаты "Хилка"
 
+new const minKillStreakForNotify = 2; ///< Минимальная серия для начала уведомления в чат
+
 ///> Handle на базу данных
 new Handle:g_DbHandle = Empty_Handle;
 
-///> Наименование базы данных и таблиц
-new const KILL_STREAK_DB_NAME[]           = "incom_kill_streak";
-new const KILL_STREAK_AWP_TABLE_NAME[]    = "incom_kill_streak_awp";
-new const KILL_STREAK_KNIFE_TABLE_NAME[]  = "incom_kill_streak_knife";
-new const KILL_STREAK_COMMON_TABLE_NAME[] = "incom_kill_streak_common"; 
+///> Наименование базы данных и таблицы
+new const KILL_STREAK_DB_NAME[]    = "incom_kill_streak"; 
+new const KILL_STREAK_TABLE_NAME[] = "incom_kill_streak"; 
 
-///> Текущее название используемой таблицы в зависимости от карты
-new g_TableName[128];
-new g_TableDesc[128];
+///> Текущее название карты
+new g_CurrentMapName[128];
 
+///> Текущая карта ножевая
 new is_knife_map = false;
 
-new const KILL_STREAK_COMMAND_SAY[]      = "say /killstreak";
-new const KILL_STREAK_COMMAND_SAY_TEAM[] = "say_team /killstreak";
+///> Команды, которые сервер обрабатывает от клиента
+new const MAP_STREAK_COMMAND[]          = "/mapstreak";
+new const MAP_STREAK_COMMAND_SAY[]      = "say /mapstreak";
+new const MAP_STREAK_COMMAND_SAY_TEAM[] = "say_team /mapstreak";
+
+new const TOP_STREAK_COMMAND[]          = "/topstreak";
+new const TOP_STREAK_COMMAND_SAY[]      = "say /topstreak";
+new const TOP_STREAK_COMMAND_SAY_TEAM[] = "say_team /topstreak";
+
+///> Идентификаторы типа выбранной команды клиентом
+new const TOP_STREAK = 1;
+new const MAP_STREAK = 2;
+
+///> ID таски для уведомления клиентов
+new g_NotifyTaskId = 15382;
 
 public plugin_init()
 {
@@ -75,8 +85,14 @@ public plugin_init()
 
 	register_event("DeathMsg", "HandleDeathEvent", "a", "1>0");
 
-	register_clcmd(KILL_STREAK_COMMAND_SAY, "OnKillStreakCommand")
-	register_clcmd(KILL_STREAK_COMMAND_SAY_TEAM, "OnKillStreakCommand")
+	register_clcmd(MAP_STREAK_COMMAND_SAY, "OnMapStreakCommand")
+	register_clcmd(MAP_STREAK_COMMAND_SAY_TEAM, "OnMapStreakCommand")
+
+	register_clcmd(TOP_STREAK_COMMAND_SAY, "OnTopStreakCommand")
+	register_clcmd(TOP_STREAK_COMMAND_SAY_TEAM, "OnTopStreakCommand")
+
+	///> Будет вызываться раз в 8 минут. Думаю не так часто... Пусть пока так
+	set_task(480.0, "NotifyAboutKillStreakCommands", g_NotifyTaskId, .flags = "b");
 
 	register_dictionary("incom_kill_streak_reward.txt")
 }
@@ -167,9 +183,19 @@ public client_disconnected(playerId)
 		return;
 	}
 
-	SavePlayerKillStreak(playerId, GetKillStreak(playerId));
+	SavePlayerKillStreak(playerId);
 	ResetKillStreak(playerId);
 	ResetMaxKillStreak(playerId);
+}
+
+public NotifyAboutKillStreakCommands()
+{
+	if (!amx_incom_kill_streak_enable)
+	{
+		return;
+	}
+
+	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "KILLSTREAK_NOTIFY", MAP_STREAK_COMMAND, TOP_STREAK_COMMAND);
 }
 
 public HandleDeathEvent()
@@ -195,29 +221,8 @@ public HandleDeathEvent()
 		}
 	}
 
-	new victimKills = GetKillStreak(victimId);
-	if (victimKills > maxKillStreak)
-	{
-		UpdateBestKillStreak(victimId, victimKills);
-	}
-
-	SavePlayerKillStreak(victimId, victimKills);
+	SavePlayerKillStreak(victimId);
 	ResetKillStreak(victimId);
-}
-
-stock UpdateBestKillStreak(playerId, killStreak)
-{
-	if (!is_user_connected(playerId) || killStreak < minKillStreakForUpdate)
-	{
-		return
-	}
-
-	maxKillStreak = killStreak;
-
-	new name[128];
-	get_user_name(playerId, name, charsmax(name));
-
-	IncomPrint_Client(0, "[%L] %L", 0, "INCOM_KILL_STREAM_REWARD", 0, "NEW_BEST_KILL_STREAK", name, killStreak);
 }
 
 public HandleKillStreak(playerId)
@@ -480,6 +485,10 @@ stock GetMaxKillStreak(playerId)
 stock UpdateMaxKillStreak(playerId, killstreak)
 {
 	g_MaxKills[playerId] = killstreak;
+	if (killstreak >= minKillStreakForNotify)
+	{
+		IncomPrint_Client(playerId, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "YOUR_BEST_STREAK", killstreak);
+	}
 }
 
 stock ResetMaxKillStreak(playerId)
@@ -508,13 +517,14 @@ stock IsHealthGrenade(const item[])
 	return equal(item, HEALTH_GRENADE);
 }
 
-stock SavePlayerKillStreak(playerId, killstreak)
+stock SavePlayerKillStreak(playerId)
 {
 	if(is_user_bot(playerId) || !is_user_connected(playerId))
 	{
 		return;
 	}
 
+	new killstreak = GetKillStreak(playerId);
 	if (killstreak <= GetMaxKillStreak(playerId))
 	{
 		return;
@@ -538,20 +548,22 @@ stock SavePlayerKillStreak(playerId, killstreak)
 
 	new query[512];
 	formatex(query, charsmax(query),
-		"INSERT INTO `%s` (`steam_id`, `player_name`, `killstreak`) VALUES ('%s', '%s', %d) \
+		"INSERT INTO `%s` (`steam_id`, `player_name`, `mapname`, `killstreak`) VALUES ('%s', '%s', '%s', %d) \
 		ON CONFLICT(`steam_id`) DO UPDATE SET \
 			`player_name` = excluded.`player_name`, \
+			`mapname` = excluded.`mapname`, \
 			`killstreak` = CASE WHEN excluded.`killstreak` > `killstreak` THEN excluded.`killstreak` ELSE `killstreak` END;",
-		g_TableName,
+		KILL_STREAK_TABLE_NAME,
 		authid,
 		escapedName,
+		g_CurrentMapName,
 		killstreak
 	);
 
 	SQL_ThreadQuery(g_DbHandle, "KillStreakIgnoreHandle", query);
 }
 
-public OnKillStreakCommand(playerId)
+public OnMapStreakCommand(playerId)
 {
 	if (!amx_incom_kill_streak_enable)
 	{
@@ -559,10 +571,40 @@ public OnKillStreakCommand(playerId)
 	}
 
 	new query[512];
-	formatex(query, charsmax(query), "SELECT `player_name`, `killstreak` FROM `%s` ORDER BY `killstreak` DESC LIMIT 10;", g_TableName);
+	formatex(query, charsmax(query),
+		"SELECT `player_name`, `killstreak`   \
+		 FROM `%s`                            \
+		 WHERE `mapname`='%s'                 \
+		 ORDER BY `killstreak` DESC LIMIT 10;",
+		KILL_STREAK_TABLE_NAME,
+		g_CurrentMapName
+	);
 
-	new data[1];
+	new data[2];
 	data[0] = playerId;
+	data[1] = MAP_STREAK;
+
+	SQL_ThreadQuery(g_DbHandle, "KillStreakTopHandle", query, data, sizeof(data));
+}
+
+public OnTopStreakCommand(playerId)
+{
+	if (!amx_incom_kill_streak_enable)
+	{
+		return;
+	}
+
+	new query[512];
+	formatex(query, charsmax(query),
+		"SELECT `player_name`, `killstreak`   \
+		 FROM `%s`                            \
+		 ORDER BY `killstreak` DESC LIMIT 10;",
+		KILL_STREAK_TABLE_NAME
+	);
+
+	new data[2];
+	data[0] = playerId;
+	data[1] = TOP_STREAK;
 
 	SQL_ThreadQuery(g_DbHandle, "KillStreakTopHandle", query, data, sizeof(data));
 }
@@ -575,7 +617,8 @@ public KillStreakTopHandle(failstate, Handle:query, error[], errcode, data[], si
 		return;
 	}
 
-	new playerId = data[0];
+	new playerId   = data[0];
+	new streakType = data[1]; 
 	
 	if (!is_user_connected(playerId))
 	{
@@ -587,7 +630,7 @@ public KillStreakTopHandle(failstate, Handle:query, error[], errcode, data[], si
 	
 	new row = 0;
 	new playerName[128], killstreak;
-	
+
 	while (SQL_MoreResults(query))
 	{
 		SQL_ReadResult(query, 0, playerName, charsmax(playerName));
@@ -595,42 +638,50 @@ public KillStreakTopHandle(failstate, Handle:query, error[], errcode, data[], si
 		
 		row++;
 
-		new color[16];
+		new color[4];
 		if (row == 1)
-			copy(color, charsmax(color), "gold");
+		{
+			copy(color, charsmax(color), "t1");
+		}
 		else if (row == 2)
-			copy(color, charsmax(color), "gray");
+		{
+			copy(color, charsmax(color), "t2");
+		}
 		else if (row == 3)
-			copy(color, charsmax(color), "bronze");
+		{
+			copy(color, charsmax(color), "t3");
+		}
 		else
+		{
 			copy(color, charsmax(color), "g");
+		}
 
 		tableLen += format(tableContent[tableLen], charsmax(tableContent) - tableLen,
-			"<tr><td class=%s>[%d]<td>%s</td><td class=%s>%2d</td></tr>",
+			"<tr class=%s><td>[%d]<td>%s</td><td>%2d</td></tr>",
 			color,
 			row,
 			playerName,
-			color,
 			killstreak
 		);
-
-		if (row == 3)
-		{
-			tableLen += format(tableContent[tableLen], charsmax(tableContent) - tableLen,
-				"<tr class=sep-row><td colspan=3></td></tr>"
-			);
-		}
 
 		SQL_NextRow(query);
 	}
 
 	new motd[2048];
 	copy(motd, charsmax(motd), g_PrecachedMotdContent);
-	
-	replace(motd, charsmax(motd), "%DESCRIPTION%", g_TableDesc);
+
+	if (streakType == TOP_STREAK)
+	{
+		replace(motd, charsmax(motd), "%DESCRIPTION%", "ABSOLUTE TOP-10 KILLSTREAK");
+	}
+	else // MAP_STREAK
+	{
+		replace(motd, charsmax(motd), "%DESCRIPTION%", "MAP TOP-10 KILLSTREAK");
+	}
+
 	replace(motd, charsmax(motd), "%CONTENT%", tableContent);
 
-	show_motd(playerId, motd, "Top10 Killstreak");
+	show_motd(playerId, motd, "KILLSTREAK");
 }
 
 stock CreateKillStreakTable()
@@ -644,27 +695,12 @@ stock CreateKillStreakTable()
 		return;
 	}
 
+	get_mapname(g_CurrentMapName, charsmax(g_CurrentMapName));
+
 	is_knife_map = false;
-
-	new mapname[128];
-	get_mapname(mapname, charsmax(mapname));
-
-	strtolower(mapname);
-	if (containi(mapname, "35hp") != -1)
+	if (containi(g_CurrentMapName, "35hp") != -1)
 	{
-		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_KNIFE_TABLE_NAME);
-		copy(g_TableDesc, charsmax(g_TableDesc), "TOP Knife Killstreaks");
 		is_knife_map = true;
-	}
-	else if (containi(mapname, "awp") != -1)
-	{
-		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_AWP_TABLE_NAME);
-		copy(g_TableDesc, charsmax(g_TableDesc), "TOP AWP Killstreaks");
-	}
-	else
-	{
-		copy(g_TableName, charsmax(g_TableName), KILL_STREAK_COMMON_TABLE_NAME);
-		copy(g_TableDesc, charsmax(g_TableDesc), "TOP Common Killstreaks");
 	}
 
 	new query[512];
@@ -672,9 +708,10 @@ stock CreateKillStreakTable()
 		"CREATE TABLE IF NOT EXISTS `%s` (		\
 			`steam_id` VARCHAR(32) PRIMARY KEY,	\
 			`player_name` VARCHAR(128),			\
+			`mapname` VARCHAR(128),			    \
 			`killstreak` INTEGER				\
 		);",
-		g_TableName
+		KILL_STREAK_TABLE_NAME
 	);
 
 	SQL_ThreadQuery(g_DbHandle, "KillStreakIgnoreHandle", query);

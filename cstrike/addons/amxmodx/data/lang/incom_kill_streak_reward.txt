@@ -1,7 +1,9 @@
 [ru]
-INCOM_KILL_STREAM_REWARD = &x07IncomKillStreak&x01
-NEW_BEST_KILL_STREAK = &x04%s&x01 установил новый рекорд серии убийств: &x07%d&x01
+INCOM_KILLSTREAK = &x07IncomKillStreak&x01
+KILLSTREAK_NOTIFY = Лучшие игроки на &x04%s&x01 и &x04%s&x01!
+YOUR_BEST_STREAK = Ваша лучшая серия убийств в этой игре - &x04%d&x01!
 
 [en]
-INCOM_KILL_STREAM_REWARD = &x07IncomKillStreak&x01 
-NEW_BEST_KILL_STREAK = &x04%s&x01 set a new kill streak record: &x07%d&x01
+INCOM_KILLSTREAK = &x07IncomKillStreak&x01 
+KILLSTREAK_NOTIFY = Best players on &x04%s&x01 and &x04%s&x01!
+YOUR_BEST_STREAK = Your best killstreak in this game - &x04%d&x01!

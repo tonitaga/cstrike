@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.7.2.xmas]
+## [0.7.3.xmas]
 
 - Добавлена подгрузка новогодних плагинов в `plugins.ini`
 - Изменен тип музыки в `plugin-incom_music.cfg`. Выставлен тип `[XMas]`
@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 - Добавлено включение новогодних моделей оружия в плагины `incom_skins_*.amxx`
 - Добавлена замена моделей в `weapons_replacement.ini`
+
+## [0.7.3]
+- Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
+    - Система таблиц: Теперь таблица одна. Добавлена колонка с названием карты.
+    - Статистика: Ведется для каждой карты. Можно посмотреть общий топ.
+    - Команды: `/mapstreak` — статистика по картам, `/topstreak` — общий топ.
+- Убрано выставление стартовой карты из `run_server.bat`.
+    - Запуск сервера и смена карты ускорились в 2 раза
+- Удален mode/plugin `ReDeathmatch` из-за ненадобности
 
 ## [0.7.2]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`2.0` -> `3.0`)

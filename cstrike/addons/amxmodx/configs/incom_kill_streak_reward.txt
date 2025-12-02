@@ -1,46 +1,35 @@
 <html>
 <head>
 <meta charset=UTF-8>
-<title>INCOMSYSTEM [DEV ZONE]</title>
 <style>
 body{background:#000;color:#fff;font-family:'Courier New';margin:10px}
 .hdr{color:#f00; font-weight:bold; font-size:22px; }
-.y{color:#ff0}
-.g{color:#0f0}
-.gold{color:#ffd700}
-.gray{color:#c0c0c0}
-.bronze{color:#cd7f32}
-.b{color:#08f}
-.r{color:#f00}
-.streak{color:#0f0; font-size:22px; margin-top:15px;}
-.cmds{background:#112;padding:15px;margin:10px;max-width:500px}
+.t1{color:#ffd700; background-color: #333300}
+.t2{color:#c0c0c0; background-color: #2a2a2a}
+.t3{color:#cd7f32; background-color: #332211}
 .col{padding:12px 15px; font-size:20px; color:#08f; font-weight:bold;}
-.cmds table{border-spacing: 20px 0; text-align: center;}
+.cmds table{border-spacing: 0px 10px; text-align: center;}
 .col, .cmds td {text-align: center;}
-.sep-row {height: 20px;}
-.sep-row td {border-top: 2px solid #444; padding: 0;}
 </style>
 </head>
 <body>
 <center>
 <br>
-<div class="hdr">INCOMSYSTEM [DEV ZONE]</div>
-<br>
-<div>/* Powered by Tonitaga */</div>
-<div class="b">v0.7.2</div>
-<div class="streak">%DESCRIPTION%</div>
-<br><hr><br>
-<div class=cmds><table>
+<div class="hdr">%DESCRIPTION%</div>
+<hr><br>
+<div class=cmds>
+<table>
 <thead>
 <tr>
-<th class=col>Место</th>
-<th class=col>Имя</th>
-<th class=col>Серия</th></tr>
+<th class=col>Top</th>
+<th class=col>Name</th>
+<th class=col>Streak</th></tr>
 </thead>
 <tbody>
 %CONTENT%
 </tbody>
-</table></div>
+</table>
+</div>
 </center>
 </body>
 </html>
