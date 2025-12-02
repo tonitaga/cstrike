@@ -549,9 +549,8 @@ stock SavePlayerKillStreak(playerId)
 	new query[512];
 	formatex(query, charsmax(query),
 		"INSERT INTO `%s` (`steam_id`, `player_name`, `mapname`, `killstreak`) VALUES ('%s', '%s', '%s', %d) \
-		ON CONFLICT(`steam_id`) DO UPDATE SET \
+		ON CONFLICT(`steam_id`, `mapname`) DO UPDATE SET \
 			`player_name` = excluded.`player_name`, \
-			`mapname` = excluded.`mapname`, \
 			`killstreak` = CASE WHEN excluded.`killstreak` > `killstreak` THEN excluded.`killstreak` ELSE `killstreak` END;",
 		KILL_STREAK_TABLE_NAME,
 		authid,
@@ -596,9 +595,10 @@ public OnTopStreakCommand(playerId)
 
 	new query[512];
 	formatex(query, charsmax(query),
-		"SELECT `player_name`, `killstreak`   \
-		 FROM `%s`                            \
-		 ORDER BY `killstreak` DESC LIMIT 10;",
+		"SELECT `player_name`, MAX(`killstreak`) as killstreak \
+		 FROM `%s`                                             \
+		 GROUP BY `steam_id`                                   \
+		 ORDER BY killstreak DESC LIMIT 10;",
 		KILL_STREAK_TABLE_NAME
 	);
 
@@ -706,10 +706,11 @@ stock CreateKillStreakTable()
 	new query[512];
 	formatex(query, charsmax(query),
 		"CREATE TABLE IF NOT EXISTS `%s` (		\
-			`steam_id` VARCHAR(32) PRIMARY KEY,	\
+			`steam_id` VARCHAR(32),				\
 			`player_name` VARCHAR(128),			\
 			`mapname` VARCHAR(128),			    \
-			`killstreak` INTEGER				\
+			`killstreak` INTEGER,				\
+			PRIMARY KEY (`steam_id`, `mapname`)	\
 		);",
 		KILL_STREAK_TABLE_NAME
 	);
