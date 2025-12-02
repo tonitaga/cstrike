@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Команды: `/mapstreak` — статистика по картам, `/topstreak` — общий топ.
 - Убрано выставление стартовой карты из `run_server.bat`.
     - Запуск сервера и смена карты ускорились в 2 раза
+- Удален mode/plugin `ReDeathmatch` из-за ненадобности
 
 ## [0.7.2]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`2.0` -> `3.0`)
