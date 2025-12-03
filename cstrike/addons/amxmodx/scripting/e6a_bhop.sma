@@ -4,7 +4,7 @@
 #define PLUGIN  "e6a_bhop"
 #define VERSION "1.0"
 #define AUTHOR  "e6aluga"
-#define BHOP_MUSIC "e6a_bhop/bhop_round.wav"
+#define BHOP_MUSIC "e6a_bhop/bhop_round.mp3"
 
 new amx_e6a_bhop_enable;
 new amx_e6a_bhop_chance;
@@ -123,5 +123,11 @@ public OnPlayerJump(id)
 
 public play_bhop_music_for_all()
 {
-    rg_send_audio(0, BHOP_MUSIC, PITCH_NORM);
+    new players[32], num;
+    get_players(players, num, "ch");
+    
+    for (new i = 0; i < num; i++)
+    {
+        client_cmd(players[i], "mp3 play sound/%s", BHOP_MUSIC);
+    }
 }
