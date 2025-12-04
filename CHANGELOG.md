@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Изменение гравитации теперь привязано дополнительно к опросу по периоду `amx_incom_gravity_max_duration`
     - Изменено значение параметра `amx_incom_gravity_change_percent` на `5.0`
     - Изменено значение параметра `amx_incom_gravity_max_duration` на `60.0`
+- Удален файл `incom_print.inc`. Заменена печать на `client_print_color`
 
 ## [0.7.3]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)

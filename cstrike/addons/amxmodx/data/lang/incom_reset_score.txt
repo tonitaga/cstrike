@@ -1,7 +1,7 @@
 [en]
-INCOM_RESET_SCORE = &x07IncomResetScore&x01
-RESET_SCORE_DONE = The score is &x04reset&x01!
+INCOM_RESET_SCORE = ^3IncomResetScore^1
+RESET_SCORE_DONE = The score is ^4reset^1!
 
 [ru]
-INCOM_RESET_SCORE = &x07IncomResetScore&x01
-RESET_SCORE_DONE = Счет &x04обнулен&x01!
+INCOM_RESET_SCORE = ^3IncomResetScore^1
+RESET_SCORE_DONE = Счет ^4обнулен^1!

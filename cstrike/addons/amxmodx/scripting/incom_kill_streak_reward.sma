@@ -3,7 +3,6 @@
 #include <string>
 #include <reapi>
 #include <file>
-#include <incom_print>
 #include <sqlx>
 
 #define SUPPORT_MOLOTOV    1
@@ -195,7 +194,7 @@ public NotifyAboutKillStreakCommands()
 		return;
 	}
 
-	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "KILLSTREAK_NOTIFY", MAP_STREAK_COMMAND, TOP_STREAK_COMMAND);
+	client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "KILLSTREAK_NOTIFY", MAP_STREAK_COMMAND, TOP_STREAK_COMMAND);
 }
 
 public HandleDeathEvent()
@@ -487,7 +486,7 @@ stock UpdateMaxKillStreak(playerId, killstreak)
 	g_MaxKills[playerId] = killstreak;
 	if (killstreak >= minKillStreakForNotify)
 	{
-		IncomPrint_Client(playerId, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "YOUR_BEST_STREAK", killstreak);
+		client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_KILLSTREAK", LANG_PLAYER, "YOUR_BEST_STREAK", killstreak);
 	}
 }
 

@@ -1,9 +1,9 @@
 [ru]
-MODE_NAME = &x07RandomModels&x01
-PLAYER_GOT_MODEL = Игроку &x04%s&x01 выпала особая модель
+MODE_NAME = ^3RandomModels^1
+PLAYER_GOT_MODEL = Игроку ^4%s^1 выпала особая модель
 YOU_GOT_MODEL = Вам выпала особая модель
 
 [en]
-MODE_NAME = &x07RandomModels&x01
-PLAYER_GOT_MODEL = Player &x04%s&x01 got a special model
+MODE_NAME = ^3RandomModels^1
+PLAYER_GOT_MODEL = Player ^4%s^1 got a special model
 YOU_GOT_MODEL = You got a special model

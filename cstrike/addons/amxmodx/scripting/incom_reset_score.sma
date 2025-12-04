@@ -1,6 +1,5 @@
 #include <amxmodx>
 #include <reapi>
-#include <incom_print>
 
 #define PLUGIN  "Incomsystem Reset Score"
 #define VERSION "1.0"
@@ -39,5 +38,5 @@ public OnResetScore(playerId)
 	// Проигрываем звук
 	rg_send_audio(playerId, reset_score_sound);
 
-	IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_RESET_SCORE", playerId, "RESET_SCORE_DONE");
+	client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESET_SCORE", LANG_PLAYER, "RESET_SCORE_DONE");
 }

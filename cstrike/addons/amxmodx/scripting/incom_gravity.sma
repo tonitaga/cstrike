@@ -1,6 +1,5 @@
 #include <amxmodx>
 #include <cstrike>
-#include <incom_print>
 
 new const PLUGIN[]  = "Incomsystem Gravity";
 new const VERSION[] = "1.1";
@@ -137,7 +136,7 @@ stock ChangeGravityToCustom()
 	gravity_changed = true;
 	ChangeGravity(amx_incom_gravity_change_value);
 
-	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED", amx_incom_gravity_change_value, amx_incom_gravity_max_duration);
+	client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED", amx_incom_gravity_change_value, amx_incom_gravity_max_duration);
 }
 
 stock ChangeGravityToDefault()
@@ -150,7 +149,7 @@ stock ChangeGravityToDefault()
 	gravity_changed = false;
 	ChangeGravity(gravity_default);
 
-	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED_TO_DEF");
+	client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED_TO_DEF");
 }
 
 stock ReplaceProcessGravityTask()

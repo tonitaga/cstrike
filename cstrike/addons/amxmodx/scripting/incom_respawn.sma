@@ -6,7 +6,6 @@
 #include <engine>
 #include <fun>
 #include <parse_color>
-#include <incom_print>
 #include <reapi>
 #include <string>
 
@@ -140,7 +139,7 @@ public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
 		set_cvar_float("amx_incom_weapons_delete_time", 5.0);
 		set_cvar_float("amx_incom_respawn_time", 1.0);
 
-		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_ENABLE");
+		client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESPAWN", LANG_PLAYER, "TEAM_DM_ENABLE");
 		server_cmd("sv_restart 1");
 	}
 	else if (oldVal == 1 && newVal == 0)
@@ -168,7 +167,7 @@ public OnRespawnEnabledChanged(cvar, const old_value[], const new_value[])
 			}
 		}
 
-		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "TEAM_DM_DISABLE");
+		client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESPAWN", LANG_PLAYER, "TEAM_DM_DISABLE");
 		server_cmd("sv_restart 1");
 	}
 }
@@ -187,11 +186,11 @@ public OnRandomWeaponsEnabledChanged(cvar, const old_value[], const new_value[])
 
 		if (oldVal == 0 && newVal == 1)
 		{
-			IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "RANDOM_WEAPONS_ENABLE");
+			client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESPAWN", LANG_PLAYER, "RANDOM_WEAPONS_ENABLE");
 		}
 		else if (oldVal == 1 && newVal == 0)
 		{
-			IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "RANDOM_WEAPONS_DISABLE");
+			client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESPAWN", LANG_PLAYER, "RANDOM_WEAPONS_DISABLE");
 		}
 
 		GiveWeaponsToAllPlayers();
@@ -212,7 +211,7 @@ public NotifyAboutWeaponSelect()
 
 	if (get_pcvar_num(g_WeaponsChooseEnabled) && !get_pcvar_num(g_RandomWeaponsEnabled))
 	{
-		IncomPrint_Client(0, "[%L] %L", 0, "INCOM_RESPAWN", 0, "WEAPONS_NOTIFY", WEAPONS_COMMAND);
+		client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_RESPAWN", LANG_PLAYER, "WEAPONS_NOTIFY", WEAPONS_COMMAND);
 	}
 }
 
