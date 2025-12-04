@@ -3,7 +3,7 @@
 #include <incom_print>
 
 new const PLUGIN[]  = "Incomsystem Gravity";
-new const VERSION[] = "1.0";
+new const VERSION[] = "1.1";
 new const AUTHOR[]  = "Tonitaga"
 
 new gravity_changed = false;
@@ -15,128 +15,163 @@ new Float:amx_incom_gravity_change_percent;
 new Float:amx_incom_gravity_change_value;
 new Float:amx_incom_gravity_max_duration;
 
-new const force_restore_gravity_task_id = 14500;
+new pcvar_amx_incom_gravity_enable;
+new pcvar_amx_incom_gravity_max_duration;
+
+new const GRAVITY_TASKID = 14500;
 
 public plugin_init()
 {
 	register_plugin(PLUGIN, VERSION, AUTHOR);
 
 	register_event("HLTV", "OnRoundStart", "a", "1=0", "2=0");
-	register_logevent("OnRoundEnd", 2, "1=Round_End");
 
-    register_dictionary("incom_gravity.txt")
+	register_dictionary("incom_gravity.txt");
 
-    gravity_default = get_cvar_float("sv_gravity");
+	gravity_default = get_cvar_float("sv_gravity");
 }
 
 public plugin_cfg()
 {
-    bind_pcvar_num(
-        create_cvar(
-            "amx_incom_gravity_enable", "1",
-            .has_min = true, .min_val = 0.0,
-            .has_max = true, .max_val = 1.0,
-            .description = "0 - Плагин отключен^n\
-                            1 - Плагин включен"
-        ),
-        amx_incom_gravity_enable
-    );
+	pcvar_amx_incom_gravity_enable = create_cvar(
+		"amx_incom_gravity_enable", "1",
+		.has_min = true, .min_val = 0.0,
+		.has_max = true, .max_val = 1.0,
+		.description = "0 - Плагин отключен^n\
+						1 - Плагин включен"
+	);
 
-    bind_pcvar_float(
-        create_cvar(
-            "amx_incom_gravity_change_percent", "1",
-            .has_min = true, .min_val = 0.0,
-            .has_max = true, .max_val = 100.0,
-            .description = "Шанс (%) на изменение гравитации в начале раунда"
-        ),
-        amx_incom_gravity_change_percent
-    );
+	bind_pcvar_num(pcvar_amx_incom_gravity_enable, amx_incom_gravity_enable);
 
-    bind_pcvar_float(
-        create_cvar(
-            "amx_incom_gravity_change_value", "300.0",
-            .has_min = true, .min_val = 100.0,
-            .has_max = true, .max_val = 2000.0,
-            .description = "Значение гравитации при сработке шанса"
-        ),
-        amx_incom_gravity_change_value
-    );
+	bind_pcvar_float(
+		create_cvar(
+			"amx_incom_gravity_change_percent", "1.0",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 100.0,
+			.description = "Шанс (%) на изменение гравитации в начале раунда"
+		),
+		amx_incom_gravity_change_percent
+	);
 
-    bind_pcvar_float(
-        create_cvar(
-            "amx_incom_gravity_max_duration", "120.0",
-            .has_min = true, .min_val = 10.0,
-            .has_max = true, .max_val = 600.0,
-            .description = "Максимальная длительность изменения гравитации"
-        ),
-        amx_incom_gravity_max_duration
-    );
+	bind_pcvar_float(
+		create_cvar(
+			"amx_incom_gravity_change_value", "300.0",
+			.has_min = true, .min_val = 100.0,
+			.has_max = true, .max_val = 2000.0,
+			.description = "Значение гравитации при сработке шанса"
+		),
+		amx_incom_gravity_change_value
+	);
 
-    AutoExecConfig();
+	pcvar_amx_incom_gravity_max_duration = 	create_cvar(
+		"amx_incom_gravity_max_duration", "120.0",
+		.has_min = true, .min_val = 10.0,
+		.has_max = true, .max_val = 600.0,
+		.description = "Максимальная длительность изменения гравитации"
+	);
+		
+	bind_pcvar_float(pcvar_amx_incom_gravity_max_duration, amx_incom_gravity_max_duration);
+
+	hook_cvar_change(pcvar_amx_incom_gravity_enable, "OnGravityVariableChange");
+	hook_cvar_change(pcvar_amx_incom_gravity_max_duration, "OnGravityVariableChange");
+
+	AutoExecConfig();
+}
+
+public OnGravityVariableChange(cvar, const old_value[], const new_value[])
+{
+	if (cvar == pcvar_amx_incom_gravity_enable)
+	{
+		if (new_value[0] == '0')
+		{
+			ChangeGravityToDefault();
+		}
+		else
+		{
+			ProcessGravity();
+		}
+	}
+	else if (cvar == pcvar_amx_incom_gravity_max_duration)
+	{
+		ReplaceProcessGravityTask();
+	}
+}
+
+public ProcessGravity()
+{
+	if (!amx_incom_gravity_enable)
+	{
+		return;
+	}
+
+	ChangeGravityToDefault();
+
+	new Float:rand = random_float(0.0, 100.0);
+	if (rand < amx_incom_gravity_change_percent)
+	{
+		ChangeGravityToCustom();
+	}
 }
 
 public OnRoundStart()
 {
-    if (!amx_incom_gravity_enable)
-    {
-        return;
-    }
-
-    new Float:rand = random_float(0.0, 100.0);
-    if (rand < amx_incom_gravity_change_percent)
-    {
-        ChangeGravityToCustom();
-        CreateForceRestoreGravityOperation();
-    }
-}
-
-public OnRoundEnd()
-{
-    if (gravity_changed)
-    {
-        RemoveForceRestoreGravityOperation();
-        ChangeGravityToDefault();
-    }
+	ProcessGravity();
+	StartProcessGravityTaskOnce();
 }
 
 stock ChangeGravity(Float:value)
 {
-    new command[32];
-    formatex(command, charsmax(command), "sv_gravity %f", value);
+	new command[32];
+	formatex(command, charsmax(command), "sv_gravity %f", value);
 
-    server_cmd(command);
+	server_cmd(command);
 }
 
 stock ChangeGravityToCustom()
 {
-    gravity_changed = true;
-    ChangeGravity(amx_incom_gravity_change_value);
+	if (gravity_changed)
+	{
+		return;
+	}
 
-    IncomPrint_Client(0, "[%L] %L", 0, "INCOM_GRAVITY", 0, "GRAVITY_CHANGED", amx_incom_gravity_change_value, amx_incom_gravity_max_duration);
+	gravity_changed = true;
+	ChangeGravity(amx_incom_gravity_change_value);
+
+	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED", amx_incom_gravity_change_value, amx_incom_gravity_max_duration);
 }
 
 stock ChangeGravityToDefault()
 {
-    gravity_changed = false;
-    ChangeGravity(gravity_default);
+	if (!gravity_changed)
+	{
+		return;
+	}
 
-    IncomPrint_Client(0, "[%L] %L", 0, "INCOM_GRAVITY", 0, "GRAVITY_CHANGED_TO_DEF");
+	gravity_changed = false;
+	ChangeGravity(gravity_default);
+
+	IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "INCOM_GRAVITY", LANG_PLAYER, "GRAVITY_CHANGED_TO_DEF");
 }
 
-stock CreateForceRestoreGravityOperation()
+stock ReplaceProcessGravityTask()
 {
-    set_task(amx_incom_gravity_max_duration, "ForceRestoreGravity", force_restore_gravity_task_id);
+	if (task_exists(GRAVITY_TASKID))
+	{
+		remove_task(GRAVITY_TASKID);
+	}
+
+	StartProcessGravityTask();
 }
 
-stock RemoveForceRestoreGravityOperation()
+stock StartProcessGravityTaskOnce()
 {
-    remove_task(force_restore_gravity_task_id);
+	if (!task_exists(GRAVITY_TASKID))
+	{
+		StartProcessGravityTask();
+	}
 }
 
-public ForceRestoreGravity()
+stock StartProcessGravityTask()
 {
-    if (gravity_changed)
-    {
-        ChangeGravityToDefault();
-    }
+	set_task(amx_incom_gravity_max_duration, "ProcessGravity", GRAVITY_TASKID, .flags = "b");
 }
