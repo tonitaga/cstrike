@@ -1,6 +1,5 @@
 #include <amxmodx>
 #include <reapi>
-#include <incom_print>
 
 #define PLUGIN  "e6a_bhop"
 #define VERSION "1.0"
@@ -105,7 +104,7 @@ public ActivateBhopMode()
         {
             play_bhop_music_for_all();
         }
-        IncomPrint_Client(0, "[%L] %L", 0, "E6A_BHOP", 0, "E6A_BHOP_START");
+        client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "E6A_BHOP", LANG_PLAYER, "E6A_BHOP_START");
         
         if (iChance < 100)
         {
