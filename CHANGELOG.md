@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Изменено значение параметра `amx_incom_gravity_change_percent` на `5.0`
     - Изменено значение параметра `amx_incom_gravity_max_duration` на `60.0`
 - Удален файл `incom_print.inc`. Заменена печать на `client_print_color`
+- Добавлен плагин `e6a_bhop.ammx`:
+    - Автоматическое выполнение прыжков с ускорением с нажатым `Space`
+    - Во время раунда проигрывается тематическая музыка
+    - Случайная активация режима в начале и во время раунда.
+    - Если выставить `amx_e6a_bhop_chance` = 100, тогда таймер не будет сбрасываться.
 
 ## [0.7.3]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
