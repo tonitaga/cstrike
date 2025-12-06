@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Обновлен плагин `e6a_knife.ammx` до версии `1.1.0`:
     - Добавлен спрайтовый визуальный эффект
     - Добавлено небольшое покраснение экрана
+- Добавлены скины игроков: `crysis`, `santa`
 
 ## [0.7.3]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
