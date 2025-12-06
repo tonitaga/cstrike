@@ -3,6 +3,8 @@
 #include <reapi>
 
 new amx_e6a_knife_enable;
+new amx_e6a_knife_blood_enable;
+new amx_e6a_knife_red_screen_enable;
 new g_msgScreenFade;
 new g_BloodSprite;
 
@@ -55,6 +57,26 @@ public plugin_cfg()
         ),
         amx_e6a_knife_enable
     );
+	bind_pcvar_num(
+		create_cvar(
+			"amx_e6a_knife_blood_enable", "1",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "0 - Эффект крови отключен^n\
+							1 - Эффект крови включен"
+		),
+		amx_e6a_knife_blood_enable
+	);
+	bind_pcvar_num(
+		create_cvar(
+			"amx_e6a_knife_red_screen_enable", "1",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "0 - Эффект покраснения экрана отключен^n\
+							1 - Эффект покраснения экрана включен"
+		),
+		amx_e6a_knife_red_screen_enable
+	);
     AutoExecConfig();
 }
 
@@ -82,6 +104,9 @@ public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 
 red_screen_effect(killer)
 {
+	if (!amx_e6a_knife_red_screen_enable)
+		return;
+
 	if (!is_user_connected(killer))
 		return;
 	
@@ -98,6 +123,9 @@ red_screen_effect(killer)
 
 more_blood_effect(victim)
 {
+	if (!amx_e6a_knife_blood_enable)
+		return;
+
 	new Float:pos[3];
 	get_entvar(victim, var_origin, pos);
 	pos[2] += 35.0;
