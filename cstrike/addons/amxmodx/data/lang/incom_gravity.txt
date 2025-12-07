@@ -1,9 +1,9 @@
 [en]
-INCOM_GRAVITY = &x07IncomGravity&x01
-GRAVITY_CHANGED = New Gravity: &x04%.1f&x01, lasts for &x07%.1f&x01 second or until the end of the round
+INCOM_GRAVITY = ^3IncomGravity^1
+GRAVITY_CHANGED = New Gravity: ^4%.1f^1, lasts for ^3%.1f^1 second or until the end of the round
 GRAVITY_CHANGED_TO_DEF = Gravity restored
 
 [ru]
-INCOM_GRAVITY = &x07IncomGravity&x01
-GRAVITY_CHANGED = Новая гравитация: &x04%.1f&x01, продолжается &x07%.1f&x01 секунд или до конца раунда
+INCOM_GRAVITY = ^3IncomGravity^1
+GRAVITY_CHANGED = Новая гравитация: ^4%.1f^1, продолжается ^3%.1f^1 секунд или до конца раунда
 GRAVITY_CHANGED_TO_DEF = Гравитация восстановлена

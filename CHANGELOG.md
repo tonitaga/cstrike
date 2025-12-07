@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0]
+- Обновления плагина `incom_gravity.amxx` (`1.0` -> `1.1`)
+    - Добавлена совместимость с плагином `incom_respawn.amxx`.
+    - Изменение гравитации теперь привязано дополнительно к опросу по периоду `amx_incom_gravity_max_duration`
+    - Изменено значение параметра `amx_incom_gravity_change_percent` на `5.0`
+- Удален файл `incom_print.inc`. Заменена печать на `client_print_color`
+- Добавлен плагин `e6a_bhop.ammx`:
+    - Автоматическое выполнение прыжков с ускорением с нажатым `Space`
+    - Во время раунда проигрывается тематическая музыка
+    - Случайная активация режима в начале и во время раунда.
+    - Если выставить `amx_e6a_bhop_chance` = 100, тогда таймер не будет сбрасываться.
+- Обновлен плагин `e6a_knife.ammx` до версии `1.1.0`:
+    - Добавлен спрайтовый визуальный эффект
+    - Добавлено небольшое покраснение экрана
+- Добавлены скины игроков: `crysis`, `santa`
+- Изменены параметры в `aes.cfg`, `plugin-incom_respawn.cfg`
+    - Отключено лишнее отображение информации на HUD игрока
+
 ## [0.7.3]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
     - Система таблиц: Теперь таблица одна. Добавлена колонка с названием карты.

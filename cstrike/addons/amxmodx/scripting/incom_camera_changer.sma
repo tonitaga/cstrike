@@ -1,7 +1,6 @@
 #include <amxmodx>
 #include <amxmisc>
 #include <engine>
-#include <incom_print>
 
 #define PLUGIN  "Incomsystem Camera Changer"
 #define VERSION "1.1" 
@@ -101,7 +100,7 @@ public ShowCameraMessage(playerId)
 {
 	if (get_user_flags(playerId) & ADMIN_IMMUNITY)
 	{
-		IncomPrint_Client(playerId, "[%L] %L", playerId, "CAMERA_NAME", playerId, "CAMERA_USAGE_MESSAGE", CAMERA_COMMAND);
+		client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "CAMERA_NAME", LANG_PLAYER, "CAMERA_USAGE_MESSAGE", CAMERA_COMMAND);
 	}
 }
 

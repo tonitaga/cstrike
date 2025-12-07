@@ -1,7 +1,6 @@
 #include <amxmodx>
 #include <cstrike>
 #include <cromchat>
-#include <incom_print>
 
 new const PLUGIN[]  = "Incomsystem version";
 new const VERSION[] = "1.1";
@@ -33,6 +32,6 @@ public ShowVersion(playerId)
 {
     if (get_pcvar_num(g_Enable))
     {
-        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_VERSION", playerId, "VERSION_MESSAGE");
+        client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_VERSION", LANG_PLAYER, "VERSION_MESSAGE");
     }
 }

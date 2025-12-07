@@ -2,13 +2,16 @@
 #include <fakemeta>
 #include <reapi>
 
-// #define EnableAfterFirstRound   // Если у вас нету разминки на ножах то можно закоментить
-#define MODELS // Закомментировать если модели не нужны
-#define SOUNS  // Закомментировать если звуки не нужны
-
 new amx_e6a_knife_enable;
+new amx_e6a_knife_blood_enable;
+new amx_e6a_knife_red_screen_enable;
+new g_msgScreenFade;
+new g_BloodSprite;
 
-#if defined SOUNS
+const Float: ENTITY_LIFETIME = 3;
+const Float: ENTITY_SPEED = 40.0;
+
+new const ENTITY_CLASSNAME[] = "ghost";
 new const KILL_SOUND[][] =
 {
 	"e6a_knife/kill_1.wav",
@@ -17,8 +20,7 @@ new const KILL_SOUND[][] =
 	"e6a_knife/kill_4.wav",
 	"e6a_knife/kill_5.wav"
 }
-#endif
-#if defined MODELS
+
 new const ENTITY_MODEL[][] =
 {
 	"models/e6a_knife/piglet.mdl",
@@ -26,27 +28,21 @@ new const ENTITY_MODEL[][] =
 	"models/e6a_knife/rxghost.mdl"
 }
 
-new const ENTITY_CLASSNAME[] = "ghost";
-const Float: ENTITY_LIFETIME = 1.7;
-const Float: ENTITY_SPEED = 40.0;
-#endif
-
 public plugin_precache() {
-	#if defined SOUNS
 	for(new i = 0; i < sizeof(KILL_SOUND); i++) 
 		precache_sound(KILL_SOUND[i]);
-	#endif
 	
-	#if defined MODELS
 	for(new i = 0; i < sizeof(ENTITY_MODEL); i++) 
 			precache_model(ENTITY_MODEL[i]);
-	#endif	
+
+	g_BloodSprite = precache_model("sprites/blood.spr");
 }
 
 public plugin_init()
 {
-	register_plugin("e6a knife", "1.1.1", "MurLemur & e6aluga");
+	register_plugin("e6a_knife", "1.1.0", "e6aluga & MurLemur");
 	RegisterHookChain(RG_CSGameRules_DeathNotice, "CSGameRules_DeathNotice", true);
+	g_msgScreenFade = get_user_msgid("ScreenFade");
 }	
 
 public plugin_cfg()
@@ -61,49 +57,126 @@ public plugin_cfg()
         ),
         amx_e6a_knife_enable
     );
-
+	bind_pcvar_num(
+		create_cvar(
+			"amx_e6a_knife_blood_enable", "1",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "0 - Эффект крови отключен^n\
+							1 - Эффект крови включен"
+		),
+		amx_e6a_knife_blood_enable
+	);
+	bind_pcvar_num(
+		create_cvar(
+			"amx_e6a_knife_red_screen_enable", "1",
+			.has_min = true, .min_val = 0.0,
+			.has_max = true, .max_val = 1.0,
+			.description = "0 - Эффект покраснения экрана отключен^n\
+							1 - Эффект покраснения экрана включен"
+		),
+		amx_e6a_knife_red_screen_enable
+	);
     AutoExecConfig();
 }
 
 public CSGameRules_DeathNotice(const iVictim, const iKiller, pevInflictor){
 	if (!amx_e6a_knife_enable)
 		return HC_CONTINUE;
-	#if defined MODELS
+
 	if (pevInflictor<1)
 		ghost_effect(2,iVictim,iVictim)
-	#endif
-
-	#if defined EnableAfterFirstRound
-	if (get_member_game(m_iTotalRoundsPlayed) == 0) 
-		return HC_CONTINUE
-	#endif
 	
 	if(iVictim == iKiller || !is_user_connected(iKiller))
-		return HC_CONTINUE
+		return HC_CONTINUE;
 
-	if(iKiller == pevInflictor && FClassnameIs(get_member(iKiller, m_pActiveItem),"weapon_knife") || FClassnameIs(pevInflictor, "weapon_knife") ) {
+	if((iKiller == pevInflictor && FClassnameIs(get_member(iKiller, m_pActiveItem),"weapon_knife")) || 
+	   FClassnameIs(pevInflictor, "weapon_knife")) {
 		new sound_type = random_num(0, sizeof(KILL_SOUND) - 1);
-		#if defined SOUNS
 		play_loud_sound_for_all(sound_type);
-		#endif
-		#if defined MODELS
 		new model_type = random_num(0, sizeof(ENTITY_MODEL) - 1);
 		ghost_effect(model_type,pevInflictor,iVictim)
-		#endif
-
+		more_blood_effect(iVictim);
+		red_screen_effect(iKiller);
     } 
-
 	return HC_CONTINUE;
 }
 
-#if defined SOUNS
+red_screen_effect(killer)
+{
+	if (!amx_e6a_knife_red_screen_enable)
+		return;
+
+	if (!is_user_connected(killer))
+		return;
+	
+	message_begin(MSG_ONE, g_msgScreenFade, {0,0,0}, killer);
+	write_short(1<<12);
+	write_short(1<<8);
+	write_short(1<<9);
+	write_byte(255);
+	write_byte(0);
+	write_byte(0);
+	write_byte(100);
+	message_end();
+}
+
+more_blood_effect(victim)
+{
+	if (!amx_e6a_knife_blood_enable)
+		return;
+
+	new Float:pos[3];
+	get_entvar(victim, var_origin, pos);
+	pos[2] += 35.0;
+	
+	// Фонтаны (1)
+	for(new i = 0; i < 1; i++)
+	{
+		new Float:fpos[3];
+		fpos[0] = pos[0] + random_float(-20.0, 20.0);
+		fpos[1] = pos[1] + random_float(-20.0, 20.0);
+		fpos[2] = pos[2] + random_float(-5.0, 10.0);
+		
+		message_begin(MSG_BROADCAST, SVC_TEMPENTITY);
+		write_byte(TE_BLOODSTREAM);
+		engfunc(EngFunc_WriteCoord, fpos[0]);
+		engfunc(EngFunc_WriteCoord, fpos[1]);
+		engfunc(EngFunc_WriteCoord, fpos[2]);
+		engfunc(EngFunc_WriteCoord, random_float(-80.0, 80.0));
+		engfunc(EngFunc_WriteCoord, random_float(-80.0, 80.0));
+		engfunc(EngFunc_WriteCoord, random_float(200.0, 350.0));
+		write_byte(70);
+		write_byte(random_num(400, 600));
+		message_end();
+	}
+	
+	// Частицы (5)
+	for(new i = 0; i < 5; i++)
+	{
+		new Float:ppos[3];
+		ppos[0] = pos[0] + random_float(-45.0, 45.0);
+		ppos[1] = pos[1] + random_float(-45.0, 45.0);
+		ppos[2] = pos[2] + random_float(-10.0, 25.0);
+		
+		message_begin(MSG_BROADCAST, SVC_TEMPENTITY);
+		write_byte(TE_BLOODSPRITE);
+		engfunc(EngFunc_WriteCoord, ppos[0]);
+		engfunc(EngFunc_WriteCoord, ppos[1]);
+		engfunc(EngFunc_WriteCoord, ppos[2]);
+		write_short(g_BloodSprite);
+		write_short(g_BloodSprite);
+		write_byte(248);
+		write_byte(random_num(20, 40));
+		message_end();
+	}
+}
+
 public play_loud_sound_for_all(sound_index)
 {
     rg_send_audio(0, KILL_SOUND[sound_index], PITCH_NORM);
 }
-#endif
 
-#if defined MODELS
 public ghost_effect(model_type,pevInflictor,iVictim)
 {
 		new Float: vecOrigin[3];
@@ -125,7 +198,7 @@ public ghost_effect(model_type,pevInflictor,iVictim)
 			vecAngles[0] *= -1;
 			vecAngles[1] += 180;
 		}
-		
+
 		engfunc(EngFunc_SetModel, iEntity, ENTITY_MODEL[model_type]);
 		engfunc(EngFunc_SetSize, iEntity, {-10.0, -10.0, -10.0}, {10.0, 10.0, 10.0});
 
@@ -149,4 +222,3 @@ public ghost_effect(model_type,pevInflictor,iVictim)
 {
 	set_entvar(iEntity, var_flags, FL_KILLME);
 }
-#endif
