@@ -1,7 +1,7 @@
 [ru]
-INCOM_SKINS = &x07IncomSkins&x01
-SKIN_SELECTED = Ваш выбор &x04%s&x01
+INCOM_SKINS = ^3IncomSkins^1
+SKIN_SELECTED = Ваш выбор ^4%s^1
 
 [en]
-INCOM_SKINS = &x07IncomSkins&x01
-SKIN_SELECTED = Your choice is &x04%s&x01
+INCOM_SKINS = ^3IncomSkins^1
+SKIN_SELECTED = Your choice is ^4%s^1

@@ -9,7 +9,6 @@
 #include <fakemeta>
 #include <hamsandwich>
 #include <amxmisc>
-#include <incom_print>
 
 #define PLUGIN  "Incomsystem Custom Models"
 #define VERSION "1.1"
@@ -249,12 +248,12 @@ public changePlayerModel(id)
 				new player_name[32];
 				get_user_name(id, player_name, charsmax(player_name));
 
-				IncomPrint_Client(0, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
+				client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "PLAYER_GOT_MODEL", player_name);
 			}
 			else
 			{
 				// В режиме TeamDM печатает только самому игроку
-				IncomPrint_Client(id, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "YOU_GOT_MODEL");
+				client_print_color(id, print_team_default, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "YOU_GOT_MODEL");
 			}
 
 			g_CurrentRandomModelsCount++;

@@ -1,5 +1,4 @@
 #include <amxmodx>
-#include <incom_print>
 #include <reapi>
 
 #define PLUGIN  "Incomsystem music"
@@ -283,12 +282,12 @@ public HandleStopSound(playerId)
         new name[128];
         get_user_name(playerId, name, charsmax(name));
 
-        IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "ADMIN_STOP_SOUND", name);
+        client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "ADMIN_STOP_SOUND", name);
     }
     else
     {
         StopSound(playerId);
-        IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "PLAYER_STOP_SOUND");
+        client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "PLAYER_STOP_SOUND");
     }
 }
 
@@ -343,7 +342,7 @@ public PollSongRequest()
     --g_SongRequestCounter;
     if (g_SongRequestCounter <= 0)
     {
-        IncomPrint_Client(0, "[%L] %L", 0, "INCOM_MUSIC", 0, "SOUND_AVAILABLE");
+        client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_AVAILABLE");
         SetSongRequested(false);
         return;
     }
@@ -353,19 +352,19 @@ public pointBonus_RequestSong(playerId)
 {
     if (!amx_incom_music_request_enable)
     {
-        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "REQUEST_DISABLED");
+        client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "REQUEST_DISABLED");
         return false;
     }
 
     if (IsSongAlreadyRequested())
     {
-        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
+        client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_NOT_AVAILABLE", g_SongRequestCounter);
         return false;
     }
 
     if (IsSongRequestMenuOnHud())
     {
-        IncomPrint_Client(playerId, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOMEONE_SELECTING_SOUND");
+        client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOMEONE_SELECTING_SOUND");
         return false;
     }
 
@@ -392,7 +391,7 @@ public InactiveMenuCanceler(taskId)
 
     SongRequestMenuOnHud(false);
 
-    IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_AVAILABLE");
+    client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_AVAILABLE");
 }
 
 public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
@@ -490,7 +489,7 @@ public CommonMenuCase(playerId, menu, item)
 
 	get_user_name(playerId, name, charsmax(name));
 
-	IncomPrint_Client(0, "[%L] %L", playerId, "INCOM_MUSIC", playerId, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
+	client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
 	menu_destroy(menu)
 	return PLUGIN_HANDLED
 }

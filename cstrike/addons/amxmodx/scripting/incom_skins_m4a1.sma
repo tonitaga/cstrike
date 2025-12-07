@@ -2,7 +2,6 @@
 #include <cstrike>
 #include <cromchat>
 #include <incom_skins>
-#include <incom_print>
 
 new const PLUGIN[]       = "Incomsystem M4A1 Menu";
 new const VERSION[]      = "2.3";
@@ -153,7 +152,7 @@ public IncomCase(id, menu, item)
 	}
 
 	SkinStorage[id] = item;
-	IncomPrint_Client(id, "[%L] %L", id, "INCOM_SKINS", id, "SKIN_SELECTED", ModelNames[item]);
+	client_print_color(id, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_SKINS", LANG_PLAYER, "SKIN_SELECTED", ModelNames[item]);
 	
 	IncomSkins_SaveUserSkin(g_DbHandle, TABLE_NAME, id, SkinStorage[id]);
 	IncomChangeCurrentWeapon(id);

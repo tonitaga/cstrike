@@ -1,0 +1,7 @@
+[ru]
+E6A_BHOP = ^3e6a_bhop^1 
+E6A_BHOP_START = BunnyHop режим ЗАПУЩЕН!
+
+[en]
+E6A_BHOP = ^3e6a_bhop^1 
+E6A_BHOP_START = BunnyHop mode ENABLED!
