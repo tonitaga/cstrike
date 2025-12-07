@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Добавлен спрайтовый визуальный эффект
     - Добавлено небольшое покраснение экрана
 - Добавлены скины игроков: `crysis`, `santa`
+- Изменены параметры в `aes.cfg`, `plugin-incom_respawn.cfg`
+    - Отключено лишнее отображение информации на HUD игрока
 
 ## [0.7.3]
 - Обновления плагина `incom_kill_streak_reward.amxx` (`3.0` -> `3.1`)
