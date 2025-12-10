@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.8.1]
 - Добавлен плагин `ReSemiclip 2.4.3`. Плагин для прохода сквозь игроков
+- В плагине `plugin-cstatsx_sql.cfg` изменены параметры
+    - Новое значение `csstats_sql_rankformula "2"` (kill + hs)
+    - Новое значение `csstats_sql_weapons "1"` (enable)
+    - Новое значение `csstats_sql_autoclear_day "10"`
 
 ## [0.8.0]
 - Обновления плагина `incom_gravity.amxx` (`1.0` -> `1.1`)
