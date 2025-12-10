@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.0.xmas]
+## [0.8.1.xmas]
 
 - Добавлена подгрузка новогодних плагинов в `plugins.ini`
 - Изменен тип музыки в `plugin-incom_music.cfg`. Выставлен тип `[XMas]`
@@ -15,6 +15,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 - Добавлено включение новогодних моделей оружия в плагины `incom_skins_*.amxx`
 - Добавлена замена моделей в `weapons_replacement.ini`
+
+## [0.8.1]
+- Добавлен плагин `ReSemiclip 2.4.3`. Плагин для прохода сквозь игроков
+- В плагине `plugin-cstatsx_sql.cfg` изменены параметры
+    - Новое значение `csstats_sql_rankformula "2"` (kill + hs)
+    - Новое значение `csstats_sql_weapons "1"` (enable)
+    - Новое значение `csstats_sql_autoclear_day "10"`
+- Добавлен плагин `change_gamename.amxx` для замены отображаемого имени игры на сервере
 
 ## [0.8.0]
 - Обновления плагина `incom_gravity.amxx` (`1.0` -> `1.1`)
