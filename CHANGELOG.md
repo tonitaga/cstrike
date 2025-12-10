@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     - Новое значение `csstats_sql_rankformula "2"` (kill + hs)
     - Новое значение `csstats_sql_weapons "1"` (enable)
     - Новое значение `csstats_sql_autoclear_day "10"`
+- Добавлен плагин `change_gamename.amxx` для замены отображаемого имени игры на сервере
 
 ## [0.8.0]
 - Обновления плагина `incom_gravity.amxx` (`1.0` -> `1.1`)
