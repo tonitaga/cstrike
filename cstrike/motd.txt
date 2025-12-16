@@ -18,7 +18,7 @@ hr{ border:1px solid #444 ; width:60%; }
 <div class="hdr">INCOMSYSTEM [DEV ZONE] ®</div>
 <br>
 <div>/* Powered by Tonitaga */</div>
-<div class="b">v0.8.1</div>
+<div class="b">v0.9.0</div>
 <br>
 <span class="y">✰ GitHub</span> - <span class="g">github.com/tonitaga/incomsystem_cstrike</span>
 </a>
@@ -26,7 +26,7 @@ hr{ border:1px solid #444 ; width:60%; }
 <br><hr><br>
 <div class="b">✰ LOOKUP SERVER COMMANDS</div>
 <br>
-<div><span class="y">▫ /commands</span> - <span class="g">Lookup server commands</span></div>
+<div><span class="y">▫ /menu</span> - <span class="g">Lookup server commands</span></div>
 <br><hr><br>
 <div class=b>✰ CONTRIBUTORS</div>
 <br>
