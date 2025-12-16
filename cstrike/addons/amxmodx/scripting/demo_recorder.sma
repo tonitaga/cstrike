@@ -6,7 +6,6 @@ new       demo_recorder_max_value;
 new Float:demo_recorder_delay;
 new       demo_recorder_name[96];
 
-new g_pHostName;
 new g_hVault, g_szMapName[64];
 
 new const PLUGIN[]  = "Demo Recorder";
@@ -46,8 +45,6 @@ public plugin_init()
 	AutoExecConfig();
 
 	register_dictionary("demo_recorder.txt");
-
-	g_pHostName = get_cvar_pointer("hostname")
 
 	get_mapname(g_szMapName, charsmax(g_szMapName))
 
@@ -98,10 +95,4 @@ public task_StartRecord(playerId)
 public task_PrintInfo(const szDemoName[], playerId)
 {
 	client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "DEMO_RECORD", szDemoName)
-
-	new hostname[64], time[64]
-	get_pcvar_string(g_pHostName, hostname, charsmax(hostname))
-
-	get_time("%d.%m.%Y - %H:%M:%S", time, charsmax(time))
-	client_print_color(playerId, print_team_default, "[%L] %s [^3%s^1]^4 %n", LANG_PLAYER, "MODE_NAME", hostname, time, playerId)
 }

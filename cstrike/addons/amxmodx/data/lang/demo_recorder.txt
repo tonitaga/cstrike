@@ -1,7 +1,7 @@
 [ru]
 MODE_NAME = ^3DemoRecorder^1
-DEMO_RECORD = Автоматическая запись демо: ^3%s.dem^1
+DEMO_RECORD = Автоматическая запись демо ^3%s.dem^1
 
 [en]
 MODE_NAME = ^3DemoRecorder^1
-DEMO_RECORD = Automatic demo record: ^3%s.dem^1
+DEMO_RECORD = Automatic demo recording ^3%s.dem^1

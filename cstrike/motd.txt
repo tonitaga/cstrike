@@ -26,7 +26,7 @@ hr{ border:1px solid #444 ; width:60%; }
 <br><hr><br>
 <div class="b">✰ LOOKUP SERVER COMMANDS</div>
 <br>
-<div><span class="y">▫ /commands</span> - <span class="g">Lookup server commands</span></div>
+<div><span class="y">▫ /menu</span> - <span class="g">Lookup server commands</span></div>
 <br><hr><br>
 <div class=b>✰ CONTRIBUTORS</div>
 <br>
