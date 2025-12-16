@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0]
+- Добавлен модуль `VoiceTranscoder` `v2017RC5` вместо `revoice`
+    - На `revoice` почему-то не работал voice-чат
+- Обновлен модуль `reunion` `0.1.92` -> `0.2.0.34`
+
 ## [0.8.1]
 - Добавлен плагин `ReSemiclip 2.4.3`. Плагин для прохода сквозь игроков
 - В плагине `plugin-cstatsx_sql.cfg` изменены параметры
