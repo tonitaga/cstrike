@@ -2,3 +2,5 @@
 logs/*
 *.mdmp
 *.sq3
+*.journal
+*.vault

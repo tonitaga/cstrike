@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.8.1.xmas]
+## [0.9.0.xmas]
 
 - Добавлена подгрузка новогодних плагинов в `plugins.ini`
 - Изменен тип музыки в `plugin-incom_music.cfg`. Выставлен тип `[XMas]`
@@ -15,6 +15,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлено включение режима с рандомными моделями в `plugin-custom_models.cfg`
 - Добавлено включение новогодних моделей оружия в плагины `incom_skins_*.amxx`
 - Добавлена замена моделей в `weapons_replacement.ini`
+
+## [0.9.0]
+- Добавлен модуль `VoiceTranscoder` `v2017RC5` вместо `revoice`
+    - На `revoice` почему-то не работал voice-чат
+- Обновлен модуль `reunion` `0.1.92` -> `0.2.0.34`
+- Добавлен модуль `hitbox-fix` `2.0.3`
+    - Исправляет на стороне сервера так называемую «кривую стрельбу».
+    - `metamod` модуль исправляет сломанные и кривые хитбоксы моделей игроков на стороне сервера.
+- Добавлен плагин `spectator_bot.amxx` для добавления бота в наблюдатели
+- Добавлен и доработан плагин `demo_recorder.amxx`.
+    - Плагин автоматически начинает запись демо для каждого игрока.
+- Заменен плагин `incom_commands.amxx` на `player_menu.amxx`
+    - Плагин позволяет настроить меню для игрока
+- Плагин `map_manager_*.amxx` теперь совместим с режимом `TeamDM` (incom_respawn.amxx).
+    - Ранее голосование за смену карты начиналось только в начале нового раунда. В режиме TeamDM раунд не обновлялся, поэтому карта не менялась
+- Добавлена функция досрочной смены карты через голосование (rtv)
 
 ## [0.8.1]
 - Добавлен плагин `ReSemiclip 2.4.3`. Плагин для прохода сквозь игроков
