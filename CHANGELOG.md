@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0]
+- Добавлен плагин `reapi_parachute.amxx` вместо `amx_parachute`
+    - Плагин без модели, с более быстрым откликом
+- Удалены рудименты из `server.cfg` `amxx.cfg`
+
 ## [0.9.0]
 - Добавлен модуль `VoiceTranscoder` `v2017RC5` вместо `revoice`
     - На `revoice` почему-то не работал voice-чат
