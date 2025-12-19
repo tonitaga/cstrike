@@ -1,7 +1,7 @@
 [ru]
 INCOM_VERSION = ^3IncomVersion^1
-VERSION_MESSAGE = v^40.9.0^1. By Tonitaga
+VERSION_MESSAGE = v^40.10.0^1. By Tonitaga
 
 [en]
 INCOM_VERSION = ^3IncomVersion^1
-VERSION_MESSAGE = v^40.9.0^1. By Tonitaga
+VERSION_MESSAGE = v^40.10.0^1. By Tonitaga
