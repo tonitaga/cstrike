@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Удалены рудименты из `server.cfg` `amxx.cfg`
 - Добавлено выпадение всех гранат после смерти
 - Добавлена автоматическая перезарядка в начале раунда
+- Добавлен звук приветствия в админовское меню `speech.ini`
 
 ## [0.9.0]
 - Добавлен модуль `VoiceTranscoder` `v2017RC5` вместо `revoice`
