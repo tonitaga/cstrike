@@ -9,7 +9,7 @@ new const AUTHOR[]       = "Tonitaga"
 new const SKIN_COMMAND[] = "say /skins-m4a1";
 
 // Добавление в сборку скина XMas
-#define XMAS_SKIN_ENABLE 0
+#define XMAS_SKIN_ENABLE 1
 
 new const Models_V[][] =
 {
