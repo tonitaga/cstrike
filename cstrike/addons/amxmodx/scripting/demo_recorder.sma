@@ -94,5 +94,5 @@ public task_StartRecord(playerId)
 
 public task_PrintInfo(const szDemoName[], playerId)
 {
-	client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "MODE_NAME", LANG_PLAYER, "DEMO_RECORD", szDemoName)
+	client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "DEMO_RECORDER_PREFIX", LANG_PLAYER, "DEMO_RECORD", szDemoName)
 }
