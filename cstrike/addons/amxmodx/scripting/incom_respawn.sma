@@ -579,7 +579,10 @@ stock CheckCurrentMap()
 
 	new const blocked_maps[][] = {
 		"awp",
-		"35hp"
+		"35hp",
+		"scout",
+		"usp",
+		"deagle"
 	};
 
 	for (new i = 0; i < sizeof(blocked_maps); i++)
