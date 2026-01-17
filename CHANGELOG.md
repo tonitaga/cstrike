@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Убрано выпадение всех гранат, связано с тем, что healthnade не пропадает спустя время.
 - Удалена карта `35hp_volcano` из-за некорректной выдачи здоровья после смерти.
 - Добавлены новые песни на заказ в `incom_music`
+- Добавлены админовские права для `ebaluga` `web-makaka`
 
 ## [0.9.2]
 - Добавлен STEAM админ-аккаунт для `tonitaga`
