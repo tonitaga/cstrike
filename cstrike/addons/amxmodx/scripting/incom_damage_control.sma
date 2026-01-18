@@ -22,11 +22,17 @@ new Float:amx_incom_damage_control_all_scale; ///< Для Остального �
 
 ///> КЭШ состояния базы данных по статусу
 new g_PlayerHasDamageControl[33] = { false, ... };
+new g_PlayerUsedTrialAccess[33] = { false, ... };
 
 ///> Длительности
 #define DURATION_ENDMAP -1
+#define DURATION_TRIAL  (25 * 60 * 60 * 3)
 #define DURATION_WEEK   (24 * 60 * 60 * 7)
 #define DURATION_MONTH  (24 * 60 * 60 * 30)
+
+///> Тип доступа
+#define ACCESS_COMMON 1
+#define ACCESS_TRIAL  2
 
 public plugin_init()
 {
@@ -88,7 +94,7 @@ public plugin_cfg()
 
 public plugin_precache()
 {
-	CreateIncomDamageControlTable();
+	ConfigureDatabase();
 }
 
 public plugin_end()
@@ -144,20 +150,29 @@ public OnPlayerTakeDamage(victim, inflictor, attacker, Float:damage, damageBits)
 
 public public_IncreaseDamageUntilMapEnd(playerId, count, maximum)
 {
-	return IncreaseDamage(playerId, DURATION_ENDMAP);
+	return IncreaseDamage(playerId, DURATION_ENDMAP, ACCESS_COMMON);
 }
 
 public public_IncreaseDamageOneWeek(playerId, count, maximum)
 {
-	return IncreaseDamage(playerId, DURATION_WEEK);
+	return IncreaseDamage(playerId, DURATION_WEEK, ACCESS_COMMON);
 }
 
-public public_IncreaseDamageOneMonth(playerId, count, maximum)
+public public_IncreaseDamageTrialAccess(playerId, count, maximum)
 {
-	return IncreaseDamage(playerId, DURATION_MONTH);
+	if (g_PlayerUsedTrialAccess[playerId])
+	{
+		client_print_color(playerId, print_team_default, "[%L] %L",
+			LANG_PLAYER, "DAMAGE_CONTROL",
+			LANG_PLAYER, "DAMAGE_CONTROL_TRIAL_USED"
+		);
+		return false;
+	}
+
+	return IncreaseDamage(playerId, DURATION_TRIAL, ACCESS_TRIAL);
 }
 
-stock IncreaseDamage(playerId, duration)
+stock IncreaseDamage(playerId, duration, accessType)
 {
 	if (!amx_incom_damage_control_enable)
 		return false;
@@ -177,7 +192,7 @@ stock IncreaseDamage(playerId, duration)
 	// Для DURATION_ENDMAP информация хранится только в кеше, в базу не попадает	
 	if (duration != DURATION_ENDMAP)
 	{
-		EnableDamageControlStatus(playerId, duration);
+		EnableDamageControlStatus(playerId, duration, accessType);
 	}
 
 	client_print_color(playerId, print_team_default, "[%L] %L",
@@ -191,7 +206,7 @@ stock IncreaseDamage(playerId, duration)
 	return true;
 }
 
-stock EnableDamageControlStatus(playerId, duration)
+stock EnableDamageControlStatus(playerId, duration, accessType)
 {
 	new steamId[32];
 	get_user_authid(playerId, steamId, charsmax(steamId));
@@ -200,15 +215,26 @@ stock EnableDamageControlStatus(playerId, duration)
 	new expiresIn = systime + duration;
 
 	new query[512];
-	formatex(query, charsmax(query),
-		"INSERT OR REPLACE INTO `%s` (steam_id, expires_in) VALUES ('%s', %d);",
-		DAMAGE_CONTROL_TABLE_NAME, steamId, expiresIn
-	);
+	
+	if (accessType == ACCESS_TRIAL)
+	{
+		formatex(query, charsmax(query),
+			"INSERT OR REPLACE INTO `%s` (steam_id, expires_in, used_trial) VALUES ('%s', %d, 1);",
+			DAMAGE_CONTROL_TABLE_NAME, steamId, expiresIn
+		);
+	}
+	else
+	{
+		formatex(query, charsmax(query),
+			"INSERT INTO `%s` (steam_id, expires_in) VALUES ('%s', %d) ON CONFLICT (steam_id) DO UPDATE SET expires_in = EXCLUDED.expires_in;",
+			DAMAGE_CONTROL_TABLE_NAME, steamId, expiresIn
+		);
+	}
 
 	SQL_ThreadQuery(g_DbHandle, "Callback_IncomDamageControlIgnoreHandle", query);
 }
 
-stock CreateIncomDamageControlTable()
+stock ConfigureDatabase()
 {
 	SQL_SetAffinity("sqlite");
 
@@ -223,7 +249,8 @@ stock CreateIncomDamageControlTable()
 	formatex(query, charsmax(query),
 		"CREATE TABLE IF NOT EXISTS `%s` (		\
 			`steam_id` VARCHAR(32) PRIMARY KEY,	\
-			`expires_in` INTEGER NOT NULL		\
+			`expires_in` INTEGER NOT NULL,		\
+			`used_trial` INTEGER DEFAULT 0		\
 		);",
 		DAMAGE_CONTROL_TABLE_NAME
 	);
@@ -238,7 +265,7 @@ stock LoadIncomDamageControlStatus(playerId)
 
 	new query[256];
 	formatex(query, charsmax(query),
-		"SELECT expires_in FROM `%s` WHERE steam_id = '%s';",
+		"SELECT expires_in, used_trial FROM `%s` WHERE steam_id = '%s';",
 		DAMAGE_CONTROL_TABLE_NAME, steamId
 	);
 
@@ -246,25 +273,6 @@ stock LoadIncomDamageControlStatus(playerId)
 	data[0] = playerId;
 	
 	SQL_ThreadQuery(g_DbHandle, "Callback_LoadIncomDamageControlStatusHandle", query, data, sizeof(data));
-}
-
-stock RemoveExpiredDamageControl(playerId)
-{
-	if (!is_user_connected(playerId))
-	{
-		return;
-	}
-
-	new steamId[32];
-	get_user_authid(playerId, steamId, charsmax(steamId));
-
-	new query[256];
-	formatex(query, charsmax(query),
-		"DELETE FROM `%s` WHERE steam_id = '%s'",
-		DAMAGE_CONTROL_TABLE_NAME, steamId
-	);
-
-	SQL_ThreadQuery(g_DbHandle, "Callback_IncomDamageControlIgnoreHandle", query);
 }
 
 public Callback_LoadIncomDamageControlStatusHandle(failstate, Handle:query, error[], errcode, data[], size)
@@ -281,21 +289,14 @@ public Callback_LoadIncomDamageControlStatusHandle(failstate, Handle:query, erro
 		new expiresIn = SQL_ReadResult(query, 0);
 		new currentTime = get_systime();
 
-		if (expiresIn > currentTime)
-		{
-			g_PlayerHasDamageControl[playerId] = true;
+		g_PlayerUsedTrialAccess[playerId]  = SQL_ReadResult(query, 1);
+		g_PlayerHasDamageControl[playerId] = (expiresIn > currentTime);
 
-			new data[2];
-			data[0] = playerId;
-			data[1] = expiresIn - currentTime;
+		new data[2];
+		data[0] = playerId;
+		data[1] = expiresIn - currentTime;
 
-			set_task(12.0, "NotifyAboutSubscription", playerId, data, sizeof(data))
-		}
-		else
-		{
-			RemoveExpiredDamageControl(playerId);
-			g_PlayerHasDamageControl[playerId] = false;
-		}
+		set_task(13.0, "NotifyAboutSubscription", playerId, data, sizeof(data))
 	}
 	else
 	{
@@ -319,12 +320,22 @@ public NotifyAboutSubscription(data[])
 		return;
 	}
 
+	if (!g_PlayerHasDamageControl[playerId])
+	{
+		client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "DAMAGE_CONTROL", LANG_PLAYER, "DAMAGE_CONTROL_DEACTIVATED");
+		return;
+	}
+
 	new timeleft = data[1];
-	new hours = timeleft / 60 / 60;
+
+	new minutes = (timeleft / 60);
+	new hours   = minutes / 60;
+
+	new leftMinutes = minutes % 60;
 
 	client_print_color(playerId, print_team_default, "[%L] %L",
 		LANG_PLAYER, "DAMAGE_CONTROL",
 		LANG_PLAYER, "DAMAGE_CONTROL_ACTIVE",
-		hours
+		hours, leftMinutes
 	);
 }

@@ -1,11 +1,15 @@
 [ru]
 DAMAGE_CONTROL = ^3IncomDamageControl^1
-DAMAGE_CONTROL_ACTIVE = Подписка активна! До конца подписки ^4%d^1 часов
+DAMAGE_CONTROL_ACTIVE = Подписка активна! До конца подписки ^4%d^1 часов ^4%d^1 минут
+DAMAGE_CONTROL_DEACTIVATED = Подписка закончилась! Купите новую через /anew
 DAMAGE_CONTROL_ALREADY_ACTIVE = Подписка ^4уже активна^1!
+DAMAGE_CONTROL_TRIAL_USED = Пробная подписка уже ^4использована^1!
 DAMAGE_CONTROL_INFO = Вы получаете множитель ^4%.2f^1 на AWP и ^4%.2f^1 на все остальное оружие
 
 [en]
 DAMAGE_CONTROL = ^3IncomDamageControl^1
-DAMAGE_CONTROL_ACTIVE = Subscription is active! Subscription will end in ^4%d^1 hours
+DAMAGE_CONTROL_ACTIVE = Subscription is active! Subscription will end in ^4%d^1 hours ^4%d^1 minutes
+DAMAGE_CONTROL_DEACTIVATED = Subscription deactivated! Buy another one using /anew
 DAMAGE_CONTROL_ALREADY_ACTIVE = Subscription ^4already active^1!
+DAMAGE_CONTROL_TRIAL_USED = Trial access already ^4used^1!
 DAMAGE_CONTROL_INFO = You got ^4%.2f^1 AWP multiplier and ^4%.2f^1 multiplier for another weapons
