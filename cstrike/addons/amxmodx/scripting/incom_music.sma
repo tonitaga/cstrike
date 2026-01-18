@@ -35,6 +35,7 @@ new const g_Sounds[][] =
     "incom/greeting_code_and_cs.mp3",
     "incom/greeting_baobab.mp3",
     "incom/greeting_lesnik.mp3",
+    "incom/greeting_end_of_beginning.mp3",
 
     ///> Greeting sounds [XMas]
     "incom/greeting_xmas_incomsystem_and_new_year.mp3",
@@ -79,6 +80,7 @@ new const g_SoundsNames[][] =
     "Antonk - Код и Counter-Strike",
     "ivanzolo2004 - Баобаб",
     "Король и Шут - Лесник",
+    "Djo (Stranger things) - End of Beginning",
 
     ///> Greeting sounds [XMas]
     "Tonitaga - Инкомсистем и Новый год",
@@ -114,9 +116,9 @@ new const g_SoundsNames[][] =
 };
 
 #define SOUND_OFFSET_GREETING      0  // g_Sounds[0]
-#define SOUND_OFFSET_GREETING_XMAS 5  // g_Sounds[3]
-#define SOUND_OFFSET_DEFAULT       14 // g_Sounds[12]
-#define SOUND_OFFSET_XMAS          23 // g_Sounds[21]
+#define SOUND_OFFSET_GREETING_XMAS 6  // g_Sounds[6]
+#define SOUND_OFFSET_DEFAULT       15 // g_Sounds[15]
+#define SOUND_OFFSET_XMAS          24 // g_Sounds[24]
 #define SOUND_OFFSET_MAX           (sizeof g_SoundsNames)
 
 public plugin_init() 

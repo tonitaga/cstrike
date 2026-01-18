@@ -284,6 +284,12 @@ public Callback_LoadIncomDamageControlStatusHandle(failstate, Handle:query, erro
 		if (expiresIn > currentTime)
 		{
 			g_PlayerHasDamageControl[playerId] = true;
+
+			new data[2];
+			data[0] = playerId;
+			data[1] = expiresIn - currentTime;
+
+			set_task(12.0, "NotifyAboutSubscription", playerId, data, sizeof(data))
 		}
 		else
 		{
@@ -303,4 +309,22 @@ public Callback_IncomDamageControlIgnoreHandle(failstate, Handle:query, error[],
 	{
 		server_print("[IncomDamageControl] Failed to execute query: %s", error);
 	}
+}
+
+public NotifyAboutSubscription(data[])
+{
+	new playerId = data[0];
+	if (!amx_incom_damage_control_enable || !is_user_connected(playerId))
+	{
+		return;
+	}
+
+	new timeleft = data[1];
+	new hours = timeleft / 60 / 60;
+
+	client_print_color(playerId, print_team_default, "[%L] %L",
+		LANG_PLAYER, "DAMAGE_CONTROL",
+		LANG_PLAYER, "DAMAGE_CONTROL_ACTIVE",
+		hours
+	);
 }
