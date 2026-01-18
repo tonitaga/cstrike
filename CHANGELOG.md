@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Удалена карта `35hp_volcano` из-за некорректной выдачи здоровья после смерти.
 - Добавлены новые песни на заказ в `incom_music`
 - Добавлены админовские права для `ebaluga` `web-makaka`
+- Добавлена возможность за баллы купить подписку на увеличенный урон `incom_damage_control`
 
 ## [0.9.2]
 - Добавлен STEAM админ-аккаунт для `tonitaga`

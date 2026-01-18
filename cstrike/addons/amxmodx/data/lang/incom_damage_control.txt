@@ -1,0 +1,9 @@
+[ru]
+DAMAGE_CONTROL = ^3IncomDamageControl^1
+DAMAGE_CONTROL_ALREADY_ACTIVE = Подписка ^4уже активна^1!
+DAMAGE_CONTROL_INFO = Вы получаете множитель ^4%.2f^1 на AWP и ^4%.2f^1 на все остальное оружие
+
+[en]
+DAMAGE_CONTROL = ^3IncomDamageControl^1
+DAMAGE_CONTROL_ALREADY_ACTIVE = Subscription ^4already active^1!
+DAMAGE_CONTROL_INFO = You got ^4%.2f^1 AWP multiplier and ^4%.2f^1 multiplier for another weapons
