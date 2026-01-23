@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.11.0]
+- Исправлен баг с выдачей брони при возрождении
+    - В исходном коде плагина `aes` при попытке выставить броню в значение `1` или `1` выдавалось `100` брони
 
 ## [0.10.0]
 - Добавлены новые карты
