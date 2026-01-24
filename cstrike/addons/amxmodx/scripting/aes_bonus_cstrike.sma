@@ -13,7 +13,7 @@
 #include <reapi>
 
 #define PLUGIN "AES: Bonus CSTRIKE"
-#define VERSION "0.6.0.0 [REAPI]"
+#define VERSION "0.6.1.0 [REAPI]"
 #define AUTHOR "serfreeman1337/sonyx + Tonitaga"
 #define LASTUPDATE "30, November (11), 2025"
 
@@ -50,9 +50,9 @@ new const Float:g_flCoords[][] = { {0.55, 0.55}, {0.5, 0.55}, {0.55, 0.5}, {0.45
 new g_players[MAX_PLAYERS + 1];
 new bool: g_PointDam[MAX_PLAYERS + 1] = false;
 
-new aes_block_round_bonus_on_knife_maps;
+new aes_block_round_bonus_on_pistol_and_knife_maps;
 
-new is_knife_map = false;
+new is_bonus_block_map = false;
 
 public plugin_init()
 {
@@ -70,12 +70,12 @@ public plugin_cfg()
 {
 	bind_pcvar_num(
 		create_cvar(
-			"aes_block_round_bonus_on_knife_maps", "1",
+			"aes_block_round_bonus_on_pistol_and_knife_maps", "1",
 			.has_min = true, .min_val = 0.0,
 			.has_max = true, .max_val = 1.0,
 			.description = "Блокировать бонусы в начале раунда на ножевых картах"
 		),
-		aes_block_round_bonus_on_knife_maps
+		aes_block_round_bonus_on_pistol_and_knife_maps
 	);
 }
 
@@ -306,7 +306,7 @@ public roundBonus_GiveHP(id,cnt)
 
 stock IsRoundBonusDisabled()
 {
-	return (aes_block_round_bonus_on_knife_maps && is_knife_map);
+	return (aes_block_round_bonus_on_pistol_and_knife_maps && is_bonus_block_map);
 }
 
 stock CheckCurrentMap()
@@ -317,18 +317,19 @@ stock CheckCurrentMap()
 	strtolower(mapname);
 
 	new const blocked_maps[][] = {
-		"35hp"
+		"35hp",
+		"usp",
+		"deagle"
 	};
 
 	for (new i = 0; i < sizeof(blocked_maps); i++)
 	{
 		if (containi(mapname, blocked_maps[i]) != -1)
 		{
-			is_knife_map = true;
-			server_print("[AesBonusCstrike] Detected knife map");
+			is_bonus_block_map = true;
 			return;
 		}
 	}
 
-	is_knife_map = false;
+	is_bonus_block_map = false;
 }
