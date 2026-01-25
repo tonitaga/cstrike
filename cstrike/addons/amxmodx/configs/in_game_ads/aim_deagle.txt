@@ -1,0 +1,8 @@
+
+models/banner/banner_incom_white.mdl
+origin 276.237304 3318.969482 519.673095
+angles 0.000000 90.000000 0.000000
+
+models/banner/banner_incom_black.mdl
+origin 278.179870 932.031250 493.270355
+angles 0.000000 270.000000 0.000000

@@ -1,0 +1,47 @@
+[en]
+ERROR_FILE_NOT_FOUND = Error: Failed to precache/load (%s), model/sprite does not exist.
+ERROR_USER_ALREADY_PLACING = Error: More than one user is placing an advertisement!
+
+MENU_SAVE_TEXT = \rSave this ent?^n^n1.\w Yes, save it.^n\r0.\w No, delete it.^n
+MENU_SELECT_TEXT_CHOOSE_MODEL = \rChoose one: \y%i\r/%i\w^n^n
+MENU_SELECT_TEXT_OPTIONS_1 = ^n\r6.\w Axis: %s^n\r7.\w Rotate \y(step %.0f°)^n^n\r8.\w Save this ent!^n^n\r9.\w More...^n\r0.\w %L
+MENU_SELECT_TEXT_OPTIONS_2 = ^n\r6.\w Axis: %s^n\r7.\w Rotate \y(step %.0f°)\w^n^n\r8.\w Save this ent!^n^n\r0.\w %L
+MENU_DELETE_TEXT_HEADER = \rDelete an ent: \y%i\r/%i^n\y(Select one to highlight it on the map)^n^n
+MENU_DELETE_TEXT_OPTIONS_1 = ^n^n\r9.\wMore...^n\r0.\w%L
+MENU_DELETE_TEXT_OPTIONS_2 = ^n^n\r0.\w%L
+MENU_DELETE_TEXT_CONFIRM =\rDelete selected ent?^n^n1.\w Yes, delete it.^n\r0.\w Cancel.^n
+MENU_TEXT_PREVIOUS = Previous page
+MENU_TEXT_EXIT = Exit
+DEG = °
+
+[ru]
+ERROR_FILE_NOT_FOUND = Error: Failed to precache/load (%s), model/sprite does not exist.
+ERROR_USER_ALREADY_PLACING = Error: More than one user is placing an advertisement!
+
+MENU_SAVE_TEXT = \rСохранить?^n^n1.\w Да, сохранить.^n\r0.\w Нет, удалить.^n
+MENU_SELECT_TEXT_CHOOSE_MODEL = \rСделайте выбор: \y%i\r/%i\w^n^n
+MENU_SELECT_TEXT_OPTIONS_1 = ^n\r6.\w Ось: %s^n\r7.\w Повернуть \y(шаг %.0f°)^n^n\r8.\w Сохранить^n^n\r9.\w Дальше...^n\r0.\w %L
+MENU_SELECT_TEXT_OPTIONS_2 = ^n\r6.\w Ось: %s^n\r7.\w Повернуть \y(шаг %.0f°)\w^n^n\r8.\w Сохранить^n^n\r0.\w %L
+MENU_DELETE_TEXT_HEADER = \rУдалить: \y%i\r/%i^n^n^n
+MENU_DELETE_TEXT_OPTIONS_1 = ^n^n\r9.\wДальше...^n\r0.\w%L
+MENU_DELETE_TEXT_OPTIONS_2 = ^n^n\r0.\w%L
+MENU_DELETE_TEXT_CONFIRM =\rВы действительно желаете удалить?^n^n1.\w Да, я хочу удалить.^n\r0.\w Отмена.^n
+MENU_TEXT_PREVIOUS = Назад
+MENU_TEXT_EXIT = Выход
+DEG = °
+
+[ua]
+ERROR_FILE_NOT_FOUND = Error: Failed to precache/load (%s), model/sprite does not exist.
+ERROR_USER_ALREADY_PLACING = Error: More than one user is placing an advertisement!
+
+MENU_SAVE_TEXT = \rЗберегти?^n^n1.\w Так, зберегти.^n\r0.\w Ні, видалити.^n
+MENU_SELECT_TEXT_CHOOSE_MODEL = \rЗробіть вибір: \y%i\r/%i\w^n^n
+MENU_SELECT_TEXT_OPTIONS_1 = ^n\r6.\w Вісь: %s^n\r7.\w Повернути \y(крок %.0f°)^n^n\r8.\w Зберегти^n^n\r9.\w Далі...^n\r0.\w %L
+MENU_SELECT_TEXT_OPTIONS_2 = ^n\r6.\w Вісь: %s^n\r7.\w Повернути \y(крок %.0f°)\w^n^n\r8.\w Зберегти^n^n\r0.\w %L
+MENU_DELETE_TEXT_HEADER = \rВидалити: \y%i\r/%i^n^n^n
+MENU_DELETE_TEXT_OPTIONS_1 = ^n^n\r9.\wДалі...^n\r0.\w%L
+MENU_DELETE_TEXT_OPTIONS_2 = ^n^n\r0.\w%L
+MENU_DELETE_TEXT_CONFIRM =\rВи дійсно бажаєте видалити?^n^n1.\w Так, я хочу видалити.^n\r0.\w Відміна.^n
+MENU_TEXT_PREVIOUS = Назад
+MENU_TEXT_EXIT = Вихід
+DEG = °

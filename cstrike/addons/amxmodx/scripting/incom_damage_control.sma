@@ -4,7 +4,7 @@
 #include <sqlx>
 
 new const PLUGIN[]  = "Incomsystem Damage Control";
-new const VERSION[] = "1.0";
+new const VERSION[] = "1.1";
 new const AUTHOR[]  = "Tonitaga";
 
 ///> Наименование базы данных и таблицы
@@ -23,6 +23,7 @@ new Float:amx_incom_damage_control_all_scale; ///< Для Остального �
 ///> КЭШ состояния базы данных по статусу
 new g_PlayerHasDamageControl[33] = { false, ... };
 new g_PlayerUsedTrialAccess[33] = { false, ... };
+new g_PlayerSubscriptionExpiresTime[33] = { 0, ... };
 
 ///> Длительности
 #define DURATION_ENDMAP -1
@@ -39,6 +40,10 @@ public plugin_init()
 	register_plugin(PLUGIN, VERSION, AUTHOR);
 
 	RegisterHam(Ham_TakeDamage, "player", "OnPlayerTakeDamage");
+
+	register_clcmd("say /damage",      "OnSubscriptionCheckCommand");
+	register_clcmd("say /damageinfo",  "OnSubscriptionInfoCheckCommand");
+	register_clcmd("say /damagetrial", "public_IncreaseDamageTrialAccess");
 
 	register_dictionary("incom_damage_control.txt");
 }
@@ -113,6 +118,30 @@ public client_putinserver(playerId)
 	}
 
 	LoadIncomDamageControlStatus(playerId);
+}
+
+public OnSubscriptionCheckCommand(playerId)
+{
+	if (!amx_incom_damage_control_enable)
+	{
+		return;
+	}
+
+	new data[2];
+	data[0] = playerId;
+	data[1] = g_PlayerSubscriptionExpiresTime[playerId] - get_systime();
+
+	NotifyAboutSubscription(data);
+}
+
+public OnSubscriptionInfoCheckCommand(playerId)
+{
+	if (!amx_incom_damage_control_enable)
+	{
+		return;
+	}
+
+	NotifyAboutSubscriptionInfo(playerId);
 }
 
 public OnPlayerTakeDamage(victim, inflictor, attacker, Float:damage, damageBits)
@@ -195,13 +224,7 @@ stock IncreaseDamage(playerId, duration, accessType)
 		EnableDamageControlStatus(playerId, duration, accessType);
 	}
 
-	client_print_color(playerId, print_team_default, "[%L] %L",
-		LANG_PLAYER, "DAMAGE_CONTROL",
-		LANG_PLAYER, "DAMAGE_CONTROL_INFO",
-		/* Параметры */
-		amx_incom_damage_control_awp_scale,
-		amx_incom_damage_control_all_scale
-	);
+	NotifyAboutSubscriptionInfo(playerId);
 
 	return true;
 }
@@ -213,6 +236,8 @@ stock EnableDamageControlStatus(playerId, duration, accessType)
 
 	new systime = get_systime();
 	new expiresIn = systime + duration;
+
+	g_PlayerSubscriptionExpiresTime[playerId] = expiresIn;
 
 	new query[512];
 	
@@ -291,6 +316,7 @@ public Callback_LoadIncomDamageControlStatusHandle(failstate, Handle:query, erro
 
 		g_PlayerUsedTrialAccess[playerId]  = SQL_ReadResult(query, 1);
 		g_PlayerHasDamageControl[playerId] = (expiresIn > currentTime);
+		g_PlayerSubscriptionExpiresTime[playerId] = expiresIn;
 
 		new data[2];
 		data[0] = playerId;
@@ -337,5 +363,16 @@ public NotifyAboutSubscription(data[])
 		LANG_PLAYER, "DAMAGE_CONTROL",
 		LANG_PLAYER, "DAMAGE_CONTROL_ACTIVE",
 		hours, leftMinutes
+	);
+}
+
+stock NotifyAboutSubscriptionInfo(playerId)
+{
+	client_print_color(playerId, print_team_default, "[%L] %L",
+		LANG_PLAYER, "DAMAGE_CONTROL",
+		LANG_PLAYER, "DAMAGE_CONTROL_INFO",
+		/* Параметры */
+		amx_incom_damage_control_awp_scale,
+		amx_incom_damage_control_all_scale
 	);
 }

@@ -1,0 +1,4 @@
+
+models/banner/banner_incom_squad.mdl
+origin 0.085901 -117.253204 -318.969390
+angles 270.000000 90.000000 0.000000
