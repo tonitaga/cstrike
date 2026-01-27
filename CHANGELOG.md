@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.1]
 - Добавлены новые скины игроков: `anonimous` `mini`
+- Добавлена песня `ICEGERGERT, SKY RAE - Гейследство`
 
 ## [0.11.0]
 - Исправлен баг с выдачей брони при возрождении
