@@ -118,9 +118,9 @@ new const g_SoundsNames[][] =
 };
 
 #define SOUND_OFFSET_GREETING      0  // g_Sounds[0]
-#define SOUND_OFFSET_GREETING_XMAS 6  // g_Sounds[6]
-#define SOUND_OFFSET_DEFAULT       15 // g_Sounds[15]
-#define SOUND_OFFSET_XMAS          24 // g_Sounds[24]
+#define SOUND_OFFSET_GREETING_XMAS 7  // g_Sounds[7]
+#define SOUND_OFFSET_DEFAULT       16 // g_Sounds[16]
+#define SOUND_OFFSET_XMAS          25 // g_Sounds[25]
 #define SOUND_OFFSET_MAX           (sizeof g_SoundsNames)
 
 public plugin_init() 
@@ -139,53 +139,53 @@ public plugin_init()
 
 public plugin_cfg()
 {
-	bind_pcvar_num(
-		create_cvar(
-			"amx_incom_music_enable", "1",
+    bind_pcvar_num(
+        create_cvar(
+            "amx_incom_music_enable", "1",
             .has_min = true, .min_val = 0.0,
             .has_max = true, .max_val = 1.0,
             .description = "Статус плагина^n\
                             0 - Отключен^n\
                             1 - Включен"
-		),
-		amx_incom_music_enable
-	);
+        ),
+        amx_incom_music_enable
+    );
 
-	bind_pcvar_num(
-		create_cvar(
-			"amx_incom_music_type", "1",
+    bind_pcvar_num(
+        create_cvar(
+            "amx_incom_music_type", "1",
             .has_min = true, .min_val = 1.0,
             .has_max = true, .max_val = 2.0,
             .description = "Тип музыки^n\
                             1 - Incomsystem [Default]^n\
                             2 - Incomsystem [XMas]"
-		),
-		amx_incom_music_type
-	);
+        ),
+        amx_incom_music_type
+    );
 
-	bind_pcvar_num(
-		create_cvar(
-			"amx_incom_music_request_timeout", "60",
+    bind_pcvar_num(
+        create_cvar(
+            "amx_incom_music_request_timeout", "60",
             .has_min = true, .min_val = 30.0,
             .has_max = true, .max_val = 180.0,
             .description = "Максимальное время ожидания между двумя заказами песен"
-		),
-		amx_incom_music_request_timeout
-	);
+        ),
+        amx_incom_music_request_timeout
+    );
 
-	bind_pcvar_num(
-		create_cvar(
-			"amx_incom_music_request_enable", "1",
+    bind_pcvar_num(
+        create_cvar(
+            "amx_incom_music_request_enable", "1",
             .has_min = true, .min_val = 0.0,
             .has_max = true, .max_val = 1.0,
             .description = "Возможность заказать песню^n\
                             0 - Отключен^n\
                             1 - Включен"
-		),
-		amx_incom_music_request_enable
-	);
+        ),
+        amx_incom_music_request_enable
+    );
 
-	AutoExecConfig();
+    AutoExecConfig();
 }
 
 public plugin_precache()
@@ -218,7 +218,7 @@ public client_connect(playerId)
 
 public client_disconnected(playerId)
 {
-	StopSound(playerId);
+    StopSound(playerId);
 }
 
 public client_putinserver(playerId)
@@ -433,24 +433,24 @@ public ShowMenu(playerId, soundIndexLhs, soundIndexRhs, const callback[])
 
 public ShowMusicMenu(playerId)
 {
-	if (get_user_flags(playerId) & ADMIN_FLAG)
-	{
-		ShowMenu(playerId, 0, sizeof g_Sounds, "MenuCase");
-	}
+    if (get_user_flags(playerId) & ADMIN_FLAG)
+    {
+        ShowMenu(playerId, 0, sizeof g_Sounds, "MenuCase");
+    }
 }
 
 public MenuCase(playerId, menu, item)
 {
-	SongRequestMenuOnHud(false);
-	RemoveInvactiveMenuCanceler(playerId);
+    SongRequestMenuOnHud(false);
+    RemoveInvactiveMenuCanceler(playerId);
 
-	if(item == MENU_EXIT)
-	{
-		menu_destroy(menu);
-		return PLUGIN_HANDLED;
-	}
+    if(item == MENU_EXIT)
+    {
+        menu_destroy(menu);
+        return PLUGIN_HANDLED;
+    }
 
-	return CommonMenuCase(playerId, menu, item);
+    return CommonMenuCase(playerId, menu, item);
 }
 
 public ShowMusicRequestMenu(playerId)
@@ -475,8 +475,8 @@ public RequestMenuCase(playerId, menu, item)
 
     if(item == MENU_EXIT)
     {
-    	menu_destroy(menu);
-    	return PLUGIN_HANDLED;
+        menu_destroy(menu);
+        return PLUGIN_HANDLED;
     }
 
     return CommonMenuCase(playerId, menu, item);
@@ -484,20 +484,20 @@ public RequestMenuCase(playerId, menu, item)
 
 public CommonMenuCase(playerId, menu, item)
 {
-	SetSongRequested(true);
+    SetSongRequested(true);
 
-	new data[6], name[128];
-	new access, callback;
+    new data[6], name[128];
+    new access, callback;
 
-	menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback)
-	new soundId = str_to_num(data)
+    menu_item_getinfo(menu, item, access, data, charsmax(data), name, charsmax(name), callback)
+    new soundId = str_to_num(data)
 
     StopSound(0);
-	PlaySound(0, soundId);
+    PlaySound(0, soundId);
 
-	get_user_name(playerId, name, charsmax(name));
+    get_user_name(playerId, name, charsmax(name));
 
-	client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
-	menu_destroy(menu)
-	return PLUGIN_HANDLED
+    client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_MUSIC", LANG_PLAYER, "SOUND_REQUESTED", name, g_SoundsNames[soundId]);
+    menu_destroy(menu)
+    return PLUGIN_HANDLED
 }
