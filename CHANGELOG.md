@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.1]
+- Добавлены новые скины игроков: `anonimous` `mini`
+- Добавлена песня `ICEGERGERT, SKY RAE - Гейследство`
+- Изменено стандартное максимальное количество игроков,которые получат случайные модели за раунд. Было `1`, теперь `2` 
+
 ## [0.11.0]
 - Исправлен баг с выдачей брони при возрождении
     - В исходном коде плагина `aes` при попытке выставить броню в значение `1` или `2` выдавалось `100` брони
