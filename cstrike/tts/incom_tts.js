@@ -7,9 +7,8 @@ const { promisify } = require("util");
 
 const execFileAsync = promisify(execFile);
 
-const gameRoot = path.resolve(__dirname, "../../..");
+const gameRoot = path.resolve(__dirname, "..");
 const dataDir = path.join(gameRoot, "addons", "amxmodx", "data", "incom_tts");
-const soundDir = path.join(gameRoot, "sound", "incom_tts");
 const requestPath = path.join(dataDir, "request.txt");
 const statusPath = path.join(dataDir, "status.txt");
 
@@ -18,7 +17,6 @@ const TTS_PATH = "/translate_tts";
 const TTS_LANG = "ru-RU";
 
 fs.mkdirSync(dataDir, { recursive: true });
-fs.mkdirSync(soundDir, { recursive: true });
 
 let busy = false;
 
@@ -99,22 +97,21 @@ function convertForEngine(input) {
 
 function writeSound(buffer) {
   const name = "voice.wav";
-  const filePath = path.join(soundDir, name);
+  const filePath = path.join(dataDir, name);
   const tmpPath = `${filePath}.tmp`;
 
   fs.writeFileSync(tmpPath, buffer);
   fs.renameSync(tmpPath, filePath);
 
-  for (const file of fs.readdirSync(soundDir)) {
+  for (const file of fs.readdirSync(dataDir)) {
     if (file !== name && (file.endsWith(".mp3") || file.endsWith(".wav") || file.endsWith(".tmp"))) {
       try {
-        fs.unlinkSync(path.join(soundDir, file));
-      } catch (err) {}
+        fs.unlinkSync(path.join(dataDir, file));
+      } catch (err) { }
     }
   }
 
-  console.log(`sound/incom_tts/${name}`);
-  return `sound/incom_tts/${name}`;
+  return name
 }
 
 function processRequest() {
@@ -136,6 +133,8 @@ function processRequest() {
     return;
   }
 
+  console.log(`[incom_tts] converting "${text}"`)
+
   busy = true;
   downloadTts(text)
     .then((buffer) => {
@@ -146,11 +145,13 @@ function processRequest() {
       return convertForEngine(buffer);
     })
     .then((buffer) => {
-      writeStatus(`OK ${writeSound(buffer)}`);
+      writeSound(buffer)
+      writeStatus("OK");
+      console.log(`[incom_tts] conversion good`)
     })
     .catch((err) => {
-      console.error("[incom_tts]", err.message || err);
       writeStatus("ERR");
+      console.error("[incom_tts]", err.message || err);
     })
     .finally(() => {
       busy = false;
@@ -158,4 +159,6 @@ function processRequest() {
 }
 
 setInterval(processRequest, 200);
-console.log("[incom_tts] helper started");
+
+console.log("[incom_tts] Started");
+console.log(`[incom_tts] DataDir ${dataDir}`);

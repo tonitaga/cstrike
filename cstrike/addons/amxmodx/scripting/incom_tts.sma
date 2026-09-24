@@ -7,7 +7,7 @@
 
 #define REQUEST_FILE "addons/amxmodx/data/incom_tts/request.txt"
 #define STATUS_FILE  "addons/amxmodx/data/incom_tts/status.txt"
-#define SOUND_FILE   "sound/incom_tts/voice.wav"
+#define SOUND_FILE   "addons/amxmodx/data/incom_tts/voice.wav"
 
 #define TASK_POLL     31000
 #define POLL_INTERVAL 0.2
@@ -31,12 +31,6 @@ public plugin_init()
     register_dictionary("incom_tts.txt");
 
     mkdir("addons/amxmodx/data/incom_tts");
-    mkdir("sound/incom_tts");
-}
-
-public plugin_precache()
-{
-    mkdir("sound/incom_tts");
 }
 
 public plugin_cfg()
@@ -150,6 +144,7 @@ public OnSay(playerId)
     g_Busy = true;
     g_PollCount = 0;
     g_RequestPlayer = playerId;
+
     set_task(POLL_INTERVAL, "PollTtsStatus", TASK_POLL, .flags = "b");
 
     return PLUGIN_HANDLED;
@@ -173,7 +168,7 @@ public PollTtsStatus()
         FinishRequest();
         trim(line);
 
-        if (equal(line, "OK", 2) && (line[2] == EOS || line[2] == ' '))
+        if (equal(line, "OK", 2))
         {
             PlayTtsToAll();
             g_LastUse = get_systime();
