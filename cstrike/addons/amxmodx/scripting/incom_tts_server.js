@@ -12,7 +12,6 @@ const dataDir = path.join(gameRoot, "addons", "amxmodx", "data", "incom_tts");
 const soundDir = path.join(gameRoot, "sound", "incom_tts");
 const requestPath = path.join(dataDir, "request.txt");
 const statusPath = path.join(dataDir, "status.txt");
-const soundPath = path.join(soundDir, "voice.mp3");
 
 const TTS_HOST = "translate.google.com";
 const TTS_PATH = "/translate_tts";
@@ -78,7 +77,7 @@ function downloadTts(text) {
 
 function convertForEngine(input) {
   const tmpIn = path.join(os.tmpdir(), "incom_tts_in.mp3");
-  const tmpOut = path.join(os.tmpdir(), "incom_tts_out.mp3");
+  const tmpOut = path.join(os.tmpdir(), "incom_tts_out.wav");
   fs.writeFileSync(tmpIn, input);
 
   return execFileAsync("ffmpeg", [
@@ -86,9 +85,9 @@ function convertForEngine(input) {
     "-hide_banner",
     "-loglevel", "error",
     "-i", tmpIn,
-    "-af", "aresample=44100,asetrate=35280,aresample=44100,atempo=1.25",
-    "-ac", "2",
-    "-b:a", "128k",
+    "-ac", "1",
+    "-ar", "8000",
+    "-c:a", "pcm_s16le",
     tmpOut,
   ]).then(() => {
     const output = fs.readFileSync(tmpOut);
@@ -96,6 +95,26 @@ function convertForEngine(input) {
     fs.unlinkSync(tmpOut);
     return output;
   });
+}
+
+function writeSound(buffer) {
+  const name = "voice.wav";
+  const filePath = path.join(soundDir, name);
+  const tmpPath = `${filePath}.tmp`;
+
+  fs.writeFileSync(tmpPath, buffer);
+  fs.renameSync(tmpPath, filePath);
+
+  for (const file of fs.readdirSync(soundDir)) {
+    if (file !== name && (file.endsWith(".mp3") || file.endsWith(".wav") || file.endsWith(".tmp"))) {
+      try {
+        fs.unlinkSync(path.join(soundDir, file));
+      } catch (err) {}
+    }
+  }
+
+  console.log(`sound/incom_tts/${name}`);
+  return `sound/incom_tts/${name}`;
 }
 
 function processRequest() {
@@ -127,8 +146,7 @@ function processRequest() {
       return convertForEngine(buffer);
     })
     .then((buffer) => {
-      fs.writeFileSync(soundPath, buffer);
-      writeStatus("OK");
+      writeStatus(`OK ${writeSound(buffer)}`);
     })
     .catch((err) => {
       console.error("[incom_tts]", err.message || err);

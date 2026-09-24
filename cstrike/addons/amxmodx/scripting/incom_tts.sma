@@ -1,4 +1,5 @@
 #include <amxmodx>
+#include <reapi>
 
 #define PLUGIN  "Incomsystem TTS"
 #define VERSION "1.0"
@@ -6,7 +7,7 @@
 
 #define REQUEST_FILE "addons/amxmodx/data/incom_tts/request.txt"
 #define STATUS_FILE  "addons/amxmodx/data/incom_tts/status.txt"
-#define SOUND_FILE   "incom_tts/voice.mp3"
+#define SOUND_FILE   "sound/incom_tts/voice.wav"
 
 #define TASK_POLL     31000
 #define POLL_INTERVAL 0.2
@@ -36,11 +37,6 @@ public plugin_init()
 public plugin_precache()
 {
     mkdir("sound/incom_tts");
-
-    if (file_exists(SOUND_FILE))
-    {
-        precache_generic(SOUND_FILE);
-    }
 }
 
 public plugin_cfg()
@@ -104,6 +100,12 @@ public OnSay(playerId)
         return PLUGIN_HANDLED;
     }
 
+    if (!has_vtc())
+    {
+        client_print_color(playerId, print_team_default, "[%L] %L", LANG_PLAYER, "INCOM_TTS", LANG_PLAYER, "TTS_FAIL");
+        return PLUGIN_HANDLED;
+    }
+
     if (!is_user_connected(playerId))
     {
         return PLUGIN_HANDLED;
@@ -159,7 +161,7 @@ public PollTtsStatus()
 
     if (file_exists(STATUS_FILE))
     {
-        new line[16];
+        new line[64];
         new file = fopen(STATUS_FILE, "rt");
         if (file)
         {
@@ -171,7 +173,7 @@ public PollTtsStatus()
         FinishRequest();
         trim(line);
 
-        if (equal(line, "OK"))
+        if (equal(line, "OK", 2) && (line[2] == EOS || line[2] == ' '))
         {
             PlayTtsToAll();
             g_LastUse = get_systime();
@@ -219,7 +221,18 @@ stock FinishRequest()
 
 stock PlayTtsToAll()
 {
-    client_cmd(0, "mp3 play %s", SOUND_FILE);
+    if (!has_vtc())
+    {
+        return;
+    }
+
+    new players[MAX_PLAYERS], num;
+    get_players(players, num, "ch");
+
+    for (new i = 0; i < num; i++)
+    {
+        VTC_PlaySound(players[i], SOUND_FILE);
+    }
 }
 
 stock bool:WriteRequest(const text[])
