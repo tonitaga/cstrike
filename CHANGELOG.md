@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Добавлен TTS (text-to-speech)
     - Добавлен плагин `incom_tts.amxx` (`1.0`)
     - Добавлен скрипт `incom_tts.js`
+- Добавлен плагин с анимациями а танцами `/dance` (dance_menu.amxx)
 
 ## [0.13.0]
 - Переписан плагин `incom_music.amxx`  (`4.1` -> `5.0`)
