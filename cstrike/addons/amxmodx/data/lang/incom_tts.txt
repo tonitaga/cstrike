@@ -1,0 +1,19 @@
+[en]
+INCOM_TTS = ^3IncomTTS^1
+TTS_USAGE = Usage: ^4/voice ^1<text>
+TTS_DISABLED = Plugin is ^4disabled^1
+TTS_BUSY = TTS is ^4busy^1, try later
+TTS_COOLDOWN = Wait ^4%d^1 seconds
+TTS_FAIL = Failed to generate speech
+TTS_HELPER = TTS helper is ^4not responding^1
+TTS_PLAYING = ^4%s^1 is speaking
+
+[ru]
+INCOM_TTS = ^3IncomTTS^1
+TTS_USAGE = Использование: ^4/voice ^1<текст>
+TTS_DISABLED = Плагин ^4выключен^1
+TTS_BUSY = TTS ^4занят^1, попробуйте позже
+TTS_COOLDOWN = Подождите ^4%d^1 секунд
+TTS_FAIL = Не удалось сгенерировать речь
+TTS_HELPER = TTS-хелпер ^4не отвечает^1
+TTS_PLAYING = ^4%s^1 говорит

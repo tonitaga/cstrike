@@ -1,0 +1,19 @@
+[ru]
+
+DANCE_MENU_NAME = Выбор движения
+
+CENTER_ONLY_ADMINS = Только для админов!
+CENTER_ONLY_ALIVE = Только для живых игроков!
+CENTER_OFF_GROUND = Вы должны быть на земле!
+CENTER_DONT_FLOOD = Не спамь!
+CENTER_DONT_MOVE = Не двигайся!
+
+[en]
+
+DANCE_MENU_NAME = Movement selection
+
+CENTER_ONLY_ADMINS = For admins only!
+CENTER_ONLY_ALIVE = For live players only!
+CENTER_OFF_GROUND = You must be on the ground!
+CENTER_DONT_FLOOD = No spam!
+CENTER_DONT_MOVE = Don't move!
