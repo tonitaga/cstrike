@@ -2,6 +2,15 @@
 cls
 title StartUp
 
+:: Запуск run_tts.bat из папки cstrike\tts (в отдельном окне, без ожидания)
+cd /d "%~dp0cstrike\tts"
+echo (%time%) Starting TTS...
+start "TTS" cmd /c run_tts.bat
+cd /d "%~dp0"
+
+:: Небольшая пауза, чтобы TTS успел стартовать
+timeout /t 1 /nobreak >nul
+
 :: Переход в папку cstrike/hfs и запуск hfs.exe
 cd /d "cstrike\hfs"
 echo (%time%) Starting HFS...
