@@ -1,5 +1,6 @@
 [ru]
 
+DANCE_MENU = ^3IncomDance^1
 DANCE_MENU_NAME = Выбор движения
 
 CENTER_ONLY_ADMINS = Только для админов!
@@ -8,8 +9,12 @@ CENTER_OFF_GROUND = Вы должны быть на земле!
 CENTER_DONT_FLOOD = Не спамь!
 CENTER_DONT_MOVE = Не двигайся!
 
+DANCE_REQUESTED = ^4%s^1 танцует ^3%s^1
+
+
 [en]
 
+DANCE_MENU = ^3IncomDance^1
 DANCE_MENU_NAME = Movement selection
 
 CENTER_ONLY_ADMINS = For admins only!
@@ -17,3 +22,5 @@ CENTER_ONLY_ALIVE = For live players only!
 CENTER_OFF_GROUND = You must be on the ground!
 CENTER_DONT_FLOOD = No spam!
 CENTER_DONT_MOVE = Don't move!
+
+DANCE_REQUESTED = ^4%s^1 dances ^3%s^1

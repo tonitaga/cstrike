@@ -35,9 +35,15 @@
 		        
 		0.2.4f	(03.07.2026) by dreamxleo.
             - добавлен en (англ.) язык в мультиязычность плагина;
+
+        0.2.5 (27.09.2026) by tonitaga
+            - добавлена public ручка для бонусного меню anew
+            - изменена работа с флагами доступа
+                - для пользователей без флагов меню выбора будет закрывать после выбора танца
+                - необходимо для реализации бонусного меню
 */
 
-new const VERSION[] = "0.2.4f";
+new const VERSION[] = "0.2.5";
 
 #include <amxmodx>
 #include <reapi>
@@ -46,9 +52,9 @@ new const VERSION[] = "0.2.4f";
 
 /**
     Файлы с настройками создаются автоматически:
-    configs/plugins/Dance.cfg;
-    configs/Dance.ini;
-    amxmodx/data/lang/Dance.txt;
+    configs/plugins/dance_menu.cfg;
+    configs/dance_menu.ini;
+    amxmodx/data/lang/dance_menu.txt;
 */
 
 #define var_ent_model       var_impulse
@@ -95,26 +101,29 @@ new
     Float:p_fFloodDanceMenu[33];
 
 public plugin_precache() {
-    Func__ReadSettingsFile();
+    ReadSettingsFile();
 
-    if(!ArraySize(g_Array__Dance)) {
+    if(!ArraySize(g_Array__Dance))
+    {
         server_print("[NewDance] No models not");
         server_print("[NewDance] Plugin is state pause");
         
         pause("a");
-
         return;
     }
 
     new aData[ArrayData];
-    for(new iItem;iItem<ArraySize(g_Array__Dance);iItem++) {
-        ArrayGetArray(g_Array__Dance,iItem,aData);
+    for(new i; i < ArraySize(g_Array__Dance); i++)
+    {
+        ArrayGetArray(g_Array__Dance, i, aData);
 
-        if(!file_exists(aData[MODEL_WAY])) {
+        if(!file_exists(aData[MODEL_WAY]))
+        {
             server_print("[NewDance] Bad load model: %s",aData[MODEL_WAY]);
-            ArrayDeleteItem(g_Array__Dance,iItem);
+            ArrayDeleteItem(g_Array__Dance, i);
         }
-        else {
+        else
+        {
             precache_model(aData[MODEL_WAY]);
         }
     }
@@ -123,82 +132,109 @@ public plugin_precache() {
 }
 
 public plugin_init() {
-    register_plugin("New Dance Menu",VERSION,"b0t.");
+    register_plugin("Dance Menu",VERSION,"b0t.");
 
-    UTIL__RegisterClCmd("dance","Show__DanceMenu");
+    RegisterCommands("dance", "ShowDanceMenu");
 
-    RegisterHookChain(RG_CBasePlayer_Killed,"RG_CBasePlayerKilledAndSpawn_Post", .post = true);
-    RegisterHookChain(RG_CBasePlayer_Spawn,"RG_CBasePlayerKilledAndSpawn_Post", .post = true);
+    RegisterHookChain(RG_CBasePlayer_Killed, "OnPlayerKilledAndSpawned", .post = true);
+    RegisterHookChain(RG_CBasePlayer_Spawn, "OnPlayerKilledAndSpawned", .post = true);
 
-    register_dictionary("Dance.txt");
+    register_dictionary("dance_menu.txt");
 }
 
-public RG_CBasePlayerKilledAndSpawn_Post(const id) {
-    if(!is_user_connected(id)) {
+public OnPlayerKilledAndSpawned(const playerId)
+{
+    if(!is_user_connected(playerId))
+    {
         return;
     }
 
-    if(is_nullent(p_iEntityId[id]) || is_nullent(p_iCamId[id])) {
-        Func__RemoveModel(p_iEntityId[id]);
-        Func__RemoveCam(p_iCamId[id]);
+    if(is_nullent(p_iEntityId[playerId]) || is_nullent(p_iCamId[playerId]))
+    {
+        RemoveModel(p_iEntityId[playerId]);
+        RemoveCamera(p_iCamId[playerId]);
     }
 }
 
-public Show__DanceMenu(const id) {
-    if(!(get_user_flags(id) & read_flags(g_pCvarrString__FlagAccess)) && g_pCvarrString__FlagAccess[0]) {
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_ONLY_ADMINS");
-        
+public pointBonus_RequestDance(const playerId)
+{
+    if(!is_user_alive(playerId))
+    {
+        client_print(playerId, print_center, "%L", LANG_PLAYER, "CENTER_ONLY_ALIVE");
+        return false;
+    }
+
+    ShowDanceMenuFreeAccess(playerId)
+    return true;
+}
+
+public ShowDanceMenu(const playerId)
+{
+    if (!IsPlayerHasAccessFlags(playerId))
+    {
         return PLUGIN_HANDLED;
     }
 
-    if(!is_user_alive(id)) {
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_ONLY_ALIVE");
+    return ShowDanceMenuFreeAccess(playerId)
+}
 
+/**
+ * Функция показа меню танцев без обработки флагов доступа
+ */
+public ShowDanceMenuFreeAccess(const playerId)
+{
+    if(!is_user_alive(playerId))
+    {
+        client_print(playerId, print_center, "%L", LANG_PLAYER, "CENTER_ONLY_ALIVE");
         return PLUGIN_HANDLED;
     }
 
-    new iMenu = menu_create(fmt("%L",LANG_PLAYER,"DANCE_MENU_NAME"),"DanceMenu__Handler");
+    new menu = menu_create(fmt("%L",LANG_PLAYER,"DANCE_MENU_NAME"),"DanceMenuHandler");
 
     ArrayClear(g_Array__MenuIndex);
 
-    for(new iItem,aData[ArrayData];iItem<ArraySize(g_Array__Dance);iItem++) {
-        ArrayGetArray(g_Array__Dance,iItem,aData);
+    for(new i, aData[ArrayData]; i < ArraySize(g_Array__Dance); i++)
+    {
+        ArrayGetArray(g_Array__Dance, i, aData);
 
-        if((ArrayFindString(g_Array__MenuIndex,aData[MENU_INDEX])) != -1) {
+        if((ArrayFindString(g_Array__MenuIndex,aData[MENU_INDEX])) != -1)
+        {
             continue;
         }
         
-        if(contain(aData[MENU_INDEX],"_") != -1) {
-            menu_additem(iMenu,fmt("%s",aData[MENU_NAME]),fmt("_%i",iItem), .paccess = aData[FLAG_ACCESS]);
+        if(contain(aData[MENU_INDEX],"_") != -1)
+        {
+            menu_additem(menu,fmt("%s",aData[MENU_NAME]),fmt("_%i", i), .paccess = aData[FLAG_ACCESS]);
         }
-        else {
+        else
+        {
             ArrayPushString(g_Array__MenuIndex,aData[MENU_INDEX]);
-            menu_additem(iMenu,fmt("%s",aData[MENU_INDEX]));
+            menu_additem(menu,fmt("%s",aData[MENU_INDEX]));
         }
     }
 
-    UTIL__DisplayMenu(id,iMenu, .szExitName = "Выход");
-    
+    DisplayMenuToPlayer(playerId, menu, .szExitName = "Выход");
     return PLUGIN_HANDLED;
 }
 
-public DanceMenu__Handler(const id,const iMenu,const iItem) {
-    if(iItem == MENU_EXIT) {
-        menu_destroy(iMenu);
-
+public DanceMenuHandler(const playerId,const menu,const selectedItem) {
+    if(selectedItem == MENU_EXIT)
+    {
+        menu_destroy(menu);
         return PLUGIN_HANDLED;
     }
-    
+
     new szData[64],szName[256];
-    menu_item_getinfo(iMenu,iItem, .info = szData, .infolen = charsmax(szData), .name = szName, .namelen = charsmax(szName));
-    menu_destroy(iMenu);
+    menu_item_getinfo(menu,selectedItem, .info = szData, .infolen = charsmax(szData), .name = szName, .namelen = charsmax(szName));
+    menu_destroy(menu);
 
     new aData[ArrayData];
 
-    if(contain(szData,"_") != -1) {
-        if(!UTIL__IsCreateDanceEntity(id)) {
-            Show__DanceMenu(id);
-
+    if(contain(szData,"_") != -1)
+    {
+        if(!IsCreateDanceEntity(playerId))
+        {
+            ShowDanceMenuFreeAccess(playerId);
             return PLUGIN_HANDLED;
         }
 
@@ -206,98 +242,114 @@ public DanceMenu__Handler(const id,const iMenu,const iItem) {
 
         ArrayGetArray(g_Array__Dance,str_to_num(szData),aData);
 
-        Func__CreateModels(id,aData[MODEL_WAY],aData[SEQUENCE],aData[FRAMERATE]);
+        CreateModels(playerId,aData[MODEL_WAY],aData[SEQUENCE],aData[FRAMERATE],aData[MENU_NAME]);
 
-        p_fFloodDanceMenu[id] = get_gametime()+g_pCvarFloat__Flood;
-        Show__DanceMenu(id);
+        p_fFloodDanceMenu[playerId] = get_gametime()+g_pCvarFloat__Flood;
+        
+        // Продолжать выбор танца можно только если есть соответствующие флаги доступа
+        if (IsPlayerHasAccessFlags(playerId))
+        {
+            ShowDanceMenu(playerId);
+        }
     }
-    else {
-        Show__DanceMenuNext(id,szName,0);
+    else
+    {
+        ShowDanceMenuNext(playerId,szName,0);
     }
 
     return PLUGIN_HANDLED;
 }
 
-public Show__DanceMenuNext(const id,const szName[],const iPage) {
-    new iMenu = menu_create(szName,"DanceMenuNew__Handler");
+public ShowDanceMenuNext(const playerId,const szName[],const iPage) {
+    new menu = menu_create(szName,"DanceMenuNextHandler");
 
-    for(new i,aData[ArrayData];i<ArraySize(g_Array__Dance);i++) {
+    for(new i,aData[ArrayData];i<ArraySize(g_Array__Dance);i++)
+    {
         ArrayGetArray(g_Array__Dance,i,aData);
 
-        if(contain(aData[MENU_INDEX],"_") != -1) {
+        if(contain(aData[MENU_INDEX],"_") != -1)
+        {
             continue;
         }
         
-        if(!equal(aData[MENU_INDEX],szName)) {
+        if(!equal(aData[MENU_INDEX],szName))
+        {
             continue;
         }    
         
-        menu_additem(iMenu,fmt("%s",aData[MENU_NAME]),fmt("%i|%s",i,szName),aData[FLAG_ACCESS]);
+        menu_additem(menu,fmt("%s",aData[MENU_NAME]),fmt("%i|%s",i,szName),aData[FLAG_ACCESS]);
     }
 
-    UTIL__DisplayMenu(id,iMenu,iPage,"В меню");
-
+    DisplayMenuToPlayer(playerId,menu,iPage,"В меню");
     return PLUGIN_HANDLED;
 }
 
-public DanceMenuNew__Handler(const id,const iMenu,const iItem) {
-    if(iItem == MENU_EXIT) {
-        menu_destroy(iMenu);
+public DanceMenuNextHandler(const playerId,const menu,const selectedItem)
+{
+    if(selectedItem == MENU_EXIT)
+    {
+        menu_destroy(menu);
 
-        Show__DanceMenu(id);
-
+        ShowDanceMenuFreeAccess(playerId);
         return PLUGIN_HANDLED;
     }
 
-    new iMenuNew = iMenu;
+    new menuNew = menu;
     new iPage;
-    player_menu_info(id,iMenuNew,iMenuNew,iPage);
+    player_menu_info(playerId,menuNew,menuNew,iPage);
 
     new szData[64];
-    menu_item_getinfo(iMenu,iItem, .info = szData, .infolen = charsmax(szData));
-    menu_destroy(iMenu);
+    menu_item_getinfo(menu,selectedItem, .info = szData, .infolen = charsmax(szData));
+    menu_destroy(menu);
 
     new szItem[64],szName[256];
     strtok(szData,szItem,charsmax(szItem),szName,charsmax(szName),'|');
     trim(szItem);
     trim(szName);
 
-    if(!UTIL__IsCreateDanceEntity(id)) {
-        Show__DanceMenuNext(id,szName,iPage);
-
+    // Проверка на спам, если игрок спамит, меню показывается снова
+    if(!IsCreateDanceEntity(playerId))
+    {
+        ShowDanceMenuNext(playerId,szName,iPage);
         return PLUGIN_HANDLED;
     }
 
     new aData[ArrayData];
     ArrayGetArray(g_Array__Dance,str_to_num(szItem),aData);
 
-    Func__CreateModels(id,aData[MODEL_WAY],aData[SEQUENCE],aData[FRAMERATE]);
+    CreateModels(playerId,aData[MODEL_WAY],aData[SEQUENCE],aData[FRAMERATE],aData[MENU_NAME]);
 
-    p_fFloodDanceMenu[id] = get_gametime()+g_pCvarFloat__Flood;
-    Show__DanceMenuNext(id,szName,iPage);
+    p_fFloodDanceMenu[playerId] = get_gametime()+g_pCvarFloat__Flood;
+
+    // Продолжать выбор танца можно только если есть соответствующие флаги доступа
+    if (IsPlayerHasAccessFlags(playerId))
+    {
+        ShowDanceMenuNext(playerId,szName,iPage);
+    }
 
     return PLUGIN_HANDLED;
 }
 
-public Func__CreateModels(const id,const szModel[],const iSequence,const Float:fFrameRate) {
-    Func__RemoveModel(p_iEntityId[id]);
-    Func__RemoveCam(p_iCamId[id]);
+public CreateModels(const playerId,const szModel[],const iSequence,const Float:fFrameRate, const danceName[])
+{
+    RemoveModel(p_iEntityId[playerId]);
+    RemoveCamera(p_iCamId[playerId]);
 
     new iEnt = rg_create_entity("info_target");
-
-    if(is_nullent(iEnt)) {
+    if(is_nullent(iEnt))
+    {
         return;
     }
 
     new iEntModel = rg_create_entity("info_target");
-
-    if(is_nullent(iEntModel)) {
+    if(is_nullent(iEntModel))
+    {
         return;
     }
 
     new Float:fOrigin[XYZ],Float:fMins[XYZ],Float:fAngles[XYZ];
-    get_entvar(id,var_origin,fOrigin);
-    get_entvar(id,var_mins,fMins);
+    get_entvar(playerId,var_origin,fOrigin);
+    get_entvar(playerId,var_mins,fMins);
 
     fMins[X] = fOrigin[X];
     fMins[Y] = fOrigin[Y];
@@ -306,9 +358,9 @@ public Func__CreateModels(const id,const szModel[],const iSequence,const Float:f
     engfunc(EngFunc_SetModel,iEnt,szModel);
     set_entvar(iEnt,var_movetype,MOVETYPE_FLY);
     set_entvar(iEnt,var_ent_model,iEntModel);
-    set_entvar(iEnt,var_owner,id);
+    set_entvar(iEnt,var_owner,playerId);
 
-    p_iEntityId[id] = iEnt;
+    p_iEntityId[playerId] = iEnt;
 
     set_entvar(iEntModel,var_movetype,MOVETYPE_FOLLOW);
     set_entvar(iEntModel,var_aiment,iEnt);
@@ -316,7 +368,7 @@ public Func__CreateModels(const id,const szModel[],const iSequence,const Float:f
     set_entvar(iEnt,var_framerate,fFrameRate);
     set_entvar(iEnt,var_sequence,iSequence);
 
-    get_entvar(id,var_angles,fAngles);
+    get_entvar(playerId,var_angles,fAngles);
     fAngles[X] = 0.0;
 
     set_entvar(iEnt,var_angles,fAngles);
@@ -325,50 +377,58 @@ public Func__CreateModels(const id,const szModel[],const iSequence,const Float:f
     engfunc(EngFunc_SetOrigin,iEntModel,fMins);
 
     new szModelNew[256];
-    get_user_info(id,"model",szModelNew,charsmax(szModelNew));
+    get_user_info(playerId,"model",szModelNew,charsmax(szModelNew));
     format(szModelNew,charsmax(szModelNew),"models/player/%s/%s.mdl",szModelNew,szModelNew);
     engfunc(EngFunc_SetModel,iEntModel,szModelNew);
 
-    set_entvar(iEntModel,var_body,get_entvar(id,var_body));
-    set_entvar(iEntModel,var_skin,get_entvar(id,var_skin));
+    set_entvar(iEntModel,var_body,get_entvar(playerId,var_body));
+    set_entvar(iEntModel,var_skin,get_entvar(playerId,var_skin));
 
     set_entvar(iEnt,var_nextthink,get_gametime());
     SetThink(iEnt,"CBaseModel_Think_Post");
 
-    rg_set_user_invisibility(id,true);
+    rg_set_user_invisibility(playerId,true);
 
     new iEntCam = rg_create_entity("trigger_camera");
-
-    if(is_nullent(iEntCam)) {
+    if(is_nullent(iEntCam))
+    {
         return;
     }
     
     set_entvar(iEntCam,var_modelindex,iCamIndex);
-    set_entvar(iEntCam,var_owner,id);
+    set_entvar(iEntCam,var_owner,playerId);
     set_entvar(iEntCam,var_movetype,MOVETYPE_NOCLIP);
     set_entvar(iEntCam,var_rendermode,kRenderTransColor);
 
-    engset_view(id,iEntCam);
+    engset_view(playerId,iEntCam);
 
     set_entvar(iEntCam,var_nextthink,get_gametime()+0.01);
     SetThink(iEntCam,"CBaseCam_Think_Post");
 
-    p_iCamId[id] = iEntCam;
+    p_iCamId[playerId] = iEntCam;
 
     //Костыль для микро;
-    client_cmd(id,"stopsound");
+    client_cmd(playerId,"stopsound");
+
+    new name[64];
+    get_user_name(playerId, name, charsmax(name));
+
+    client_print_color(0, print_team_default, "[%L] %L", LANG_PLAYER, "DANCE_MENU", LANG_PLAYER, "DANCE_REQUESTED", name, danceName);
 }
 
-public Func__RemoveModel(const iEnt) {
+public RemoveModel(const iEnt)
+{
     if(!is_nullent(iEnt)) {
-        new id = get_entvar(iEnt,var_owner);
+        new playerId = get_entvar(iEnt,var_owner);
 
-        if(is_user_connected(id)) {
-            p_iEntityId[id] = 0;
-            rg_set_user_invisibility(id,false);
+        if(is_user_connected(playerId))
+        {
+            p_iEntityId[playerId] = 0;
+            rg_set_user_invisibility(playerId,false);
         }
 
-        if(get_entvar(iEnt,var_ent_model) != 0) {
+        if(get_entvar(iEnt,var_ent_model) != 0)
+        {
             set_entvar(get_entvar(iEnt,var_ent_model),var_flags,FL_KILLME);
         }
 
@@ -376,16 +436,18 @@ public Func__RemoveModel(const iEnt) {
     }
 }
 
-public Func__RemoveCam(const iEnt) {
-    if(!is_nullent(iEnt)) {
-        new id = get_entvar(iEnt,var_owner);
+public RemoveCamera(const iEnt) {
+    if(!is_nullent(iEnt))
+    {
+        new playerId = get_entvar(iEnt,var_owner);
 
-        if(is_user_connected(id)) {
-            p_iCamId[id] = 0;
-            engset_view(id,id);
+        if(is_user_connected(playerId))
+        {
+            p_iCamId[playerId] = 0;
+            engset_view(playerId,playerId);
             
             //Костыль для микро;
-            client_cmd(id,"stopsound");
+            client_cmd(playerId,"stopsound");
         }
 
         set_entvar(iEnt,var_flags,FL_KILLME);
@@ -393,64 +455,70 @@ public Func__RemoveCam(const iEnt) {
 }
 
 public CBaseModel_Think_Post(const iEnt) {
-    if(is_nullent(iEnt)) {
+    if(is_nullent(iEnt))
+    {
         return;
     }
 
-    static id;
-    id = get_entvar(iEnt,var_owner);
+    static playerId;
+    playerId = get_entvar(iEnt,var_owner);
 
-    if(!is_user_connected(id) || get_entvar(id,var_button) & ATTACK_BTN || !rg_get_user_invisibility(id) || is_nullent(p_iCamId[id])) {
-        Func__RemoveModel(iEnt);
+    if(!is_user_connected(playerId) || get_entvar(playerId,var_button) & ATTACK_BTN || !rg_get_user_invisibility(playerId) || is_nullent(p_iCamId[playerId]))
+    {
+        RemoveModel(iEnt);
         return;
     }
 
     static Float:fOriginId[XYZ],Float:fMins[XYZ],Float:fOriginEnt[XYZ];
-    get_entvar(id,var_origin,fOriginId);
+    get_entvar(playerId,var_origin,fOriginId);
     get_entvar(iEnt,var_origin,fOriginEnt);
 
-    get_entvar(id,var_mins,fMins);
+    get_entvar(playerId,var_mins,fMins);
     fMins[X] = fOriginId[X];
     fMins[Y] = fOriginId[Y];
     fMins[Z] += fOriginId[Z];
 
-    if(!xs_vec_equal(fMins,fOriginEnt)) {
-        Func__RemoveModel(iEnt);
+    if(!xs_vec_equal(fMins,fOriginEnt))
+    {
+        RemoveModel(iEnt);
 
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_DONT_MOVE");
+        client_print(playerId,print_center,"%L",LANG_PLAYER,"CENTER_DONT_MOVE");
         return;
     }
 
     set_entvar(iEnt,var_nextthink,get_gametime());
 }
 
-public CBaseCam_Think_Post(const iEnt) {
-    if(is_nullent(iEnt)) {
+public CBaseCam_Think_Post(const iEnt)
+{
+    if(is_nullent(iEnt))
+    {
         return;
     }
 
-    static id;
-    id = get_entvar(iEnt,var_owner);
+    static playerId;
+    playerId = get_entvar(iEnt,var_owner);
 
-    if(!is_user_connected(id) || is_nullent(p_iEntityId[id])) {
-        Func__RemoveCam(iEnt);
+    if(!is_user_connected(playerId) || is_nullent(p_iEntityId[playerId]))
+    {
+        RemoveCamera(iEnt);
         return;
     }
 
     new Float:flPlayerOrigin[XYZ],Float:flCamOrigin[XYZ],Float:flVecPlayerAngles[XYZ],Float:flVecCamAngles[XYZ];
 
-    get_entvar(id,var_origin,flPlayerOrigin);
-    get_entvar(id,var_view_ofs,flVecPlayerAngles);
+    get_entvar(playerId,var_origin,flPlayerOrigin);
+    get_entvar(playerId,var_view_ofs,flVecPlayerAngles);
 
     flPlayerOrigin[Z] += flVecPlayerAngles[Z];
 
-    get_entvar(id,var_v_angle,flVecPlayerAngles);
+    get_entvar(playerId,var_v_angle,flVecPlayerAngles);
 
     angle_vector(flVecPlayerAngles,ANGLEVECTOR_FORWARD,flVecCamAngles);
 
     xs_vec_sub_scaled(flPlayerOrigin,flVecCamAngles,float(g_pCvarNum__CamDistance), flCamOrigin);
 
-    engfunc(EngFunc_TraceLine,flPlayerOrigin,flCamOrigin,IGNORE_MONSTERS,id,0);
+    engfunc(EngFunc_TraceLine,flPlayerOrigin,flCamOrigin,IGNORE_MONSTERS,playerId,0);
 
     new Float:flFraction;
     get_tr2(0,TR_flFraction,flFraction);
@@ -463,11 +531,12 @@ public CBaseCam_Think_Post(const iEnt) {
     set_entvar(iEnt,var_nextthink,get_gametime()+0.01);
 }
 
-public client_putinserver(id) {
-    p_iEntityId[id] = p_iCamId[id] = 0;
+public client_putinserver(playerId)
+{
+    p_iEntityId[playerId] = p_iCamId[playerId] = 0;
 }
 
-public Func__ReadSettingsFile() {
+public ReadSettingsFile() {
     bind_pcvar_string(
         create_cvar(
             .name = "dance_flag_access",
@@ -495,12 +564,13 @@ public Func__ReadSettingsFile() {
         g_pCvarFloat__Flood
     );
 
-    AutoExecConfig(true,"Dance");
+    AutoExecConfig(true,"dance_menu");
 
     new szData[256];
-    formatex(szData,charsmax(szData),"addons/amxmodx/data/lang/Dance.txt");
+    formatex(szData,charsmax(szData),"addons/amxmodx/data/lang/dance_menu.txt");
     
-    if(!file_exists(szData)) {
+    if(!file_exists(szData))
+    {
         write_file(szData,
             "[ru]^n^n\
             DANCE_MENU_NAME = Выбор движения^n^n\
@@ -512,9 +582,10 @@ public Func__ReadSettingsFile() {
         );
     }
 
-    formatex(szData,charsmax(szData),"addons/amxmodx/configs/Dance.ini");
+    formatex(szData,charsmax(szData),"addons/amxmodx/configs/dance_menu.ini");
 
-    if(!file_exists(szData)) {
+    if(!file_exists(szData))
+    {
         write_file(szData,
             ";Название секции где будет пункт | имя в меню | путь до модели | анимация | скорость анимации | флаг доступа^n\
             ;Если требуется добавить в основное меню, в названии секции указать '_'^n\
@@ -530,23 +601,26 @@ public Func__ReadSettingsFile() {
     new aData[ArrayData];
     new szFileData[6][256];
     new iLine;
-    while(!feof(f)) {
+    while(!feof(f))
+    {
         fgets(f,szData,charsmax(szData));
         trim(szData);
 
         iLine++;
 
-        if(szData[0] == ';' || szData[0] == EOS) {
+        if(szData[0] == ';' || szData[0] == EOS)
+        {
             continue;
         }
 
-        if(explode_string(szData,"|",szFileData,sizeof(szFileData),charsmax(szFileData[])) == MAX_SECTIONS) {
-            remove_quotes_and_trim(szFileData[SECTION_MENU]);
-            remove_quotes_and_trim(szFileData[MENU_NAME_]);
-            remove_quotes_and_trim(szFileData[MODEL_PATH]);
-            remove_quotes_and_trim(szFileData[MODEL_SEQUENCE]);
-            remove_quotes_and_trim(szFileData[MODEL_FRAME_RATE]);
-            remove_quotes_and_trim(szFileData[MODEL_FLAG_ACCESS]);
+        if(explode_string(szData,"|",szFileData,sizeof(szFileData),charsmax(szFileData[])) == MAX_SECTIONS)
+        {
+            RemoveQuotesAndTrim(szFileData[SECTION_MENU]);
+            RemoveQuotesAndTrim(szFileData[MENU_NAME_]);
+            RemoveQuotesAndTrim(szFileData[MODEL_PATH]);
+            RemoveQuotesAndTrim(szFileData[MODEL_SEQUENCE]);
+            RemoveQuotesAndTrim(szFileData[MODEL_FRAME_RATE]);
+            RemoveQuotesAndTrim(szFileData[MODEL_FLAG_ACCESS]);
 
             copy(aData[MENU_INDEX],charsmax(aData),szFileData[SECTION_MENU]);
             copy(aData[MENU_NAME],charsmax(aData),szFileData[MENU_NAME_]);
@@ -559,45 +633,50 @@ public Func__ReadSettingsFile() {
 
             ArrayPushArray(g_Array__Dance,aData);
         }
-        else {
-            log_amx("[DanceMenu] Файл [Dance.ini] заполнен не верно! Строка: %i",iLine);
+        else
+        {
+            log_amx("[DanceMenu] Файл [dance_menu.ini] заполнен не верно! Строка: %i",iLine);
         }
     }
     fclose(f);
 }
 
-public plugin_natives() {
+public plugin_natives()
+{
     register_native("nd_get_active_dance","native_nd_get_active_dance");
     register_native("nd_remove_dance","native_nd_remove_dance");
 }
 
-public bool:native_nd_get_active_dance(iPlugin,iParam) {
+public bool:native_nd_get_active_dance(iPlugin,iParam)
+{
     return bool:(p_iEntityId[get_param(1)] != 0);
 }
 
-public native_nd_remove_dance(iPlugin,iParam) {
-    new id = get_param(1);
+public native_nd_remove_dance(iPlugin,iParam)
+{
+    new playerId = get_param(1);
 
-    if(p_iEntityId[id]) {
-        Func__RemoveModel(p_iEntityId[id]);
-        Func__RemoveCam(p_iCamId[id]);
+    if(p_iEntityId[playerId]) {
+        RemoveModel(p_iEntityId[playerId]);
+        RemoveCamera(p_iCamId[playerId]);
     }
 }
 
-stock bool:UTIL__IsCreateDanceEntity(const id) {
-    if(!is_user_alive(id)) {
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_ONLY_ALIVE");
+stock bool:IsCreateDanceEntity(const playerId)
+{
+    if(!is_user_alive(playerId)) {
+        client_print(playerId,print_center,"%L",LANG_PLAYER,"CENTER_ONLY_ALIVE");
         return false;
     }
 
-    if(!(get_entvar(id,var_flags) & FL_ONGROUND) || get_entvar(id,var_waterlevel) != 0) {
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_OFF_GROUND");
+    if(!(get_entvar(playerId,var_flags) & FL_ONGROUND) || get_entvar(playerId,var_waterlevel) != 0) {
+        client_print(playerId,print_center,"%L",LANG_PLAYER,"CENTER_OFF_GROUND");
         return false;
     }
 
-    if((p_fFloodDanceMenu[id]-get_gametime()) > 0) {
-        client_print(id,print_center,"%L",LANG_PLAYER,"CENTER_DONT_FLOOD");
-        p_fFloodDanceMenu[id] = get_gametime()+g_pCvarFloat__Flood;
+    if((p_fFloodDanceMenu[playerId]-get_gametime()) > 0) {
+        client_print(playerId,print_center,"%L",LANG_PLAYER,"CENTER_DONT_FLOOD");
+        p_fFloodDanceMenu[playerId] = get_gametime()+g_pCvarFloat__Flood;
 
         return false;
     }
@@ -605,35 +684,55 @@ stock bool:UTIL__IsCreateDanceEntity(const id) {
     return true;
 }
 
-stock rg_set_user_invisibility(const id, bool:bToggle = true) {
-    new iEffects = get_entvar(id,var_effects);
-    set_entvar(id,var_effects,bToggle ? (iEffects |= EF_NODRAW) : (iEffects &= ~EF_NODRAW))
+stock rg_set_user_invisibility(const playerId, bool:bToggle = true)
+{
+    new iEffects = get_entvar(playerId,var_effects);
+    set_entvar(playerId,var_effects,bToggle ? (iEffects |= EF_NODRAW) : (iEffects &= ~EF_NODRAW))
 }
 
-stock bool:rg_get_user_invisibility(const id) {
-    return bool:(get_entvar(id, var_effects) & EF_NODRAW);
+stock bool:rg_get_user_invisibility(const playerId)
+{
+    return bool:(get_entvar(playerId, var_effects) & EF_NODRAW);
 }
 
-stock UTIL__RegisterClCmd(const szCmd[],const szFunc[]) {
-    register_clcmd(fmt("%s",szCmd),szFunc);
-    register_clcmd(fmt("say /%s",szCmd),szFunc);
-    register_clcmd(fmt("say_team /%s",szCmd),szFunc);
+stock RegisterCommands(const command[],const funcName[])
+{
+    register_clcmd(fmt("%s",command),funcName);
+    register_clcmd(fmt("say /%s",command),funcName);
+    register_clcmd(fmt("say_team /%s",command),funcName);
 }
 
-stock UTIL__DisplayMenu(const id,const iMenu,const iPage = 0,const szExitName[] = "Выход") {
-    menu_setprop(iMenu,MPROP_NEXTNAME,"Далее");
-    menu_setprop(iMenu,MPROP_BACKNAME,"Назад");
-    menu_setprop(iMenu,MPROP_EXITNAME,szExitName);
+stock DisplayMenuToPlayer(const playerId, const menu, const iPage = 0, const szExitName[] = "Выход")
+{
+    menu_setprop(menu,MPROP_NEXTNAME,"Далее");
+    menu_setprop(menu,MPROP_BACKNAME,"Назад");
+    menu_setprop(menu,MPROP_EXITNAME,szExitName);
 
-    menu_setprop(iMenu,MPROP_NUMBER_COLOR,"\y");
+    menu_setprop(menu,MPROP_NUMBER_COLOR,"\y");
 
-    if(is_user_connected(id))
-        menu_display(id,iMenu,iPage);
+    if(is_user_connected(playerId))
+    {
+        menu_display(playerId,menu,iPage);
+    }
     else
-        menu_destroy(iMenu);
+    {
+        menu_destroy(menu);
+    }
 }
 
-stock remove_quotes_and_trim(szSource[]) {
-    trim(szSource);
-    remove_quotes(szSource);
+stock RemoveQuotesAndTrim(content[])
+{
+    trim(content);
+    remove_quotes(content);
+}
+
+stock bool:IsPlayerHasAccessFlags(const playerId)
+{
+    new accessFlags = read_flags(g_pCvarrString__FlagAccess);
+    if(!(get_user_flags(playerId) & accessFlags) && g_pCvarrString__FlagAccess[0])
+    {
+        return false;
+    }
+    
+    return true;
 }
