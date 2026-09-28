@@ -9,7 +9,9 @@ CENTER_OFF_GROUND = Вы должны быть на земле!
 CENTER_DONT_FLOOD = Не спамь!
 CENTER_DONT_MOVE = Не двигайся!
 
-DANCE_REQUESTED = ^4%s^1 танцует ^3%s^1
+DANCE_FREE_ATTEMPTS_REMAINDER = Осталось ^4%d^1 бесплатных танцев
+DANCE_FREE_ATTEMPTS_OVER = Перезайдите на сервер или измените лимит танцев через ^3/anew^1
+DANCE_FREE_ATTEMPTS_MAX = Максимальное кол-во ^4бесплатных^1 танцев ^4%d^1
 
 
 [en]
@@ -23,4 +25,6 @@ CENTER_OFF_GROUND = You must be on the ground!
 CENTER_DONT_FLOOD = No spam!
 CENTER_DONT_MOVE = Don't move!
 
-DANCE_REQUESTED = ^4%s^1 dances ^3%s^1
+DANCE_FREE_ATTEMPTS_REMAINDER = There are ^4%d^1 free dances left
+DANCE_FREE_ATTEMPTS_OVER = Re-enter the server or increase dance limit via ^3/anew^1
+DANCE_FREE_ATTEMPTS_MAX = Max number of ^4free^1 dances is ^4%d^1
