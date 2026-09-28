@@ -10,7 +10,7 @@ CENTER_DONT_FLOOD = Не спамь!
 CENTER_DONT_MOVE = Не двигайся!
 
 DANCE_FREE_ATTEMPTS_REMAINDER = Осталось ^4%d^1 бесплатных танцев
-DANCE_FREE_ATTEMPTS_OVER = Перезайдите на сервер или измените лимит танцев через ^3/anew^1
+DANCE_FREE_ATTEMPTS_OVER = Перезайдите на сервер или увеличьте лимит танцев через ^3/anew^1
 DANCE_FREE_ATTEMPTS_MAX = Максимальное кол-во ^4бесплатных^1 танцев ^4%d^1
 
 
