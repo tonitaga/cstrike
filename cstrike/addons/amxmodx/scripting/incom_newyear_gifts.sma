@@ -6,16 +6,35 @@
 #include <nvault>
 #include <reapi>
 #include <incom_newyear_gifts>
+#include <incom_case_reveal>
 
 #define MAX_GIFTS 24
 #define MAX_GIFT_POINTS 128
 #define MAX_FLOOR_SHIFT 64.0
 #define PROFILE_SIZE 320
 #define MIN_POINT_DISTANCE 48.0
+#define TASK_CASE_REVEAL 7100
+#define CASE_BOX_OPEN_TIME 0.90
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
 new const GIFT_MODEL[] = "models/incom/newyear/gift.mdl";
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
+new const CASE_TICK[] = "incom/newyear/case_tick.wav";
+new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
+    {"Хвойная лента", "Карамельная обёртка", "Морозное тиснение", "Подарочная лента"},
+    {"Ёлочный дозор", "Хвойные огни", "Вечерняя гирлянда", "Полночный салют"},
+    {"Ёлочная звезда", "Праздничный леденец", "Зелёная гирлянда", "Парад конфетти"},
+    {"Хвойный орнамент", "Зимние ёлки", "Лиловая гирлянда", "Полночный салют"},
+    {"Звёздная нить", "Заснеженный леденец", "Зелёные огни", "Парад конфетти"},
+    {"Еловая снежинка", "Сахарная лента", "Ледяное тиснение", "Подарочная лента"},
+    {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Салют на клинке"}
+};
+new bool:g_WebReveal[MAX_PLAYERS + 1];
+new g_CaseMotdUrl, g_CaseSceneSerial;
+new bool:g_Revealing[MAX_PLAYERS + 1];
+new g_RevealStep[MAX_PLAYERS + 1];
+new g_RevealReward[MAX_PLAYERS + 1], g_RevealCredit[MAX_PLAYERS + 1], g_RevealName[MAX_PLAYERS + 1][32];
+new Float:g_RevealDeadline[MAX_PLAYERS + 1];
 new const WEAPON_NAMES[][] = {"M4A1", "AK-47", "Glock", "Deagle", "AWP", "USP", "Бабочка"};
 new const RARITY_NAMES[][] = {"Обычный", "Редкий", "Эпический", "Легендарный"};
 
@@ -40,6 +59,7 @@ public plugin_precache()
 {
     precache_model(GIFT_MODEL);
     precache_sound(GIFT_CHIME);
+    precache_sound(CASE_TICK);
     for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
     {
         new filename[12];
@@ -62,7 +82,7 @@ public plugin_precache()
 
 public plugin_init()
 {
-    register_plugin("INCOM New Year Gifts", "1.0", "INCOMSYSTEM");
+    register_plugin("INCOM New Year Gifts", "1.2", "INCOMSYSTEM");
     g_Enable = register_cvar("incom_gifts_enabled", "1");
     g_Interval = register_cvar("incom_gifts_interval", "60");
     g_WaveMin = register_cvar("incom_gifts_wave_min", "2");
@@ -74,6 +94,7 @@ public plugin_init()
     g_KillReward = register_cvar("incom_gifts_kill_reward", "2");
     g_KillCooldown = register_cvar("incom_gifts_kill_cooldown", "20");
     g_CasePrice = register_cvar("incom_gifts_case_price", "60");
+    g_CaseMotdUrl = register_cvar("incom_gifts_case_motd_url", "");
 
     register_touch(GIFT_CLASS, "player", "GiftTouch");
     register_think(GIFT_CLASS, "GiftExpire");
@@ -435,6 +456,13 @@ public GiftTouch(gift, player)
 
 public client_disconnected(id)
 {
+    remove_task(TASK_CASE_REVEAL + id);
+    if (g_Revealing[id])
+    {
+        g_Revealing[id] = false;
+        AnnounceCaseDrop(id, g_RevealReward[id]);
+    }
+    g_WebReveal[id] = false;
     g_SelectionLoaded[id] = false;
     arrayset(g_Selected[id], 0, sizeof g_Selected[]);
     ResetSkinFallback(id);
@@ -555,6 +583,11 @@ public BuyCase(id, menu, item)
         return PLUGIN_HANDLED;
     if (equal(info, "collection"))
         return ShowCollection(id);
+    if (g_Revealing[id])
+    {
+        client_print(id, print_chat, "[Новый год] Дождись окончания раскрутки.");
+        return PLUGIN_HANDLED;
+    }
 
     new key[40], inventory[GIFT_COLLECTION_SIZE], balance, weapon, rarity;
     if (!GetPlayerKey(id, key, charsmax(key)))
@@ -567,17 +600,139 @@ public BuyCase(id, menu, item)
         client_print(id, print_chat, "[Новый год] Для кейса нужно ещё %d снежинок.", cost-balance);
         return PLUGIN_HANDLED;
     }
-    if (!incom_case_roll(str_to_num(info), weapon, rarity))
+    new caseId = str_to_num(info);
+    if (!incom_case_roll(caseId, weapon, rarity))
         return PLUGIN_HANDLED;
 
     new reward = GiftSkinIndex(weapon, rarity);
-    if (reward < 0 || reward >= GIFT_COLLECTION_SIZE || inventory[reward] >= GIFT_MAX_BALANCE)
+    new sale = CaseDuplicateValue(caseId, weapon, rarity);
+    if (reward < 0 || reward >= GIFT_COLLECTION_SIZE || !sale)
         return PLUGIN_HANDLED;
-    inventory[reward]++;
-    SaveProfile(key, balance-cost, inventory);
-    client_print_color(id, print_team_default, "^4[Новый год]^1 Выпал скин: ^3%s / %s^1. Осталось снежинок: ^3%d^1.",
-                       WEAPON_NAMES[weapon], RARITY_NAMES[rarity], balance-cost);
+
+    new remainder = balance-cost;
+    new updated = remainder;
+    if (inventory[reward])
+        updated = GiftAddBalance(remainder, sale);
+    else
+        inventory[reward] = 1;
+
+    SaveProfile(key, updated, inventory);
+    StartCaseReveal(id, caseId, reward, updated, updated-remainder);
     return PLUGIN_HANDLED;
+}
+
+bool:ShowCaseScene(id, caseId, balance)
+{
+    new url[256];
+    get_pcvar_string(g_CaseMotdUrl, url, charsmax(url));
+    trim(url);
+    if (!url[0])
+    {
+        get_cvar_string("sv_downloadurl", url, charsmax(url));
+        trim(url);
+        if (!url[0] || strlen(url) > charsmax(url) - 25)
+            return false;
+        if (url[strlen(url) - 1] != '/')
+            add(url, charsmax(url), "/");
+        add(url, charsmax(url), "motd/newyear/index.html");
+    }
+    if ((!equali(url, "http://", 7) && !equali(url, "https://", 8)) || contain(url, "#") >= 0)
+        return false;
+
+    new bracket[160], length, reward = g_RevealReward[id];
+    new rewardSlot = reward % CASE_RARITY_COUNT;
+    if (reward / CASE_RARITY_COUNT == CASE_WEAPON_BUTTERFLY)
+        rewardSlot += CASE_RARITY_COUNT;
+
+    for (new i = 0; i < CASE_MOTD_ITEMS; i++)
+    {
+        new slot = CaseRevealItem(i, CASE_MOTD_TARGET, random_num(0, CASE_RARITY_COUNT * 2 - 2), rewardSlot);
+        new weapon = slot < CASE_RARITY_COUNT ? caseId : CASE_WEAPON_BUTTERFLY;
+        new item = GiftSkinIndex(weapon, slot % CASE_RARITY_COUNT);
+        length += formatex(bracket[length], charsmax(bracket)-length, "%s%d", i == 0 ? "" : ",", item);
+    }
+    new address[440];
+    formatex(address, charsmax(address), "%s%ccaseview=4&turn=%d-%d#%s;%d;%d;%d;%d;%d;%d",
+             url, contain(url, "?") >= 0 ? '&' : '?', get_systime(), ++g_CaseSceneSerial, bracket, CASE_MOTD_START,
+             CASE_MOTD_TARGET, reward, balance, CASE_MOTD_SPIN_MS, g_RevealCredit[id]);
+    show_motd(id, address, "Новогодний кейс");
+    return true;
+}
+
+StartCaseReveal(id, caseId, reward, balance, credit)
+{
+    g_Revealing[id] = true;
+    g_RevealReward[id] = reward;
+    g_RevealCredit[id] = credit;
+    get_user_name(id, g_RevealName[id], charsmax(g_RevealName[]));
+    g_WebReveal[id] = ShowCaseScene(id, caseId, balance);
+    g_RevealStep[id] = -1;
+    g_RevealDeadline[id] = get_gametime() + CASE_BOX_OPEN_TIME + float(CASE_MOTD_SPIN_MS) / 1000.0;
+    if (g_WebReveal[id])
+        set_task(CASE_BOX_OPEN_TIME, "CaseMotdTick", TASK_CASE_REVEAL + id);
+    else
+        set_task(CASE_BOX_OPEN_TIME + float(CASE_MOTD_SPIN_MS) / 1000.0,
+                 "CaseTextResult", TASK_CASE_REVEAL + id);
+}
+
+public CaseTextResult(taskId)
+{
+    new id = taskId - TASK_CASE_REVEAL;
+    if (g_Revealing[id] && is_user_connected(id))
+        FinishCaseReveal(id);
+}
+
+public CaseMotdTick(taskId)
+{
+    new id = taskId - TASK_CASE_REVEAL;
+    if (!g_Revealing[id] || !is_user_connected(id))
+        return;
+
+    new Float:remaining = g_RevealDeadline[id] - get_gametime();
+    if (remaining <= 0.0)
+    {
+        FinishCaseReveal(id);
+        return;
+    }
+
+    new Float:duration = float(CASE_MOTD_SPIN_MS) / 1000.0;
+    new position = floatround(CaseMotdEase(floatclamp(1.0 - remaining / duration, 0.0, 1.0))
+                              * float(CASE_MOTD_TARGET - CASE_MOTD_START));
+    if (position != g_RevealStep[id])
+    {
+        g_RevealStep[id] = position;
+        rh_emit_sound2(id, id, CHAN_ITEM, CASE_TICK, 0.65, ATTN_NONE);
+    }
+    set_task(0.1, "CaseMotdTick", taskId);
+}
+
+FinishCaseReveal(id)
+{
+    new reward = g_RevealReward[id];
+    new bool:usedWeb = g_WebReveal[id];
+    g_Revealing[id] = false;
+    g_WebReveal[id] = false;
+    new weapon = reward / CASE_RARITY_COUNT, rarity = reward % CASE_RARITY_COUNT;
+    if (CaseRevealIsPublic(rarity))
+        AnnounceCaseDrop(id, reward);
+    else if (!usedWeb)
+        client_print_color(id, print_team_default, "^4[Новый год]^1 Выпал скин ^3«%s | %s»^1 (%s).",
+                           WEAPON_NAMES[weapon], SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity]);
+    if (g_RevealCredit[id])
+        client_print_color(id, print_team_default, "^4[Новый год]^1 Дубликат продан. Начислено ^3+%d^1 снежинок.",
+                           g_RevealCredit[id]);
+}
+
+AnnounceCaseDrop(id, reward)
+{
+    new rarity = reward % CASE_RARITY_COUNT;
+    if (!CaseRevealIsPublic(rarity))
+        return;
+
+    new weapon = reward / CASE_RARITY_COUNT;
+    client_print_color(0, rarity == CASE_RARITY_EPIC ? print_team_blue : print_team_red,
+                       "^4[Новый год]^1 Игроку ^3%s^1 выпал скин ^4«%s | %s»^1. Редкость: ^3%s^1.",
+                       g_RevealName[id], WEAPON_NAMES[weapon], SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity]);
 }
 
 public ShowCollection(id)
@@ -595,8 +750,8 @@ public ShowCollection(id)
         if (!inventory[i])
             continue;
         new weapon = i / CASE_RARITY_COUNT, rarity = i % CASE_RARITY_COUNT;
-        formatex(name, charsmax(name), "%s / %s x%d%s", WEAPON_NAMES[weapon],
-                 RARITY_NAMES[rarity], inventory[i], g_Selected[id][weapon] == rarity + 1 ? " [экипирован]" : "");
+        formatex(name, charsmax(name), "%s | %s [%s] x%d%s", WEAPON_NAMES[weapon],
+                 SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity], inventory[i], g_Selected[id][weapon] == rarity + 1 ? " [экипирован]" : "");
         num_to_str(i, info, charsmax(info));
         menu_additem(menu, name, info);
         count++;

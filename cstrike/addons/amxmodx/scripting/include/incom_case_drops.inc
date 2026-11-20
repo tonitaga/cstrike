@@ -29,30 +29,39 @@ enum
 // Returns one weapon and rarity. A false return leaves both outputs untouched.
 native bool:incom_case_roll(caseId, &weapon, &rarity);
 
+// Each case uses the same two rows: its own weapon and the butterfly.
+// Values are outcomes out of CASE_DROP_ROLL_COUNT.
+new const CASE_DROP_WEIGHTS[2][CASE_RARITY_COUNT] = {
+    {6650, 2185, 570, 95},
+    {300, 150, 45, 5}
+};
+
+stock CaseDuplicateValue(caseId, weapon, rarity)
+{
+    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || rarity < 0 || rarity >= CASE_RARITY_COUNT
+        || (weapon != caseId && weapon != CASE_WEAPON_BUTTERFLY))
+        return 0;
+
+    // 3.5 / (weight / 10000), rounded down with integer arithmetic.
+    return 35000 / CASE_DROP_WEIGHTS[weapon == CASE_WEAPON_BUTTERFLY ? 1 : 0][rarity];
+}
+
 stock bool:CaseDropResolve(caseId, roll, &weapon, &rarity)
 {
     if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || roll < 0 || roll >= CASE_DROP_ROLL_COUNT)
         return false;
 
-    // Unconditional weights in hundredths of a percent.
-    static const weights[][] = {
-        {5180, 1702, 444, 74},
-        {350, 115, 30, 5},
-        {60, 30, 9, 1}
-    };
-
-    for (new candidate = 0; candidate <= CASE_WEAPON_BUTTERFLY; candidate++)
+    for (new group = 0; group < sizeof CASE_DROP_WEIGHTS; group++)
     {
-        new group = candidate == CASE_WEAPON_BUTTERFLY ? 2 : (candidate == caseId ? 0 : 1);
         for (new tier = 0; tier < CASE_RARITY_COUNT; tier++)
         {
-            if (roll < weights[group][tier])
+            if (roll < CASE_DROP_WEIGHTS[group][tier])
             {
-                weapon = candidate;
+                weapon = group ? CASE_WEAPON_BUTTERFLY : caseId;
                 rarity = tier;
                 return true;
             }
-            roll -= weights[group][tier];
+            roll -= CASE_DROP_WEIGHTS[group][tier];
         }
     }
 
