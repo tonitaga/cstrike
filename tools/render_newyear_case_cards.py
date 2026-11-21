@@ -22,7 +22,7 @@ def main():
         folder = "butterfly" if weapon == "knife" else weapon
         for rarity, tier in enumerate(TIERS):
             index = weapon_index * len(TIERS) + rarity
-            model = OUTPUT / folder / tier / f"v_{weapon}.mdl"
+            model = OUTPUT / folder / tier / f"v_{weapon}_r5.mdl"
             card = f"skins/{index}.png"
             width, height = 480, 224
             png(target / card, width, height, render(model.read_bytes(), width, height, idle=True))

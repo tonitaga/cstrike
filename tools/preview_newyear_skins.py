@@ -4,9 +4,8 @@ from pathlib import Path
 from struct import pack
 from zlib import compress, crc32
 
-from build_newyear_skins import INVERTED_PLAYER_MODELS, OUTPUT, TIERS, WEAPONS, painted_texture, texture_records
+from build_newyear_skins import INVERTED_PLAYER_MODELS, OUTPUT, TIERS, WEAPONS, texture_records, visible_texture
 from goldsrc_skin_geometry import cross, dot, projection, raster, sub, triangles, unit
-from newyear_surface_art import read_rgb_png
 
 
 def png(path, width, height, pixels):
@@ -18,11 +17,21 @@ def png(path, width, height, pixels):
                      chunk(b"IDAT", compress(rows, 6)) + chunk(b"IEND", b""))
 
 
-def render(model, width, height, back=False, idle=False, inverted=False):
+def render(model, width, height, back=False, idle=False, inverted=False, above=False):
     records = tuple(texture_records(model))
-    allowed = {i for i, record in enumerate(records) if painted_texture(record)}
+    allowed = {i for i, record in enumerate(records) if visible_texture(record)}
     mesh = list(triangles(model, allowed, first_variant_only=True, idle=idle))
     project, (length, tall), _ = projection(mesh, inverted, invert_horizontal=idle)
+    if above:
+        side_project = project
+        depths = [side_project(point)[2] for _,tri in mesh for point,_,_ in tri]
+        near = min(depths)
+        tall = max(depths)-near
+
+        def project(point):
+            x, y, depth = side_project(point)
+            return x, (depth-near)/tall, -y
+
     scale = min((width-28)/length, (height-22)/tall)
     projected_w, projected_h = length*scale, tall*scale
     image = bytearray(bytes((46,51,60)) * (width*height))
@@ -52,21 +61,6 @@ def render(model, width, height, back=False, idle=False, inverted=False):
     return image
 
 
-def write_pairs(output):
-    for first, second in (("ak47","deagle"), ("m4a1","usp"), ("awp","glock18")):
-        width,height,a = read_rgb_png(output/f"{first}.png")
-        _,_,b = read_rgb_png(output/f"{second}.png")
-        gap = 8
-        row = (height-5*gap)//4
-        first_view = slice(gap,gap+row)
-        player_view = slice(2*gap+row,2*gap+2*row)
-        gutter = a[0]
-        pixels = b"".join([gutter]*gap + a[first_view] + [gutter]*gap
-                          + b[first_view] + [gutter]*gap + a[player_view]
-                          + [gutter]*gap + b[player_view] + [gutter]*gap)
-        png(output/f"{first}-{second}.png",width,height,pixels)
-
-
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
@@ -74,23 +68,23 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     for weapon in WEAPONS:
         name = "butterfly" if weapon == "knife" else weapon
-        views = (("v",False),("v",True)) if weapon == "knife" else (
-            ("v",False),("p",False),("v",True),("p",True))
+        views = [("v",False,False),("v",True,False),("v",False,True)]
+        if weapon != "knife":
+            views.extend((("p",False,False),("p",True,False),("p",False,True)))
         page_w, page_h = 1920,1080
         gap = 8
         w = (page_w-5*gap)//4
         h = (page_h-(len(views)+1)*gap)//len(views)
         page = bytearray(bytes((13,16,22)) * (page_w*page_h))
-        for row,(prefix,back) in enumerate(views):
+        for row,(prefix,back,above) in enumerate(views):
             for col,tier in enumerate(TIERS):
-                path = OUTPUT / name / tier / f"{prefix}_{weapon}.mdl"
+                path = OUTPUT / name / tier / f"{prefix}_{weapon}_r5.mdl"
                 tile = render(path.read_bytes(), w, h, back, prefix == "v",
-                              prefix == "p" and weapon in INVERTED_PLAYER_MODELS)
+                              prefix == "p" and weapon in INVERTED_PLAYER_MODELS, above)
                 for y in range(h):
                     index = 3*((gap+row*(h+gap)+y)*page_w+gap+col*(w+gap))
                     page[index:index+3*w] = tile[3*y*w:3*(y+1)*w]
         png(args.output / f"{name}.png", page_w,page_h,page)
-    write_pairs(args.output)
 
 
 if __name__ == "__main__":

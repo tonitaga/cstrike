@@ -119,7 +119,7 @@ def triangles(model, wanted, first_variant_only=False, idle=False):
                 yield texture, (corners[a], corners[b], corners[i])
 
 
-def projection(mesh, invert_vertical=False, invert_horizontal=False):
+def projection(mesh, invert_vertical=False, invert_horizontal=False, *, axes=False):
     points = list({xyz for _, tri in mesh for xyz,_,_ in tri})
     center = tuple(sum(p[i] for p in points)/len(points) for i in range(3))
     cloud = [sub(p,center) for p in points]
@@ -149,7 +149,7 @@ def projection(mesh, invert_vertical=False, invert_horizontal=False):
     def project(point):
         return ((dot(point,long)-xmin)/(xmax-xmin),
                 1-(dot(point,tall)-ymin)/(ymax-ymin), dot(point,depth))
-    return project, (xmax-xmin, ymax-ymin), depth
+    return project, (xmax-xmin, ymax-ymin), (long, tall, depth) if axes else depth
 
 
 def raster(points, width, height):
@@ -167,44 +167,59 @@ def raster(points, width, height):
                 yield x,y,a,b,c
 
 
-ART_WIDTH = 1024
-ART_HEIGHT = 512
-
-
-def atlas_projection(model, records, allowed, idle=False, invert_vertical=False):
+def print_projection(model, records, allowed, idle=False, invert_vertical=False):
     mesh = list(triangles(model, allowed, idle=idle))
-    project, _, depth = projection(mesh, invert_vertical, invert_horizontal=idle)
-    sizes = {i: (records[i][2], records[i][3]) for i in allowed}
-    # Prefer a side face when UVs are shared by multiple physical faces.
+    project, (length, height), (long, tall, depth) = projection(
+        mesh, invert_vertical, invert_horizontal=idle, axes=True)
+    depths = [dot(point,depth) for _,tri in mesh for point,_,_ in tri]
+    near, far = min(depths), max(depths)
+    thickness = far-near
     maps = {
-        i: (array("H", [0])*(w*h), array("H", [0])*(w*h), bytearray(w*h))
-        for i, (w,h) in sizes.items()
+        i: (array("f", [0])*(records[i][2]*records[i][3]),
+            array("f", [0])*(records[i][2]*records[i][3]),
+            bytearray(records[i][2]*records[i][3]))
+        for i in allowed
     }
-    for i,tri in mesh:
-        w,h=sizes[i]
-        hmap,vmap,rank=maps[i]
-        a,b,c=(xyz for xyz,_,_ in tri)
-        normal=unit(cross(sub(b,a),sub(c,a)))
-        priority=1+int(abs(dot(normal,depth))*100)
-        uv=[(u,v) for _,u,v in tri]
-        plane=[project(xyz) for xyz,_,_ in tri]
+    for i, tri in mesh:
+        w, h = records[i][2:4]
+        u_map, v_map, state = maps[i]
+        points = [point for point, _, _ in tri]
+        normal = unit(cross(sub(points[1],points[0]),sub(points[2],points[0])))
+        uv = [(u,v) for _,u,v in tri]
+        plane = [project(point) for point in points]
+        side_weight = abs(dot(normal,depth))
+        top_weight = abs(dot(normal,tall))
+        end_weight = abs(dot(normal,long))
+        # Prefer the side print where multiple faces share an atlas island.
+        if side_weight >= max(top_weight,end_weight):
+            view = 3
+            coords = [(x,y) for x,y,_ in plane]
+        elif top_weight >= end_weight:
+            view = 2
+            coords = [(x,(z-near)/thickness) for x,_,z in plane]
+        else:
+            view = 1
+            coords = [((z-near)/thickness,y) for _,y,z in plane]
         for x,y,a,b,c in raster(uv,w,h):
-            pos=y*w+x
-            if priority > rank[pos]:
-                rank[pos]=priority
-                hmap[pos]=min(ART_WIDTH-1, max(0, round((ART_WIDTH-1)*(a*plane[0][0]+b*plane[1][0]+c*plane[2][0]))))
-                vmap[pos]=min(ART_HEIGHT-1, max(0, round((ART_HEIGHT-1)*(a*plane[0][1]+b*plane[1][1]+c*plane[2][1]))))
-    # Extend edge colors into atlas padding so bilinear sampling keeps seams clean.
-    for i, (hmap, vmap, rank) in maps.items():
-        w, h = sizes[i]
+            pos = y*w+x
+            if view <= state[pos]:
+                continue
+            u_map[pos] = a*coords[0][0]+b*coords[1][0]+c*coords[2][0]
+            v_map[pos] = a*coords[0][1]+b*coords[1][1]+c*coords[2][1]
+            state[pos] = view
+    # Copy the edge print into atlas padding so texture filtering cannot expose a seam.
+    for i,(u_map,v_map,state) in maps.items():
+        w,h = records[i][2:4]
         for _ in range(2):
-            existing = bytes(rank)
-            for pos, filled in enumerate(existing):
-                if filled:
+            previous = bytes(state)
+            for pos,view in enumerate(previous):
+                if view:
                     continue
-                x = pos % w
-                for neighbor in (pos - 1 if x else -1, pos + 1 if x < w-1 else -1, pos - w, pos + w):
-                    if 0 <= neighbor < len(existing) and existing[neighbor]:
-                        hmap[pos], vmap[pos], rank[pos] = hmap[neighbor], vmap[neighbor], 1
+                x,y = pos%w,pos//w
+                candidates = (pos-1 if x else -1, pos+1 if x+1<w else -1,
+                              pos-w if y else -1, pos+w if y+1<h else -1)
+                for neighbor in candidates:
+                    if neighbor >= 0 and previous[neighbor]:
+                        u_map[pos],v_map[pos],state[pos] = u_map[neighbor],v_map[neighbor],previous[neighbor]
                         break
-    return maps
+    return maps, (thickness/height,length/thickness,length/height)

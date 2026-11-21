@@ -21,12 +21,12 @@ new const GIFT_MODEL[] = "models/incom/newyear/gift.mdl";
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
 new const CASE_TICK[] = "incom/newyear/case_tick.wav";
 new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
-    {"Хвойная лента", "Карамельная обёртка", "Морозное тиснение", "Подарочная лента"},
-    {"Ёлочный дозор", "Хвойные огни", "Вечерняя гирлянда", "Полночный салют"},
-    {"Ёлочная звезда", "Праздничный леденец", "Зелёная гирлянда", "Парад конфетти"},
-    {"Хвойный орнамент", "Зимние ёлки", "Лиловая гирлянда", "Полночный салют"},
-    {"Звёздная нить", "Заснеженный леденец", "Зелёные огни", "Парад конфетти"},
-    {"Еловая снежинка", "Сахарная лента", "Ледяное тиснение", "Подарочная лента"},
+    {"Хвойная гравировка", "Северная вязь", "Ледяная геометрия", "Бархатный подарок"},
+    {"Медные шишки", "Морозная рябина", "Еловые огни", "Вишнёвый салют"},
+    {"Мятная звезда", "Карамельная трость", "Праздничные лампочки", "Парад конфетти"},
+    {"Кобальтовый иней", "Пряничный городок", "Стеклянные игрушки", "Часы полуночи"},
+    {"Альпийский снег", "Подарки под ёлкой", "Северное сияние", "Арктический салют"},
+    {"Остролист", "Сахарная глазурь", "Серебряные сосульки", "Изумрудная ёлка"},
     {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Салют на клинке"}
 };
 new bool:g_WebReveal[MAX_PLAYERS + 1];
@@ -67,12 +67,12 @@ public plugin_precache()
         for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
         {
             new index = GiftSkinIndex(weapon, rarity);
-            formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_%s.mdl",
+            formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_%s_r5.mdl",
                      SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename);
             precache_model(g_View[index]);
             if (weapon != CASE_WEAPON_BUTTERFLY)
             {
-                formatex(g_Player[index], charsmax(g_Player[]), "models/incom/newyear/%s/%s/p_%s.mdl",
+                formatex(g_Player[index], charsmax(g_Player[]), "models/incom/newyear/%s/%s/p_%s_r5.mdl",
                          SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename);
                 precache_model(g_Player[index]);
             }
@@ -737,27 +737,79 @@ AnnounceCaseDrop(id, reward)
 
 public ShowCollection(id)
 {
+    if (!get_pcvar_num(g_Enable))
+        return PLUGIN_HANDLED;
+
     new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
     if (!GetPlayerKey(id, key, charsmax(key)))
         return ShowBalance(id);
 
     LoadProfile(key, balance, inventory);
-    LoadSelections(id);
-    new menu = menu_create("Коллекция: выбрать или снять скин", "SelectCollectionSkin");
-    new name[120], info[5], count;
-    for (new i = 0; i < GIFT_COLLECTION_SIZE; i++)
+    new menu = menu_create("Моя коллекция", "SelectCollectionWeapon");
+    menu_setprop(menu, MPROP_PERPAGE, 0);
+    new info[5], count;
+    for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
     {
-        if (!inventory[i])
+        for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
+        {
+            if (!inventory[GiftSkinIndex(weapon, rarity)])
+                continue;
+            num_to_str(weapon, info, charsmax(info));
+            menu_additem(menu, WEAPON_NAMES[weapon], info);
+            count++;
+            break;
+        }
+    }
+    if (!count)
+        menu_addtext2(menu, "Открой кейс, чтобы получить первый скин.");
+    menu_additem(menu, "Назад", "back");
+    menu_display(id, menu);
+    return PLUGIN_HANDLED;
+}
+
+public SelectCollectionWeapon(id, menu, item)
+{
+    new info[5], access, callback;
+    new bool:valid = item >= 0 && menu_item_getinfo(menu, item, access, info, charsmax(info), .callback = callback);
+    menu_destroy(menu);
+    if (!valid)
+        return PLUGIN_HANDLED;
+    if (equal(info, "back"))
+        return OpenCaseMenu(id);
+    return ShowCollectionWeapon(id, str_to_num(info));
+}
+
+ShowCollectionWeapon(id, weapon)
+{
+    if (!get_pcvar_num(g_Enable) || weapon < 0 || weapon >= sizeof SKIN_WEAPONS)
+        return PLUGIN_HANDLED;
+
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    if (!GetPlayerKey(id, key, charsmax(key)))
+        return PLUGIN_HANDLED;
+    LoadProfile(key, balance, inventory);
+    LoadSelections(id);
+    new menu = menu_create(WEAPON_NAMES[weapon], "SelectCollectionSkin");
+    menu_setprop(menu, MPROP_PERPAGE, 0);
+    new const colors[CASE_RARITY_COUNT][] = {"\d", "\w", "\r", "\y"};
+    new name[120], info[5], count;
+    for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
+    {
+        new index = GiftSkinIndex(weapon, rarity);
+        if (!inventory[index])
             continue;
-        new weapon = i / CASE_RARITY_COUNT, rarity = i % CASE_RARITY_COUNT;
-        formatex(name, charsmax(name), "%s | %s [%s] x%d%s", WEAPON_NAMES[weapon],
-                 SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity], inventory[i], g_Selected[id][weapon] == rarity + 1 ? " [экипирован]" : "");
-        num_to_str(i, info, charsmax(info));
+        formatex(name, charsmax(name), "%s[%s]\w %s%s", colors[rarity], RARITY_NAMES[rarity], SKIN_NAMES[weapon][rarity],
+                 g_Selected[id][weapon] == rarity + 1 ? " [+]" : "");
+        num_to_str(index, info, charsmax(info));
         menu_additem(menu, name, info);
         count++;
     }
     if (!count)
-        menu_addtext(menu, "Открой кейс, чтобы получить первый скин.");
+    {
+        menu_destroy(menu);
+        return ShowCollection(id);
+    }
+    menu_additem(menu, "Назад", "back");
     menu_display(id, menu);
     return PLUGIN_HANDLED;
 }
@@ -769,6 +821,8 @@ public SelectCollectionSkin(id, menu, item)
     menu_destroy(menu);
     if (!valid || !get_pcvar_num(g_Enable))
         return PLUGIN_HANDLED;
+    if (equal(info, "back"))
+        return ShowCollection(id);
 
     new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
     if (!GetPlayerKey(id, key, charsmax(key)))
@@ -795,7 +849,7 @@ public SelectCollectionSkin(id, menu, item)
         ApplySkin(id, SKIN_WEAPONS[weapon]);
     client_print_color(id, print_team_default, "^4[Новый год]^1 %s: %s / %s.",
                        removing ? "Скин снят" : "Скин экипирован", WEAPON_NAMES[weapon], RARITY_NAMES[rarity]);
-    return ShowCollection(id);
+    return ShowCollectionWeapon(id, weapon);
 }
 
 bool:LoadSelections(id)
