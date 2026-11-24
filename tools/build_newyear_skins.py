@@ -16,6 +16,11 @@ TIERS = ("common", "rare", "epic", "legendary")
 VARIANT_TIERS = (0, 0, 0, 1, 1, 1, 2, 2, 3)
 INVERTED_PLAYER_MODELS = {"m4a1", "glock18", "deagle", "usp"}
 BUTTERFLY = MODELS / "incom/knife/butterfly/crimson_web/v_knife.mdl"
+KNIFE_FAMILIES = (
+    ("butterfly", BUTTERFLY, 4, 4),
+    ("skeleton", MODELS / "incom/knife/skeleton/case_hardened/v_knife.mdl", 8, 8),
+    ("karambit", MODELS / "incom/knife/karambit/doppler_emerald_v2/v_knife.mdl", 16, 8),
+)
 PRINT_COLORS = 128
 LIGHT_LEVELS = (.78, .93, 1.05, 1.17, 1.29)
 # Side-panel anchors avoid the support hand.
@@ -40,8 +45,10 @@ def model_filename(prefix, weapon, variant=0, *, tier=None):
         suffix = f"n{variant:02}{revision}"
     else:
         suffix = "r11" if weapon == "knife" else "r13"
-        if tier == 3 and weapon in {"deagle", "knife"}:
+        if tier == 3 and weapon == "deagle":
             suffix = "r14"
+        if tier == 3 and weapon == "knife":
+            suffix = "r15"
     if prefix == "p":
         suffix += "p2" if weapon == "awp" else "p"
     return f"{prefix}_{weapon}_{suffix}.mdl"
@@ -82,7 +89,7 @@ def nearest(color, palette):
                +(g-palette[i][1])**2+(b-palette[i][2])**2)
 
 
-def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, protected, *, player=False):
+def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, protected, *, player=False, rarity=None):
     width,height,rows = artwork(weapon,tier)
     print_colors = print_palette(weapon,tier)
     lookup = {}
@@ -140,7 +147,8 @@ def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, prot
 
     if len(print_colors) + len(exact) > 256:
         raise ValueError("Indexed texture palette exceeds 256 colors")
-    rarity = tier if tier < len(TIERS) else VARIANT_TIERS[tier-len(TIERS)]
+    if rarity is None:
+        rarity = tier if tier < len(TIERS) else VARIANT_TIERS[tier-len(TIERS)]
     painted_colors = [rarity_finish(color,rarity) for color in print_colors]
     palette = bytes(channel for color in painted_colors for channel in color)
     palette += b"".join(old_palette[value*3:value*3+3] for value in exact)
@@ -183,7 +191,8 @@ def enlarge_atlases(source):
 
 def visible_texture(record):
     name, flags, _, _, _ = record
-    return not (name.startswith(("view_", "arm.", "gloves.")) or flags & 64 or "reticle" in name)
+    return not (name.startswith(("view_", "arm.", "gloves.")) or name.endswith("_arm.bmp")
+                or "_glove_" in name or flags & 64 or "reticle" in name)
 
 
 def painted_texture(record):
@@ -255,7 +264,7 @@ def isolate_player_awp_scope(source):
     return bytes(result)
 
 
-def recolor(source, weapon, tier, prefix):
+def recolor(source, weapon, tier, prefix, *, rarity=None):
     player = prefix == "p"
     protected = set()
     if player and weapon == "awp":
@@ -266,7 +275,7 @@ def recolor(source, weapon, tier, prefix):
         name, _, w, h, offset = records[index]
         end = offset+w*h
         pixels,palette = texture(source[offset:end],source[end:end+768],w,mapping,aspect,
-                                 "butterfly" if weapon=="knife" else weapon,tier,protected,player=player)
+                                 "butterfly" if weapon=="knife" else weapon,tier,protected,player=player,rarity=rarity)
         result[offset:end+768] = pixels+palette
     return result
 
@@ -297,6 +306,31 @@ def write_model(path, model):
         pending.unlink(missing_ok=True)
 
 
+def knife_art_rarity(variant):
+    return variant % 4 if variant < 8 else ((variant - 8) % 8) // 2
+
+
+def knife_model_path(variant):
+    family, _, _, _ = KNIFE_FAMILIES[variant // 8]
+    rarity = knife_art_rarity(variant)
+    revision = "b" if rarity == 3 else ""
+    return OUTPUT / family / TIERS[rarity] / f"v_knife_k{variant:02}{revision}.mdl"
+
+
+def build_knife_family(family, variants=None):
+    name, source_path, first, size = family
+    source = source_path.read_bytes()
+    artwork_family = "butterfly-extra" if name == "butterfly" else name
+    count = 0
+    for variant in range(first, first+size) if variants is None else variants:
+        path = knife_model_path(variant)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = recolor(source, artwork_family, variant-first, "v", rarity=knife_art_rarity(variant))
+        write_model(path, checked_model(data))
+        count += 1
+    return count
+
+
 def main(*, variants_only=False):
     total = 0
     for weapon in WEAPONS:
@@ -322,6 +356,8 @@ def main(*, variants_only=False):
                     model = recolor(source, weapon, variant + 3, prefix)
                     write_model(folder / model_filename(prefix, weapon, variant), checked_model(model))
                     total += 1
+    if not variants_only:
+        total += sum(build_knife_family(family) for family in KNIFE_FAMILIES)
     print(f"Built {total} models under {OUTPUT.relative_to(ROOT)}")
 
 

@@ -12,7 +12,6 @@ LEGENDARY_ART = {
     ("glock18", 12): "glock18-winter-porcelain",
     ("deagle", 3): "deagle-frosted-glass",
     ("awp", 12): "awp-winter-lanterns",
-    ("butterfly", 3): "butterfly-ruby",
 }
 
 
@@ -72,13 +71,35 @@ def material_palette(samples, count):
     return [tuple(sum(color[i] for color in group)//len(group) for i in range(3)) for group in boxes]
 
 
-@lru_cache(maxsize=20)
+@lru_cache(maxsize=23)
 def artwork_sheet(weapon):
     return read_rgb_png(MATERIALS/f"{weapon}.png")
 
 
 @lru_cache(maxsize=82)
 def artwork(weapon, tier):
+    legendary_knife = {
+        ("butterfly", 3): ("butterfly", 0),
+        ("butterfly-extra", 3): ("butterfly", 1),
+        ("skeleton", 6): ("skeleton", 0),
+        ("skeleton", 7): ("skeleton", 1),
+        ("karambit", 6): ("karambit", 0),
+        ("karambit", 7): ("karambit", 1),
+    }.get((weapon, tier))
+    if legendary_knife:
+        family, stripe = legendary_knife
+        width, height, rows = artwork_sheet(f"{family}-legendary")
+        middle = height // 2
+        return width, middle-24, rows[stripe*middle+12:(stripe+1)*middle-12]
+    if weapon in {"butterfly-extra", "skeleton", "karambit"}:
+        width, height, rows = artwork_sheet(f"{weapon}-winter")
+        columns, row_count = 2, 2 if weapon == "butterfly-extra" else 4
+        width, height = width // columns, height // row_count
+        x, y = tier % columns * width, tier // columns * height
+        inset = 12
+        return width-2*inset, height-2*inset, [
+            row[3*(x+inset):3*(x+width-inset)] for row in rows[y+inset:y+height-inset]
+        ]
     art = LEGENDARY_ART.get((weapon, tier))
     if art:
         return artwork_sheet(art)

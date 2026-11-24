@@ -1,12 +1,15 @@
 (function () {
     "use strict";
     var openingTime = 900, resultTime = 3000, landingTime = 350;
+    var heading = document.getElementsByTagName("h1")[0];
     var intro = document.getElementById("intro");
     var roulette = document.getElementById("roulette");
     var result = document.getElementById("result");
     var resultContent = document.getElementById("result-content");
     var saved = document.getElementById("saved");
-    var request = /^#([0-9a-r,]+);(\d+);(\d+);(\d+);(\d+);([0-9,]+);([0-5])$/.exec(location.hash);
+    var alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
+    var mysteryKnife = "knife-mystery.png";
+    var request = /^#([0-9a-zA-N,]+);(\d+);(\d+);(\d+);(\d+);([0-9,]+);(\d+)$/.exec(location.hash);
 
     function show(element) {
         element.className = element.className.replace(/\s*hidden\b/, "");
@@ -22,13 +25,19 @@
         return element;
     }
 
-    function showItem(block, item) {
+    function rollingImage(item) {
+        return item.knife ? mysteryKnife : item.image;
+    }
+
+    function showItem(block, item, reveal) {
         var picture = block.firstChild;
-        block.className = block.className.indexOf("result-card") !== -1
-            ? "card result-card " + item.tier : "card " + item.tier;
-        picture.src = item.image + "?v=11";
-        picture.alt = item.weapon;
-        picture.nextSibling.textContent = item.weapon + " · " + item.name;
+        var resultCard = block.className.indexOf("result-card") !== -1;
+        var concealed = item.knife && !resultCard && !reveal;
+        block.className = "card " + item.tier + (resultCard ? " result-card" : "")
+            + (concealed ? " knife-mystery" : "");
+        picture.src = (concealed ? mysteryKnife : item.image) + "?v=13";
+        picture.alt = concealed ? "Нож" : item.weapon;
+        picture.nextSibling.textContent = concealed ? "Нож" : item.weapon + " · " + item.name;
         block.lastChild.textContent = item.rarity;
     }
 
@@ -65,7 +74,7 @@
     var allowedCards = caseSkinIds[Number(request[7])];
     var rails = [];
     var preload = {};
-    if (encoded.length > 5 || encoded.length !== credits.length || startIndex < 1
+    if (!allowedCards || encoded.length > 5 || encoded.length !== credits.length || startIndex < 1
         || targetIndex <= startIndex || spinTime < 1000 || spinTime > 15000) {
         showFallback();
         return;
@@ -90,12 +99,13 @@
         roulette.appendChild(roller);
         var items = [];
         for (var i = 0; i < encoded[row].length; i++) {
-            var item = caseCards[allowedCards[parseInt(encoded[row].charAt(i), 36)]];
+            var item = caseCards[allowedCards[alphabet.indexOf(encoded[row].charAt(i))]];
             if (!item) { showFallback(); return; }
             items.push(item);
-            if (!preload[item.image]) {
-                preload[item.image] = new Image();
-                preload[item.image].src = item.image + "?v=11";
+            var image = rollingImage(item);
+            if (!preload[image]) {
+                preload[image] = new Image();
+                preload[image].src = image + "?v=13";
             }
         }
         rails.push({roller: roller, rail: rail, items: items, first: -1});
@@ -229,7 +239,8 @@
         for (var i = 0; i < rails.length; i++) {
             var row = rails[i];
             var winner = row.rail.children[targetIndex % row.poolSize];
-            winner.className = "card " + row.items[targetIndex].tier + " selected";
+            showItem(winner, row.items[targetIndex], true);
+            winner.className += " selected";
         }
     }
 
@@ -238,9 +249,11 @@
         window.setTimeout(function () {
             window.removeEventListener("resize", sizeRails, false);
             hide(roulette);
+            hide(heading);
             show(result);
             window.setTimeout(function () {
                 hide(result);
+                show(heading);
                 show(saved);
             }, resultTime);
         }, landingTime);

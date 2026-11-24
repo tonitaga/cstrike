@@ -13,11 +13,39 @@
 #define AUTO_POINT_LIFETIME 120.0
 #define AUTO_POINT_SPACING 84.0
 #define MAX_FLOOR_SHIFT 64.0
-#define PROFILE_SIZE 600
+#define CASE_STOCK_MAX 50
+#define PROFILE_SIZE ((GIFT_COLLECTION_SIZE + 1) * 7 + sizeof CASE_TYPES * (CASE_STOCK_MAX + 1) + 1)
 #define MIN_POINT_DISTANCE 48.0
 #define TASK_CASE_REVEAL 7100
 #define CASE_BOX_OPEN_TIME 0.90
 #define CASE_BATCH_MAX 5
+
+enum
+{
+    CASE_EVENT_NEW_YEAR
+};
+
+enum _:CaseType
+{
+    CaseEvent,
+    CaseName[32],
+    bool:CaseAvailable
+};
+
+new const CASE_EVENTS[][] = {"Новый год"};
+// Type positions match the drop API and stored queue order. Append future types.
+new const CASE_TYPES[CASE_TYPE_COUNT][CaseType] = {
+    {CASE_EVENT_NEW_YEAR, "M4A1", false},
+    {CASE_EVENT_NEW_YEAR, "AK-47", false},
+    {CASE_EVENT_NEW_YEAR, "Glock", false},
+    {CASE_EVENT_NEW_YEAR, "Deagle", false},
+    {CASE_EVENT_NEW_YEAR, "AWP", false},
+    {CASE_EVENT_NEW_YEAR, "USP", false},
+    {CASE_EVENT_NEW_YEAR, "Спецназ", true},
+    {CASE_EVENT_NEW_YEAR, "Террорист", true},
+    {CASE_EVENT_NEW_YEAR, "Снайпер", true}
+};
+new const CASE_ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
 new const GIFT_MODEL[] = "models/incom/newyear/gift.mdl";
@@ -31,7 +59,7 @@ new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
     {"Кобальтовый иней", "Пряничный городок", "Стеклянные игрушки", "Ледяной витраж"},
     {"Альпийский снег", "Подарки под ёлкой", "Северное сияние", "Ледяные куранты"},
     {"Остролист", "Сахарная глазурь", "Серебряные сосульки", "Изумрудная ёлка"},
-    {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Рубиновая инкрустация"}
+    {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Полярный экспресс"}
 };
 new const SKIN_EXTRA_NAMES[CASE_WEAPON_COUNT][GIFT_EXTRA_SKINS][] = {
     {"Еловая гравюра", "Морозные перья", "Бечёвка", "Северный свитер", "Мятный кристалл", "Медные колокола", "Ледяной дворец", "Бархатные розетки", "Изумрудный бант"},
@@ -41,6 +69,15 @@ new const SKIN_EXTRA_NAMES[CASE_WEAPON_COUNT][GIFT_EXTRA_SKINS][] = {
     {"Горная хвоя", "Ледяные контуры", "Снег над елями", "Алые коробки", "Полярная лента", "Кобальтовые сосульки", "Звёздное сияние", "Серебряная метель", "Фонари в зимнем лесу"},
     {"Листья падуба", "Имбирная глазурь", "Снежный вечер", "Алые бубенцы", "Сахарные звёздочки", "Кобальтовые игрушки", "Изумрудный атлас", "Ленты в полночь", "Позолоченные игрушки"}
 };
+new const KNIFE_EXTRA_NAMES[][] = {
+    "Ледяной штрих", "Морозный олень", "Аметистовый снег", "Парад щелкунчика",
+    "Снежная сталь", "Зимняя хвоя", "Леденцовая лента", "Медная шишка",
+    "Звёздный аметист", "Полярное стекло", "Зелёная аврора", "Механика праздника",
+    "Ледяная пыль", "Хвойный венок", "Карамельный завиток", "Медный зимний лес",
+    "Фиолетовый иней", "Бирюзовый витраж", "Хрустальная сакура", "Перо жар-птицы"
+};
+new const KNIFE_NAMES[][] = {"Бабочка", "Skeleton", "Karambit"};
+new const KNIFE_FOLDERS[][] = {"butterfly", "skeleton", "karambit"};
 new g_SkinNames[GIFT_COLLECTION_SIZE][72];
 new g_CaseMotdUrl, g_CaseSceneSerial;
 new bool:g_Revealing[MAX_PLAYERS + 1];
@@ -49,7 +86,7 @@ new g_RevealCount[MAX_PLAYERS + 1];
 new g_RevealReward[MAX_PLAYERS + 1][CASE_BATCH_MAX], g_RevealCredit[MAX_PLAYERS + 1][CASE_BATCH_MAX];
 new g_RevealName[MAX_PLAYERS + 1][32];
 new Float:g_RevealDeadline[MAX_PLAYERS + 1];
-new const WEAPON_NAMES[][] = {"M4A1", "AK-47", "Glock", "Deagle", "AWP", "USP", "Бабочка"};
+new const WEAPON_NAMES[][] = {"M4A1", "AK-47", "Glock", "Deagle", "AWP", "USP", "Ножи"};
 new const RARITY_NAMES[][] = {"Обычный", "Редкий", "Эпический", "Легендарный"};
 
 new g_Vault = INVALID_HANDLE;
@@ -87,10 +124,19 @@ public plugin_precache()
             new index = GiftVariantIndex(weapon, variant);
             new rarity = GiftSkinRarity(index);
             new suffix[8];
+            if (weapon == CASE_WEAPON_BUTTERFLY && variant >= CASE_RARITY_COUNT)
+            {
+                formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_knife_k%02d%s.mdl",
+                         KNIFE_FOLDERS[variant / 8], SKIN_TIERS[rarity], variant,
+                         rarity == CASE_RARITY_LEGENDARY ? "b" : "");
+                copy(g_SkinNames[index], charsmax(g_SkinNames[]), KNIFE_EXTRA_NAMES[variant - CASE_RARITY_COUNT]);
+                precache_model(g_View[index]);
+                continue;
+            }
             if (variant < CASE_RARITY_COUNT)
             {
                 if (rarity == CASE_RARITY_LEGENDARY && (weapon == CASE_WEAPON_DEAGLE || weapon == CASE_WEAPON_BUTTERFLY))
-                    copy(suffix, charsmax(suffix), "r14");
+                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r15" : "r14");
                 else
                     copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r11" : "r13");
                 copy(g_SkinNames[index], charsmax(g_SkinNames[]), SKIN_NAMES[weapon][variant]);
@@ -137,9 +183,13 @@ public plugin_init()
     // Loaded after the ordinary skin plugins, so an equipped seasonal skin takes precedence.
     register_event("CurWeapon", "ApplyCurrentSkin", "be", "1=1");
     register_event("DeathMsg", "OnDeath", "a", "1>0");
+    register_clcmd("say /case", "OpenCaseMenu");
+    register_clcmd("say_team /case", "OpenCaseMenu");
     register_clcmd("say /newyear", "OpenCaseMenu");
     register_clcmd("say_team /newyear", "OpenCaseMenu");
     register_clcmd("say /snowflakes", "ShowBalance");
+    register_clcmd("say /skins", "ShowCollection");
+    register_clcmd("say_team /skins", "ShowCollection");
     register_clcmd("say /wintercollection", "ShowCollection");
     register_concmd("amx_gift_add", "AddPoint", ADMIN_CFG, "- add a gift point at your feet");
     register_concmd("amx_gift_remove", "RemovePoint", ADMIN_CFG, "- remove the nearest gift point");
@@ -617,16 +667,16 @@ public GiftTouch(gift, player)
     new slot = FindGiftSlot(gift);
     if (slot < 0)
         return;
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(player, key, charsmax(key)))
         return;
-    LoadProfile(key, balance, inventory);
+    LoadProfile(key, balance, inventory, cases);
     new upper = clamp(get_pcvar_num(g_RewardMax), 0, GIFT_MAX_BALANCE);
     new lower = clamp(get_pcvar_num(g_RewardMin), 0, upper);
     new total = GiftAddBalance(balance, random_num(lower, upper));
-    SaveProfile(key, total, inventory);
+    SaveProfile(key, total, inventory, cases);
     RemoveGift(slot);
-    client_print_color(player, print_team_default, "^4[Новый год]^1 Подарок: ^3+%d^1 снежинок. Баланс: ^3%d^1.", total-balance, total);
+    client_print_color(player, print_team_blue, "^4[Новый год]^1 Подарок ^4+%d^1 снежинок. Баланс: ^3%d^1.", total-balance, total);
 }
 
 public client_disconnected(id)
@@ -669,12 +719,12 @@ public OnDeath()
         return;
 
     new award = clamp(get_pcvar_num(g_KillReward), 0, GIFT_MAX_BALANCE);
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!award || !GetPlayerKey(killer, key, charsmax(key)))
         return;
 
-    LoadProfile(key, balance, inventory);
-    SaveProfile(key, GiftAddBalance(balance, award), inventory);
+    LoadProfile(key, balance, inventory, cases);
+    SaveProfile(key, GiftAddBalance(balance, award), inventory, cases);
     g_LastKill[killer][victim] = now;
 }
 
@@ -687,10 +737,13 @@ bool:GetPlayerKey(id, key[], length)
         && contain(key, ":") >= 0 && !equali(key, "STEAM_ID_PENDING");
 }
 
-LoadProfile(const key[], &balance, inventory[GIFT_COLLECTION_SIZE])
+LoadProfile(const key[], &balance, inventory[GIFT_COLLECTION_SIZE], cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1])
 {
     new record[PROFILE_SIZE], offset;
     nvault_get(g_Vault, key, record, charsmax(record));
+    new tail = contain(record, "|");
+    if (tail >= 0)
+        record[tail++] = 0;
     balance = clamp(str_to_num(record), 0, GIFT_MAX_BALANCE);
     for (new i = 0; i < GIFT_COLLECTION_SIZE; i++)
     {
@@ -700,133 +753,406 @@ LoadProfile(const key[], &balance, inventory[GIFT_COLLECTION_SIZE])
             offset++;
         inventory[i] = clamp(str_to_num(record[offset]), 0, GIFT_MAX_BALANCE);
     }
+    for (new type = 0; type < sizeof CASE_TYPES; type++)
+    {
+        new length;
+        if (tail > 0)
+        {
+            while (record[tail] && record[tail] != '|')
+            {
+                if (length < CASE_STOCK_MAX && CaseStoredSkin(type, record[tail]) >= 0)
+                    cases[type][length++] = record[tail];
+                tail++;
+            }
+            if (record[tail] == '|')
+                tail++;
+        }
+        cases[type][length] = 0;
+    }
 }
 
-SaveProfile(const key[], balance, const inventory[GIFT_COLLECTION_SIZE])
+SaveProfile(const key[], balance, const inventory[GIFT_COLLECTION_SIZE], const cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1])
 {
     new record[PROFILE_SIZE];
     new length = num_to_str(balance, record, charsmax(record));
     for (new i = 0; i < GIFT_COLLECTION_SIZE; i++)
         length += formatex(record[length], charsmax(record) - length, " %d", inventory[i]);
+    for (new type = 0; type < sizeof CASE_TYPES; type++)
+        length += formatex(record[length], charsmax(record) - length, "|%s", cases[type]);
     nvault_set(g_Vault, key, record);
 }
 
 public ShowBalance(id)
 {
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (GetPlayerKey(id, key, charsmax(key)))
     {
-        LoadProfile(key, balance, inventory);
-        client_print_color(id, print_team_default, "^4[Новый год]^1 Баланс: ^3%d^1 снежинок.", balance);
+        LoadProfile(key, balance, inventory, cases);
+        client_print_color(id, print_team_blue, "^4[Новый год]^1 Баланс: ^3%d^1 снежинок.", balance);
     }
     else
-        client_print(id, print_chat, "[Новый год] Баланс доступен после авторизации.");
+        client_print_color(id, print_team_red, "^4[Новый год]^1 Баланс доступен ^3после авторизации^1.");
     return PLUGIN_HANDLED;
+}
+
+CreateWinterMenu(const title[], const handler[])
+{
+    new menu = menu_create(title, handler);
+    menu_setprop(menu, MPROP_BACKNAME, "Пред. страница");
+    menu_setprop(menu, MPROP_NEXTNAME, "След. страница");
+    menu_setprop(menu, MPROP_EXITNAME, "Закрыть");
+    return menu;
 }
 
 public OpenCaseMenu(id)
 {
     if (!get_pcvar_num(g_Enable))
         return PLUGIN_HANDLED;
-
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(id, key, charsmax(key)))
         return ShowBalance(id);
 
-    LoadProfile(key, balance, inventory);
-    new title[128], item[64], info[4];
-    formatex(title, charsmax(title), "Новогодние кейсы^nСнежинок: %d", balance);
-    new menu = menu_create(title, "BuyCase");
-    new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
-    for (new i = 0; i < CASE_WEAPON_COUNT; i++)
-    {
-        num_to_str(i, info, charsmax(info));
-        formatex(item, charsmax(item), "%s — %d снежинок", WEAPON_NAMES[i], cost);
-        menu_additem(menu, item, info);
-    }
-    menu_additem(menu, "Моя коллекция", "collection");
+    LoadProfile(key, balance, inventory, cases);
+    new stored;
+    for (new type; type < sizeof CASE_TYPES; type++)
+        stored += strlen(cases[type]);
+
+    new title[96], label[72];
+    formatex(title, charsmax(title), "\yКейсы^n\wСнежинки: \y%d", balance);
+    new menu = CreateWinterMenu(title, "SelectCaseAction");
+    menu_additem(menu, "\wКупить кейсы", "buy");
+    formatex(label, charsmax(label), "\wОткрыть кейсы \y[%d]", stored);
+    menu_additem(menu, label, "open");
+    menu_additem(menu, "\wМои скины", "skins");
     menu_display(id, menu);
     return PLUGIN_HANDLED;
 }
 
-public BuyCase(id, menu, item)
+bool:ReadCaseMenuItem(menu, item, data[], length)
 {
-    new info[16], access, callback;
-    if (item >= 0)
-        menu_item_getinfo(menu, item, access, info, charsmax(info), .callback = callback);
+    new access, callback;
+    new bool:valid = item >= 0 && menu_item_getinfo(menu, item, access, data, length, .callback = callback);
     menu_destroy(menu);
-    if (item < 0 || !get_pcvar_num(g_Enable))
+    return valid && get_pcvar_num(g_Enable) != 0;
+}
+
+public SelectCaseAction(id, menu, item)
+{
+    new data[8];
+    if (!ReadCaseMenuItem(menu, item, data, charsmax(data)))
         return PLUGIN_HANDLED;
-    if (equal(info, "collection"))
+    if (equal(data, "open"))
+        return ShowCaseStorage(id);
+    if (equal(data, "skins"))
         return ShowCollection(id);
-    if (g_Revealing[id])
-    {
-        client_print(id, print_chat, "[Новый год] Дождись окончания раскрутки.");
-        return PLUGIN_HANDLED;
-    }
 
-    new caseId = str_to_num(info);
-    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT)
+    return SelectCaseEvents(id);
+}
+
+public SelectCaseEvent(id, menu, item)
+{
+    new data[8];
+    if (!ReadCaseMenuItem(menu, item, data, charsmax(data)))
+        return PLUGIN_HANDLED;
+    if (equal(data, "back"))
+        return OpenCaseMenu(id);
+    return ShowEventCases(id, str_to_num(data));
+}
+
+ShowEventCases(id, event)
+{
+    if (event < 0 || event >= sizeof CASE_EVENTS)
         return PLUGIN_HANDLED;
 
-    new title[96], label[64], data[16];
-    formatex(title, charsmax(title), "%s: сколько кейсов открыть?", WEAPON_NAMES[caseId]);
-    new quantityMenu = menu_create(title, "BuyCaseQuantity");
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
+    if (!GetPlayerKey(id, key, charsmax(key)))
+        return ShowBalance(id);
+    LoadProfile(key, balance, inventory, cases);
+
+    new title[148], label[104], data[8];
     new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
-    for (new count = 1; count <= CASE_BATCH_MAX; count++)
+    formatex(title, charsmax(title), "\yМагазин · %s^n\wБаланс: \y%d \w| за кейс: \y%d", CASE_EVENTS[event], balance, cost);
+    new menu = CreateWinterMenu(title, "SelectCasePurchase");
+    for (new type = 0; type < sizeof CASE_TYPES; type++)
     {
-        formatex(data, charsmax(data), "%d %d", caseId, count);
-        formatex(label, charsmax(label), "%d шт. — %d снежинок", count, cost * count);
-        menu_additem(quantityMenu, label, data);
+        if (CASE_TYPES[type][CaseEvent] != event || !CASE_TYPES[type][CaseAvailable])
+            continue;
+        num_to_str(type, data, charsmax(data));
+        new first = CaseFirearm(type, 0), second = CaseFirearm(type, 1);
+        if (second >= 0)
+            formatex(label, charsmax(label), "\w«%s» \d· %s / %s / ножи", CASE_TYPES[type][CaseName], WEAPON_NAMES[first], WEAPON_NAMES[second]);
+        else
+            formatex(label, charsmax(label), "\w«%s» \d· %s / ножи", CASE_TYPES[type][CaseName], WEAPON_NAMES[first]);
+        menu_additem(menu, label, data);
     }
-    menu_display(id, quantityMenu);
+    menu_additem(menu, "\dНазад", "back");
+    menu_display(id, menu);
     return PLUGIN_HANDLED;
+}
+
+public SelectCasePurchase(id, menu, item)
+{
+    new data[8];
+    if (!ReadCaseMenuItem(menu, item, data, charsmax(data)))
+        return PLUGIN_HANDLED;
+    if (equal(data, "back"))
+        return SelectCaseEvents(id);
+    return ShowCaseQuantity(id, str_to_num(data), true);
+}
+
+SelectCaseEvents(id)
+{
+    new data[8], menu = CreateWinterMenu("\yМагазин кейсов^n\wВыбери событие", "SelectCaseEvent");
+    for (new event = 0; event < sizeof CASE_EVENTS; event++)
+    {
+        num_to_str(event, data, charsmax(data));
+        menu_additem(menu, CASE_EVENTS[event], data);
+    }
+    menu_additem(menu, "\dНазад", "back");
+    menu_display(id, menu);
+    return PLUGIN_HANDLED;
+}
+
+ShowCaseStorage(id)
+{
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
+    if (!GetPlayerKey(id, key, charsmax(key)))
+        return ShowBalance(id);
+    LoadProfile(key, balance, inventory, cases);
+
+    new menu = CreateWinterMenu("\yМои кейсы^n\wВыбери, что открыть", "SelectStoredCase");
+    menu_setprop(menu, MPROP_PERPAGE, 5);
+    new data[8], label[96], listed;
+    for (new type = 0; type < sizeof CASE_TYPES; type++)
+    {
+        new count = strlen(cases[type]);
+        if (!count)
+            continue;
+        num_to_str(type, data, charsmax(data));
+        formatex(label, charsmax(label), "\w«%s» \y×%d%s", CASE_TYPES[type][CaseName], count,
+                 CASE_TYPES[type][CaseAvailable] ? "" : " \d(прежний)");
+        menu_additem(menu, label, data);
+        listed++;
+    }
+    if (!listed)
+        menu_addtext2(menu, "\dВ хранилище пока пусто.");
+    menu_additem(menu, "\wВ магазин", "shop");
+    menu_additem(menu, "\dНазад", "back");
+    menu_display(id, menu);
+    return PLUGIN_HANDLED;
+}
+
+public SelectStoredCase(id, menu, item)
+{
+    new data[8];
+    if (!ReadCaseMenuItem(menu, item, data, charsmax(data)))
+        return PLUGIN_HANDLED;
+    if (equal(data, "back"))
+        return OpenCaseMenu(id);
+    if (equal(data, "shop"))
+        return SelectCaseEvents(id);
+    return ShowCaseQuantity(id, str_to_num(data), false);
+}
+
+ShowCaseQuantity(id, type, bool:purchase)
+{
+    if (type < 0 || type >= sizeof CASE_TYPES || (purchase && !CASE_TYPES[type][CaseAvailable]))
+        return PLUGIN_HANDLED;
+
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
+    if (!GetPlayerKey(id, key, charsmax(key)))
+        return ShowBalance(id);
+    LoadProfile(key, balance, inventory, cases);
+    new stored = strlen(cases[type]);
+    new limit = min(CASE_BATCH_MAX, purchase ? CASE_STOCK_MAX - stored : stored);
+    if (!limit)
+    {
+        if (purchase)
+        {
+            client_print_color(id, print_team_red, "^4[Кейсы]^1 Хранилище этого типа заполнено: ^3%d^1.", CASE_STOCK_MAX);
+            return ShowCaseStorage(id);
+        }
+        return ShowCaseStorage(id);
+    }
+
+    new title[160], label[80], data[16];
+    if (purchase)
+        formatex(title, charsmax(title), "\yКупить «%s»^n\wСнежинки: \y%d \w| В наличии: \y%d",
+                 CASE_TYPES[type][CaseName], balance, stored);
+    else
+        formatex(title, charsmax(title), "\yОткрыть «%s»^n\wВ наличии: \y%d",
+                 CASE_TYPES[type][CaseName], stored);
+    new menu = CreateWinterMenu(title, purchase ? "BuyCaseQuantity" : "OpenCaseQuantity");
+    new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
+    for (new count = 1; count <= limit; count++)
+    {
+        formatex(data, charsmax(data), "%d %d", type, count);
+        if (purchase && balance >= count * cost)
+            formatex(label, charsmax(label), "\w%d шт. — \y%d \wснежинок", count, cost * count);
+        else if (purchase)
+            formatex(label, charsmax(label), "\d%d шт. — %d (не хватает)", count, cost * count);
+        else
+            formatex(label, charsmax(label), "\wОткрыть \y%d \wшт.", count);
+        menu_additem(menu, label, data);
+    }
+    formatex(data, charsmax(data), "%d 0", type);
+    menu_additem(menu, "\dНазад", data);
+    menu_display(id, menu);
+    return PLUGIN_HANDLED;
+}
+
+bool:ReadCaseQuantity(menu, item, &type, &count)
+{
+    new data[16], typeText[6], countText[6];
+    if (!ReadCaseMenuItem(menu, item, data, charsmax(data)))
+        return false;
+
+    parse(data, typeText, charsmax(typeText), countText, charsmax(countText));
+    type = str_to_num(typeText);
+    count = str_to_num(countText);
+    return type >= 0 && type < sizeof CASE_TYPES && count >= 0 && count <= CASE_BATCH_MAX;
+}
+
+CaseStoredSkin(type, code)
+{
+    new slot = code >= '0' && code <= '9' ? code - '0'
+        : (code >= 'a' && code <= 'z' ? code - 'a' + 10 : code - 'A' + 36);
+    if (slot < 0 || slot >= sizeof CASE_ALPHABET - 1 || CASE_ALPHABET[slot] != code)
+        return -1;
+    if (slot < GIFT_WEAPON_VARIANTS)
+        return GiftVariantIndex(CaseFirearm(type, 0), slot);
+    if (slot < GIFT_WEAPON_VARIANTS + GIFT_KNIFE_VARIANTS)
+        return GiftVariantIndex(CASE_WEAPON_BUTTERFLY, slot - GIFT_WEAPON_VARIANTS);
+
+    new second = CaseFirearm(type, 1);
+    if (second < 0)
+        return -1;
+    return GiftVariantIndex(second, slot - GIFT_WEAPON_VARIANTS - GIFT_KNIFE_VARIANTS);
+}
+
+CaseSkinCode(type, skin)
+{
+    new weapon = GiftSkinWeapon(skin), slot = GiftSkinVariant(skin);
+    if (weapon == CASE_WEAPON_BUTTERFLY)
+        slot += GIFT_WEAPON_VARIANTS;
+    else if (weapon == CaseFirearm(type, 1))
+        slot += GIFT_WEAPON_VARIANTS + GIFT_KNIFE_VARIANTS;
+    return CASE_ALPHABET[slot];
 }
 
 public BuyCaseQuantity(id, menu, item)
 {
-    new data[16], access, callback;
-    new bool:valid = item >= 0 && menu_item_getinfo(menu, item, access, data, charsmax(data), .callback = callback);
-    menu_destroy(menu);
-    if (!valid || !get_pcvar_num(g_Enable))
+    new type, count;
+    if (!ReadCaseQuantity(menu, item, type, count) || !CASE_TYPES[type][CaseAvailable])
         return PLUGIN_HANDLED;
-    if (g_Revealing[id])
-    {
-        client_print(id, print_chat, "[Новый год] Дождись окончания раскрутки.");
-        return PLUGIN_HANDLED;
-    }
-    new caseText[6], countText[6];
-    parse(data, caseText, charsmax(caseText), countText, charsmax(countText));
-    new caseId = str_to_num(caseText), count = str_to_num(countText);
-    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || count < 1 || count > CASE_BATCH_MAX)
-        return PLUGIN_HANDLED;
+    if (!count)
+        return ShowEventCases(id, CASE_TYPES[type][CaseEvent]);
 
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(id, key, charsmax(key)))
         return ShowBalance(id);
-    LoadProfile(key, balance, inventory);
+    LoadProfile(key, balance, inventory, cases);
     new total = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE) * count;
     if (balance < total)
     {
-        client_print(id, print_chat, "[Новый год] Нужно ещё %d снежинок.", total - balance);
-        return PLUGIN_HANDLED;
+        client_print_color(id, print_team_red, "^4[Кейсы]^1 Не хватает ^3%d^1 снежинок.", total - balance);
+        return ShowCaseQuantity(id, type, true);
     }
+    new stored = strlen(cases[type]);
+    if (count > CASE_STOCK_MAX - stored)
+    {
+        client_print_color(id, print_team_red, "^4[Кейсы]^1 Лимит хранилища: ^3%d^1 одного типа.", CASE_STOCK_MAX);
+        return ShowCaseStorage(id);
+    }
+    if (!QueueCasePurchase(type, count, cases[type], stored))
+        return PLUGIN_HANDLED;
+    SaveProfile(key, balance - total, inventory, cases);
+    client_print_color(id, print_team_blue, "^4[Кейсы]^1 «%s»: куплено ^4%d^1, потрачено ^3%d^1 снежинок.",
+                       CASE_TYPES[type][CaseName], count, total);
+    return ShowCaseReceipt(id, type, stored + count, balance - total);
+}
 
-    // Charge the whole batch before evaluating duplicates, then save once.
-    balance -= total;
+ShowCaseReceipt(id, type, stored, balance)
+{
+    new title[148], data[16];
+    formatex(title, charsmax(title), "\yПокупка · «%s»^n\wВ наличии: \y%d \w| Снежинки: \y%d",
+             CASE_TYPES[type][CaseName], stored, balance);
+    new menu = CreateWinterMenu(title, "SelectCaseReceipt");
+    new const labels[][] = {"\yОткрыть этот тип", "\wКупить ещё", "\wМои кейсы"};
+    for (new action; action < sizeof labels; action++)
+    {
+        formatex(data, charsmax(data), "%d %d", type, action);
+        menu_additem(menu, labels[action], data);
+    }
+    menu_display(id, menu);
+    return PLUGIN_HANDLED;
+}
+
+public SelectCaseReceipt(id, menu, item)
+{
+    new type, action;
+    if (!ReadCaseQuantity(menu, item, type, action))
+        return PLUGIN_HANDLED;
+    if (action == 2)
+        return ShowCaseStorage(id);
+    return ShowCaseQuantity(id, type, action == 1);
+}
+
+bool:QueueCasePurchase(type, count, queue[CASE_STOCK_MAX + 1], stored)
+{
     for (new i = 0; i < count; i++)
     {
         new weapon, rarity;
-        if (!incom_case_roll(caseId, weapon, rarity))
-            return PLUGIN_HANDLED;
-        new reward = GiftRollSkin(weapon, rarity);
-        new sale = CaseDuplicateValue(caseId, weapon, rarity);
-        if (reward < 0 || reward >= GIFT_COLLECTION_SIZE || !sale)
-            return PLUGIN_HANDLED;
+        if (!incom_case_roll(type, weapon, rarity))
+            return false;
+        queue[stored + i] = CaseSkinCode(type, GiftRollSkin(weapon, rarity));
+    }
+    queue[stored + count] = 0;
+    return true;
+}
+
+public OpenCaseQuantity(id, menu, item)
+{
+    new type, count;
+    if (!ReadCaseQuantity(menu, item, type, count))
+        return PLUGIN_HANDLED;
+    if (!count)
+        return ShowCaseStorage(id);
+    if (g_Revealing[id])
+    {
+        client_print_color(id, print_team_red, "^4[Кейсы]^1 Дождись окончания ^3текущей рулетки^1.");
+        return PLUGIN_HANDLED;
+    }
+
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
+    if (!GetPlayerKey(id, key, charsmax(key)))
+        return ShowBalance(id);
+    LoadProfile(key, balance, inventory, cases);
+    new stored = strlen(cases[type]);
+    if (stored < count)
+        return ShowCaseStorage(id);
+
+    if (!DeliverStoredCases(id, type, count, cases[type], stored, balance, inventory))
+        return PLUGIN_HANDLED;
+    SaveProfile(key, balance, inventory, cases);
+    g_RevealCount[id] = count;
+    StartCaseReveal(id, type, balance);
+    return PLUGIN_HANDLED;
+}
+
+bool:DeliverStoredCases(id, type, count, queue[CASE_STOCK_MAX + 1], stored, &balance,
+                        inventory[GIFT_COLLECTION_SIZE])
+{
+    for (new i = 0; i < count; i++)
+    {
+        new reward = CaseStoredSkin(type, queue[i]);
+        if (reward < 0)
+            return false;
         g_RevealReward[id][i] = reward;
         g_RevealCredit[id][i] = 0;
         if (inventory[reward])
         {
+            new sale = CaseDuplicateValue(type, GiftSkinWeapon(reward), GiftSkinRarity(reward));
             new updated = GiftAddBalance(balance, sale);
             g_RevealCredit[id][i] = updated - balance;
             balance = updated;
@@ -835,10 +1161,9 @@ public BuyCaseQuantity(id, menu, item)
             inventory[reward] = 1;
     }
 
-    SaveProfile(key, balance, inventory);
-    g_RevealCount[id] = count;
-    StartCaseReveal(id, caseId, balance);
-    return PLUGIN_HANDLED;
+    for (new i = 0; i <= stored - count; i++)
+        queue[i] = queue[i + count];
+    return true;
 }
 
 bool:ShowCaseScene(id, caseId, balance)
@@ -861,7 +1186,6 @@ bool:ShowCaseScene(id, caseId, balance)
 
     // Use case-local skin IDs to keep five full rails within the MOTD URL limit.
     new encoded[CASE_BATCH_MAX * (CASE_MOTD_ITEMS + 1) + 1], credits[CASE_BATCH_MAX * 8 + 1];
-    new const alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
     new length, creditLength;
     for (new row = 0; row < g_RevealCount[id]; row++)
     {
@@ -877,10 +1201,7 @@ bool:ShowCaseScene(id, caseId, balance)
                     return false;
                 item = GiftRollSkin(weapon, rarity);
             }
-            new code = GiftSkinVariant(item);
-            if (GiftSkinWeapon(item) == CASE_WEAPON_BUTTERFLY)
-                code += GIFT_WEAPON_VARIANTS;
-            encoded[length++] = alphabet[code];
+            encoded[length++] = CaseSkinCode(caseId, item);
         }
         creditLength += formatex(credits[creditLength], charsmax(credits) - creditLength,
                                  "%s%d", row ? "," : "", g_RevealCredit[id][row]);
@@ -888,7 +1209,7 @@ bool:ShowCaseScene(id, caseId, balance)
     new address[511];
     if (strlen(url) + length + creditLength + 70 >= charsmax(address))
         return false;
-    formatex(address, charsmax(address), "%s%ccaseview=9&turn=%d-%d#%s;%d;%d;%d;%d;%s;%d",
+    formatex(address, charsmax(address), "%s%ccaseview=13&turn=%d-%d#%s;%d;%d;%d;%d;%s;%d",
              url, contain(url, "?") >= 0 ? '&' : '?', get_systime(), ++g_CaseSceneSerial, encoded,
              CASE_MOTD_START, CASE_MOTD_TARGET, balance, CASE_MOTD_SPIN_MS, credits, caseId);
     show_motd(id, address, "Новогодние кейсы");
@@ -945,12 +1266,13 @@ FinishCaseReveal(id)
     for (new i = 0; i < g_RevealCount[id]; i++)
     {
         new reward = g_RevealReward[id][i];
-        new weapon = GiftSkinWeapon(reward), rarity = GiftSkinRarity(reward);
+        new rarity = GiftSkinRarity(reward), weaponName[24];
+        SkinWeaponLabel(reward, weaponName, charsmax(weaponName));
         new sale[64];
         if (g_RevealCredit[id][i])
-            formatex(sale, charsmax(sale), " Дубликат: +%d снежинок.", g_RevealCredit[id][i]);
-        client_print_color(id, print_team_default, "^4[Новый год]^1 Кейс %d: ^3«%s | %s»^1 (%s).%s",
-                           i + 1, WEAPON_NAMES[weapon], g_SkinNames[reward], RARITY_NAMES[rarity], sale);
+            formatex(sale, charsmax(sale), " · Дубликат ^4+%d^1.", g_RevealCredit[id][i]);
+        client_print_color(id, WinterRarityColor(rarity), "^4[Кейсы]^1 #%d ^3[%s]^1 %s · ^4%s^1%s",
+                           i + 1, RARITY_NAMES[rarity], weaponName, g_SkinNames[reward], sale);
         AnnounceCaseDrop(id, reward);
     }
     g_RevealCount[id] = 0;
@@ -962,17 +1284,33 @@ AnnounceCaseDrop(id, reward)
     if (!CaseRevealIsPublic(rarity))
         return;
 
-    new weapon = GiftSkinWeapon(reward);
+    new weaponName[24];
+    SkinWeaponLabel(reward, weaponName, charsmax(weaponName));
     new players[MAX_PLAYERS], count;
     get_players(players, count, "ch");
     for (new i = 0; i < count; i++)
     {
         if (players[i] == id)
             continue;
-        client_print_color(players[i], rarity == CASE_RARITY_EPIC ? print_team_blue : print_team_red,
-                       "^4[Новый год]^1 Игроку ^3%s^1 выпал скин ^4«%s | %s»^1. Редкость: ^3%s^1.",
-                       g_RevealName[id], WEAPON_NAMES[weapon], g_SkinNames[reward], RARITY_NAMES[rarity]);
+        client_print_color(players[i], WinterRarityColor(rarity),
+                       "^4[Новый год]^1 ^4%s^1 получил ^3[%s]^1 %s · ^4%s^1.",
+                       g_RevealName[id], RARITY_NAMES[rarity], weaponName, g_SkinNames[reward]);
     }
+}
+
+WinterRarityColor(rarity)
+{
+    new const colors[CASE_RARITY_COUNT] = {print_team_grey, print_team_blue, print_team_blue, print_team_red};
+    return colors[rarity];
+}
+
+SkinWeaponLabel(index, label[], size)
+{
+    new weapon = GiftSkinWeapon(index);
+    if (weapon == CASE_WEAPON_BUTTERFLY)
+        copy(label, size, KNIFE_NAMES[GiftSkinVariant(index) / 8]);
+    else
+        copy(label, size, WEAPON_NAMES[weapon]);
 }
 
 public ShowCollection(id)
@@ -980,12 +1318,12 @@ public ShowCollection(id)
     if (!get_pcvar_num(g_Enable))
         return PLUGIN_HANDLED;
 
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(id, key, charsmax(key)))
         return ShowBalance(id);
 
-    LoadProfile(key, balance, inventory);
-    new menu = menu_create("Моя коллекция", "SelectCollectionWeapon");
+    LoadProfile(key, balance, inventory, cases);
+    new menu = CreateWinterMenu("\yМои скины^n\wВыбери оружие", "SelectCollectionWeapon");
     menu_setprop(menu, MPROP_PERPAGE, 0);
     new info[5], count;
     for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
@@ -1002,19 +1340,19 @@ public ShowCollection(id)
     }
     if (!count)
         menu_addtext2(menu, "Открой кейс, чтобы получить первый скин.");
-    menu_additem(menu, "Назад", "back");
+    menu_additem(menu, "Кейсы", "cases");
     menu_display(id, menu);
     return PLUGIN_HANDLED;
 }
 
 public SelectCollectionWeapon(id, menu, item)
 {
-    new info[5], access, callback;
+    new info[8], access, callback;
     new bool:valid = item >= 0 && menu_item_getinfo(menu, item, access, info, charsmax(info), .callback = callback);
     menu_destroy(menu);
     if (!valid)
         return PLUGIN_HANDLED;
-    if (equal(info, "back"))
+    if (equal(info, "cases"))
         return OpenCaseMenu(id);
     return ShowCollectionWeapon(id, str_to_num(info));
 }
@@ -1024,33 +1362,42 @@ ShowCollectionWeapon(id, weapon)
     if (!get_pcvar_num(g_Enable) || weapon < 0 || weapon >= sizeof SKIN_WEAPONS)
         return PLUGIN_HANDLED;
 
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(id, key, charsmax(key)))
         return PLUGIN_HANDLED;
-    LoadProfile(key, balance, inventory);
+    LoadProfile(key, balance, inventory, cases);
     LoadSelections(id);
-    new menu = menu_create(WEAPON_NAMES[weapon], "SelectCollectionSkin");
-    menu_setprop(menu, MPROP_PERPAGE, 4);
+    new title[80];
+    formatex(title, charsmax(title), "\yСкины · %s", WEAPON_NAMES[weapon]);
+    new menu = CreateWinterMenu(title, "SelectCollectionSkin");
+    menu_setprop(menu, MPROP_PERPAGE, weapon == CASE_WEAPON_BUTTERFLY ? 3 : 4);
     new const colors[CASE_RARITY_COUNT][] = {"\d", "\w", "\r", "\y"};
     new name[120], info[5], count;
-    for (new variant = 0; variant < GiftVariantCount(weapon); variant++)
+    for (new tier = CASE_RARITY_COUNT - 1; tier >= 0; tier--)
     {
-        new index = GiftVariantIndex(weapon, variant);
-        new rarity = GiftSkinRarity(index);
-        if (!inventory[index])
-            continue;
-        formatex(name, charsmax(name), "%s[%s]\w %s%s", colors[rarity], RARITY_NAMES[rarity], g_SkinNames[index],
-                 g_Selected[id][weapon] == variant + 1 ? " [+]" : "");
-        num_to_str(index, info, charsmax(info));
-        menu_additem(menu, name, info);
-        count++;
+        for (new variant = 0; variant < GiftVariantCount(weapon); variant++)
+        {
+            new index = GiftVariantIndex(weapon, variant);
+            new rarity = GiftSkinRarity(index);
+            if (rarity != tier || !inventory[index])
+                continue;
+            new label[24];
+            if (weapon == CASE_WEAPON_BUTTERFLY)
+                SkinWeaponLabel(index, label, charsmax(label));
+            formatex(name, charsmax(name), "%s[%s]\w %s%s%s%s", colors[rarity], RARITY_NAMES[rarity],
+                     label, label[0] ? " · " : "", g_SkinNames[index],
+                     g_Selected[id][weapon] == variant + 1 ? " \y[+]" : "");
+            num_to_str(index, info, charsmax(info));
+            menu_additem(menu, name, info);
+            count++;
+        }
     }
     if (!count)
     {
         menu_destroy(menu);
         return ShowCollection(id);
     }
-    menu_additem(menu, "Назад", "back");
+    menu_additem(menu, "\dНазад", "back");
     menu_display(id, menu);
     return PLUGIN_HANDLED;
 }
@@ -1065,14 +1412,14 @@ public SelectCollectionSkin(id, menu, item)
     if (equal(info, "back"))
         return ShowCollection(id);
 
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
     if (!GetPlayerKey(id, key, charsmax(key)))
         return PLUGIN_HANDLED;
 
     new index = str_to_num(info);
     if (index < 0 || index >= GIFT_COLLECTION_SIZE)
         return PLUGIN_HANDLED;
-    LoadProfile(key, balance, inventory);
+    LoadProfile(key, balance, inventory, cases);
     if (!inventory[index])
         return PLUGIN_HANDLED;
 
@@ -1088,8 +1435,10 @@ public SelectCollectionSkin(id, menu, item)
 
     if (is_user_alive(id) && get_user_weapon(id) == SKIN_WEAPONS[weapon])
         ApplySkin(id, SKIN_WEAPONS[weapon]);
-    client_print_color(id, print_team_default, "^4[Новый год]^1 %s: %s / %s.",
-                       removing ? "Скин снят" : "Скин экипирован", WEAPON_NAMES[weapon], RARITY_NAMES[rarity]);
+    new label[24];
+    SkinWeaponLabel(index, label, charsmax(label));
+    client_print_color(id, WinterRarityColor(rarity), "^4[Скины]^1 %s ^3[%s]^1 %s · ^4%s^1.",
+                       removing ? "Снят" : "Экипирован", RARITY_NAMES[rarity], label, g_SkinNames[index]);
     return ShowCollectionWeapon(id, weapon);
 }
 

@@ -26,42 +26,80 @@ enum
     CASE_RARITY_COUNT
 };
 
+enum
+{
+    CASE_TYPE_CT = CASE_WEAPON_COUNT,
+    CASE_TYPE_T,
+    CASE_TYPE_SNIPER,
+    CASE_TYPE_COUNT
+};
+
+new const CASE_GROUP_WEAPONS[][2] = {
+    {CASE_WEAPON_M4A1, CASE_WEAPON_USP},
+    {CASE_WEAPON_AK47, CASE_WEAPON_GLOCK},
+    {CASE_WEAPON_AWP, CASE_WEAPON_DEAGLE}
+};
+
+stock CaseFirearm(caseId, position)
+{
+    if (caseId < 0 || caseId >= CASE_TYPE_COUNT || position < 0 || position > 1)
+        return -1;
+    if (caseId < CASE_WEAPON_COUNT)
+        return position == 0 ? caseId : -1;
+    return CASE_GROUP_WEAPONS[caseId - CASE_WEAPON_COUNT][position];
+}
+
 // Returns one weapon and rarity. A false return leaves both outputs untouched.
 native bool:incom_case_roll(caseId, &weapon, &rarity);
 
-// Each case uses the same two rows: its own weapon and the butterfly.
+// The firearm row is split evenly between the weapons in a grouped case.
 // Values are outcomes out of CASE_DROP_ROLL_COUNT.
 new const CASE_DROP_WEIGHTS[2][CASE_RARITY_COUNT] = {
     {7500, 1950, 300, 50},
     {120, 60, 18, 2}
 };
 
+stock CaseDropWeight(caseId, weapon, rarity)
+{
+    if (caseId < 0 || caseId >= CASE_TYPE_COUNT || rarity < 0 || rarity >= CASE_RARITY_COUNT)
+        return 0;
+    if (weapon == CASE_WEAPON_BUTTERFLY)
+        return CASE_DROP_WEIGHTS[1][rarity];
+    if (weapon < 0 || (weapon != CaseFirearm(caseId, 0) && weapon != CaseFirearm(caseId, 1)))
+        return 0;
+    return CASE_DROP_WEIGHTS[0][rarity] / (caseId < CASE_WEAPON_COUNT ? 1 : 2);
+}
+
 stock CaseDuplicateValue(caseId, weapon, rarity)
 {
-    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || rarity < 0 || rarity >= CASE_RARITY_COUNT
-        || (weapon != caseId && weapon != CASE_WEAPON_BUTTERFLY))
-        return 0;
-
-    // 3.5 / (weight / 10000), rounded down with integer arithmetic.
-    return 35000 / CASE_DROP_WEIGHTS[weapon == CASE_WEAPON_BUTTERFLY ? 1 : 0][rarity];
+    new weight = CaseDropWeight(caseId, weapon, rarity);
+    // 3.5 / (weight / 10000), rounded down.
+    return weight ? 35000 / weight : 0;
 }
 
 stock bool:CaseDropResolve(caseId, roll, &weapon, &rarity)
 {
-    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || roll < 0 || roll >= CASE_DROP_ROLL_COUNT)
+    if (caseId < 0 || caseId >= CASE_TYPE_COUNT || roll < 0 || roll >= CASE_DROP_ROLL_COUNT)
         return false;
 
-    for (new group = 0; group < sizeof CASE_DROP_WEIGHTS; group++)
+    new groups[3];
+    groups[0] = CaseFirearm(caseId, 0);
+    groups[1] = CaseFirearm(caseId, 1);
+    groups[2] = CASE_WEAPON_BUTTERFLY;
+    for (new group = 0; group < sizeof groups; group++)
     {
+        if (groups[group] < 0)
+            continue;
         for (new tier = 0; tier < CASE_RARITY_COUNT; tier++)
         {
-            if (roll < CASE_DROP_WEIGHTS[group][tier])
+            new weight = CaseDropWeight(caseId, groups[group], tier);
+            if (roll < weight)
             {
-                weapon = group ? CASE_WEAPON_BUTTERFLY : caseId;
+                weapon = groups[group];
                 rarity = tier;
                 return true;
             }
-            roll -= CASE_DROP_WEIGHTS[group][tier];
+            roll -= weight;
         }
     }
 
