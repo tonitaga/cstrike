@@ -5,13 +5,23 @@ from struct import unpack_from
 from zlib import decompress
 
 MATERIALS = Path(__file__).with_name("newyear_materials")
+LEGENDARY_ART = {
+    ("ak47", 3): "ak47-firebird",
+    ("awp", 3): "awp-midnight-clock",
+    ("ak47", 12): "ak47-copper-music-box",
+    ("glock18", 12): "glock18-winter-porcelain",
+    ("deagle", 3): "deagle-frosted-glass",
+    ("awp", 12): "awp-winter-lanterns",
+    ("butterfly", 3): "butterfly-ruby",
+}
 
 
-def read_rgb_png(path):
+def read_rgb_png(path, *, alpha=False):
+    channels = 4 if alpha else 3
     contents = path.read_bytes()
     width, height, depth, color, _, _, interlace = unpack_from(">IIBBBBB", contents, 16)
-    if (contents[:8], depth, color, interlace) != (b"\x89PNG\r\n\x1a\n", 8, 2, 0):
-        raise ValueError(f"Expected non-interlaced 8-bit RGB PNG: {path}")
+    if (contents[:8], depth, color, interlace) != (b"\x89PNG\r\n\x1a\n", 8, 6 if alpha else 2, 0):
+        raise ValueError(f"Expected non-interlaced 8-bit RGB(A) PNG: {path}")
     cursor, compressed = 8, bytearray()
     while cursor < len(contents):
         size, kind = unpack_from(">I4s", contents, cursor)
@@ -19,7 +29,7 @@ def read_rgb_png(path):
             compressed.extend(contents[cursor+8:cursor+8+size])
         cursor += size+12
     raw = decompress(compressed)
-    stride = width*3
+    stride = width*channels
     rows = []
     previous = bytearray(stride)
     for y in range(height):
@@ -27,9 +37,9 @@ def read_rgb_png(path):
         mode = raw[start]
         row = bytearray(raw[start+1:start+1+stride])
         for i in range(stride):
-            left = row[i-3] if i>=3 else 0
+            left = row[i-channels] if i>=channels else 0
             top = previous[i]
-            diagonal = previous[i-3] if i>=3 else 0
+            diagonal = previous[i-channels] if i>=channels else 0
             if mode == 1:
                 prediction = left
             elif mode == 2:
@@ -62,18 +72,24 @@ def material_palette(samples, count):
     return [tuple(sum(color[i] for color in group)//len(group) for i in range(3)) for group in boxes]
 
 
-@lru_cache(maxsize=7)
+@lru_cache(maxsize=20)
 def artwork_sheet(weapon):
     return read_rgb_png(MATERIALS/f"{weapon}.png")
 
 
-@lru_cache(maxsize=28)
+@lru_cache(maxsize=82)
 def artwork(weapon, tier):
-    width, height, rows = artwork_sheet(weapon)
-    width, height = width//2, height//2
-    x, y = tier%2*width, tier//2*height
+    art = LEGENDARY_ART.get((weapon, tier))
+    if art:
+        return artwork_sheet(art)
+    expanded = tier >= 4
+    columns = 3 if expanded else 2
+    width, height, rows = artwork_sheet(f"{weapon}-variants" if expanded else weapon)
+    tile = tier - 4 if expanded else tier
+    width, height = width//columns, height//columns
+    x, y = tile%columns*width, tile//columns*height
     # Keep generated transitions between tiles out of the print.
-    inset = 16
+    inset = 32 if expanded else 16
     return width-2*inset, height-2*inset, [
         row[3*(x+inset):3*(x+width-inset)] for row in rows[y+inset:y+height-inset]
     ]

@@ -21,9 +21,10 @@ h1{position:relative;margin:0;text-align:center;font-size:18px;letter-spacing:2p
 .glow{position:absolute;top:22px;left:22px;width:130px;height:65px;background:#f8d69c;opacity:0;filter:blur(12px);border-radius:50%}
 .copy{font-size:13px;color:#e6d2b3}
 .hidden{display:none!important}
-.roller{overflow:hidden;margin:0 auto;max-width:760px;padding:17px 0 14px;position:relative}
-.rail{position:relative;left:0;white-space:nowrap;text-align:left}
-.roller:before,.roller:after{content:"";position:absolute;top:0;bottom:0;width:11%;z-index:2;pointer-events:none}
+#roulette{top:48px;top:calc(48px + 4%);right:12px;bottom:12px;bottom:calc(12px + 4%);left:12px;margin:0;overflow:hidden}
+.roller{position:absolute;left:0;right:0;overflow:hidden;background:#13232c;border-radius:5px}
+.rail{position:absolute;left:0}
+.roller:before,.roller:after{content:"";position:absolute;top:0;bottom:0;width:5%;z-index:2;pointer-events:none}
 .roller:before{left:0;background:linear-gradient(to right,#18262d,transparent)}
 .roller:after{right:0;background:linear-gradient(to left,#18262d,transparent)}
 .card{display:inline-block;vertical-align:top;width:124px;height:119px;margin-right:7px;padding:5px 5px 7px;background:#172631;border:1px solid #657382;border-bottom-width:3px;border-radius:4px;white-space:normal;text-align:center}
@@ -42,6 +43,17 @@ h1{position:relative;margin:0;text-align:center;font-size:18px;letter-spacing:2p
 .balance{margin-top:9px;color:#d9d3cb;font-size:12px}
 .sale{margin-top:6px;color:#ffd37f;font-weight:bold;font-size:13px}
 @media(max-height:310px){.scene{padding:9px}.panel{top:55%}.result-card{width:180px}.box{margin-bottom:8px}}
+#roulette .card{position:absolute;top:0;margin:0;overflow:hidden}
+#roulette .card img{margin:0 auto}
+#roulette .compact .card{text-align:left}
+#roulette .compact .card img{float:left;margin:0 6px 0 0}
+#result{top:0;bottom:0;margin:0;padding:0 12px;overflow:auto}
+.result-layout{display:table;width:100%;height:100%}
+#result-content{display:table-cell;vertical-align:middle}
+.batch-result .result-card{display:inline-block;vertical-align:top;width:126px;margin:3px}
+.batch-result .result-card strong,.batch-result .result-card span,.batch-result .sale{font-size:10px}
+.batch-result .result-card img{height:48px;object-fit:contain}
+@media(max-height:310px){#roulette{top:34px;right:5px;bottom:5px;left:5px}#result{padding:0 5px}.batch-result .result-card{width:30%;min-width:96px;min-height:50px;padding:4px}.batch-result .result-card img{float:left;width:38%;height:30px;margin-right:4px}.batch-result .sale{margin-top:3px}}
 </style>
 </head>
 <body>
@@ -53,19 +65,17 @@ h1{position:relative;margin:0;text-align:center;font-size:18px;letter-spacing:2p
     </div>
     <div class="copy">Открываем кейс…</div>
 </div>
-<div class="panel hidden" id="roulette">
-    <div class="roller" id="roller">
-        <div class="marker"></div><div class="rail" id="rail"></div>
-    </div>
+<div class="panel hidden" id="roulette"></div>
+<div class="panel hidden" id="result" aria-live="polite">
+    <div class="result-layout"><div id="result-content"></div></div>
 </div>
-<div class="panel hidden" id="result" aria-live="polite"></div>
 <div class="panel hidden" id="saved">
-    <div class="copy">Скин сохранён в коллекции</div>
+    <div class="copy">Результаты отправлены в игровой чат</div>
     <div class="balance">Можно закрыть окно и вернуться в игру.</div>
 </div>
 <noscript><p>Для графической рулетки нужен JavaScript. Закройте окно и откройте /wintercollection.</p></noscript>
 </div>
-<script src="catalog.js"></script>
-<script src="reveal.js?v=4"></script>
+<script src="catalog.js?v=11"></script>
+<script src="reveal.js?v=15"></script>
 </body>
 </html>

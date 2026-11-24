@@ -32,8 +32,8 @@ native bool:incom_case_roll(caseId, &weapon, &rarity);
 // Each case uses the same two rows: its own weapon and the butterfly.
 // Values are outcomes out of CASE_DROP_ROLL_COUNT.
 new const CASE_DROP_WEIGHTS[2][CASE_RARITY_COUNT] = {
-    {6650, 2185, 570, 95},
-    {300, 150, 45, 5}
+    {7500, 1950, 300, 50},
+    {120, 60, 18, 2}
 };
 
 stock CaseDuplicateValue(caseId, weapon, rarity)

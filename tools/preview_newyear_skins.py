@@ -4,7 +4,7 @@ from pathlib import Path
 from struct import pack
 from zlib import compress, crc32
 
-from build_newyear_skins import INVERTED_PLAYER_MODELS, OUTPUT, TIERS, WEAPONS, texture_records, visible_texture
+from build_newyear_skins import model_filename, INVERTED_PLAYER_MODELS, OUTPUT, TIERS, WEAPONS, texture_records, visible_texture
 from goldsrc_skin_geometry import cross, dot, projection, raster, sub, triangles, unit
 
 
@@ -17,7 +17,7 @@ def png(path, width, height, pixels):
                      chunk(b"IDAT", compress(rows, 6)) + chunk(b"IEND", b""))
 
 
-def render(model, width, height, back=False, idle=False, inverted=False, above=False):
+def render(model, width, height, back=False, idle=False, inverted=False, above=False, hands=False):
     records = tuple(texture_records(model))
     allowed = {i for i, record in enumerate(records) if visible_texture(record)}
     mesh = list(triangles(model, allowed, first_variant_only=True, idle=idle))
@@ -31,6 +31,11 @@ def render(model, width, height, back=False, idle=False, inverted=False, above=F
         def project(point):
             x, y, depth = side_project(point)
             return x, (depth-near)/tall, -y
+
+    if hands:
+        hands_only = {i for i, record in enumerate(records)
+                      if record[0].startswith(("view_", "arm.", "gloves."))}
+        mesh.extend(triangles(model, hands_only, first_variant_only=True, idle=idle))
 
     scale = min((width-28)/length, (height-22)/tall)
     projected_w, projected_h = length*scale, tall*scale
@@ -78,7 +83,7 @@ def main():
         page = bytearray(bytes((13,16,22)) * (page_w*page_h))
         for row,(prefix,back,above) in enumerate(views):
             for col,tier in enumerate(TIERS):
-                path = OUTPUT / name / tier / f"{prefix}_{weapon}_r5.mdl"
+                path = OUTPUT / name / tier / model_filename(prefix,weapon,tier=col)
                 tile = render(path.read_bytes(), w, h, back, prefix == "v",
                               prefix == "p" and weapon in INVERTED_PLAYER_MODELS, above)
                 for y in range(h):

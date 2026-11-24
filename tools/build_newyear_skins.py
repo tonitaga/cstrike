@@ -1,11 +1,11 @@
 """Build the INCOMSYSTEM winter collection from the checked-in GoldSrc models."""
 from functools import lru_cache
 from pathlib import Path
-from struct import pack_into, unpack_from
+from struct import pack, pack_into, unpack_from
 from tempfile import NamedTemporaryFile
 from time import sleep
 
-from goldsrc_skin_geometry import print_projection, scale_texture_uvs
+from goldsrc_skin_geometry import print_projection, scale_texture_uvs, studio_meshes
 from newyear_surface_art import artwork, material_palette
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,16 +13,67 @@ MODELS = ROOT / "cstrike/models"
 OUTPUT = MODELS / "incom/newyear"
 WEAPONS = ("m4a1", "ak47", "glock18", "deagle", "knife", "awp", "usp")
 TIERS = ("common", "rare", "epic", "legendary")
+VARIANT_TIERS = (0, 0, 0, 1, 1, 1, 2, 2, 3)
 INVERTED_PLAYER_MODELS = {"m4a1", "glock18", "deagle", "usp"}
 BUTTERFLY = MODELS / "incom/knife/butterfly/crimson_web/v_knife.mdl"
-PRINT_COLORS = 64
+PRINT_COLORS = 128
+LIGHT_LEVELS = (.78, .93, 1.05, 1.17, 1.29)
+# Side-panel anchors avoid the support hand.
+# Height is measured in physical model height; width follows the artwork aspect.
+MOTIF_PLACEMENT = {
+    "m4a1": (.61, .33, .29),
+    "ak47": (.60, .23, .26),
+    "glock18": (.37, .36, .24),
+    "deagle": (.32, .23, .24),
+    "awp": (.65, .51, .25),
+    "usp": (.68, .21, .23),
+}
 
 
-@lru_cache(maxsize=28)
+def model_filename(prefix, weapon, variant=0, *, tier=None):
+    if variant:
+        revision = "f"
+        if variant == 9 and weapon in {"glock18", "awp"}:
+            revision = "g"
+        if variant == 9 and weapon == "ak47":
+            revision = "h"
+        suffix = f"n{variant:02}{revision}"
+    else:
+        suffix = "r11" if weapon == "knife" else "r13"
+        if tier == 3 and weapon in {"deagle", "knife"}:
+            suffix = "r14"
+    if prefix == "p":
+        suffix += "p2" if weapon == "awp" else "p"
+    return f"{prefix}_{weapon}_{suffix}.mdl"
+
+
+@lru_cache(maxsize=82)
 def print_palette(weapon, tier):
     width,height,rows = artwork(weapon,tier)
-    samples = [tuple(row[x:x+3]) for row in rows[::8] for x in range(0,3*width,24)]
+    samples = [tone(row[x:x+3], light) for row in rows[::12]
+               for x in range(0,3*width,36) for light in LIGHT_LEVELS]
     return material_palette(samples,PRINT_COLORS)
+
+
+def tone(rgb, light):
+    # Use a soft highlight shoulder so bright painted details retain their shape.
+    return tuple(min(255, round(value*light if light <= 1 else
+                               value+(255-value)*value/255*(light-1))) for value in rgb)
+
+
+def rarity_finish(color, rarity):
+    """Grade indexed paint colors while retaining the source illustration."""
+    r,g,b = color
+    luma = (.26*r+.60*g+.14*b)/255
+    chroma, contrast, lift = (
+        (.79,.86,.035), (1.02,1.00,.010), (1.16,1.11,.018), (1.24,1.23,.025)
+    )[rarity]
+    value = (luma-.5)*contrast+.5+lift
+    # Broaden bright details on the highest tiers without tinting their shadows.
+    highlight = max(0.0, (luma-.55)/.45)**2
+    glint = ((0,0,0),(0,0,0),(3,8,15),(26,18,7))[rarity]
+    return tuple(max(0,min(255,round(value*255+(channel-luma*255)*chroma+highlight*glint[i])))
+                 for i,channel in enumerate(color))
 
 
 def nearest(color, palette):
@@ -31,14 +82,24 @@ def nearest(color, palette):
                +(g-palette[i][1])**2+(b-palette[i][2])**2)
 
 
-def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, protected):
+def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, protected, *, player=False):
     width,height,rows = artwork(weapon,tier)
-    colors = print_palette(weapon,tier)
+    print_colors = print_palette(weapon,tier)
     lookup = {}
-    u_map,v_map,state = mapping
+    u_map,v_map,state,lighting = mapping
+    stock_luma = [(old_palette[i]*3+old_palette[i+1]*6+old_palette[i+2]) / 2550
+                  for i in range(0,768,3)]
+    used_luma = sorted({stock_luma[value] for value in data})
+    low = used_luma[len(used_luma)//10]
+    high = used_luma[len(used_luma)*9//10]
+    relief = [max(0.0,min(1.0,(value-low)/max(.18,high-low))) for value in stock_luma]
     pixels = bytearray(len(data))
+    motif = MOTIF_PLACEMENT.get(weapon) if tier >= 4 and not player else None
+    if motif:
+        cx,cy,diameter = motif
+        motif_width = diameter*width/height
     exact = sorted({data[pos] for pos in protected})
-    preserved = {value: index+len(colors) for index,value in enumerate(exact)}
+    preserved = {value: index+len(print_colors) for index,value in enumerate(exact)}
     # One physical scale per view retains proportions and fills the entire face.
     projections = [(aspect,max(aspect/width,1/height)) for aspect in aspects]
     for pos,view in enumerate(state):
@@ -55,14 +116,33 @@ def texture(data, old_palette, atlas_width, mapping, aspects, weapon, tier, prot
             # UVs of collapsed strips and unused padding still get a print color.
             col = (pos%atlas_width)*width//atlas_width
             row = rows[(pos//atlas_width)*height//(len(data)//atlas_width)]
-        key = tuple(value//8 for value in row[3*col:3*col+3])
+        rgb = row[3*col:3*col+3]
+        if view == 3 and motif:
+            # Fit the main artwork on one panel, independently of total weapon length.
+            mx = (u_map[pos]-cx)*aspects[-1]/motif_width+.5
+            my = (v_map[pos]-cy)/diameter+.5
+            if 0 < mx < 1 and 0 < my < 1:
+                edge = min(mx,my,1-mx,1-my)
+                mark = 3*int(mx*width)
+                detail = rows[int(my*height)][mark:mark+3]
+                opacity = min(1.0, edge*10)
+                rgb = tuple(round(a+(b-a)*opacity) for a,b in zip(rgb,detail))
+        # Keep depth baked into the old material without bringing back its color.
+        surface_height = v_map[pos] if view else .5
+        facing = lighting[pos]/255
+        light = .68 + .35*facing + .25*relief[data[pos]] + .095*(1-surface_height)
+        key = tuple(value//4 for value in tone(rgb, light))
         index = lookup.get(key)
         if index is None:
-            index = nearest(tuple(value*8+4 for value in key),colors)
+            index = nearest(tuple(value*4+2 for value in key),print_colors)
             lookup[key] = index
         pixels[pos] = index
 
-    palette = bytes(channel for color in colors for channel in color)
+    if len(print_colors) + len(exact) > 256:
+        raise ValueError("Indexed texture palette exceeds 256 colors")
+    rarity = tier if tier < len(TIERS) else VARIANT_TIERS[tier-len(TIERS)]
+    painted_colors = [rarity_finish(color,rarity) for color in print_colors]
+    palette = bytes(channel for color in painted_colors for channel in color)
     palette += b"".join(old_palette[value*3:value*3+3] for value in exact)
     return pixels,palette.ljust(768,b"\0")
 
@@ -108,30 +188,85 @@ def visible_texture(record):
 
 def painted_texture(record):
     # The glass and housing share one material on the stock first-person AWP.
-    return visible_texture(record) and record[0] not in {"scope.bmp", "scope_clamps.bmp"}
+    return visible_texture(record) and record[0] not in {"scope.bmp", "scope_clamps.bmp", "awp_scope_stock.bmp"}
 
 
 @lru_cache(maxsize=16)
-def paint_map(source, idle, inverted):
+def paint_map(source, idle, inverted, player):
     records = tuple(texture_records(source))
     allowed = {i for i, record in enumerate(records) if painted_texture(record)}
-    maps, aspect = print_projection(source, records, allowed, idle, inverted)
+    maps, aspect = print_projection(source, records, allowed, idle, inverted, continuous=player)
     return records, maps, aspect
 
 
-def recolor(source, weapon, tier, prefix):
+@lru_cache(maxsize=1)
+def isolate_player_awp_scope(source):
+    """Split the stock AWP mesh so its optic can keep its own texture and palette."""
+    record, = texture_records(source)
+    name, flags, width, height, offset = record
+    _, _, cursor, *_ = next(studio_meshes(source))
+    skin_count, families, _, body_count, body_offset = unpack_from("<5i", source, 192)
+    if (name, width, height, skin_count, families, body_count) != ("w_awp.bmp", 512, 128, 1, 1, 1):
+        raise ValueError("Unexpected stock AWP player model")
+    variants, _, model = unpack_from("<3i", source, body_offset+64)
+    mesh_count, mesh = unpack_from("<2i", source, model+72)
+    if variants != 1 or mesh_count != 1:
+        raise ValueError("Expected a single stock AWP player mesh")
+
+    command_lists = [bytearray(), bytearray()]
+    triangle_counts = [0, 0]
+    while count := unpack_from("<h", source, cursor)[0]:
+        end = cursor + 2 + 8*abs(count)
+        corners = [unpack_from("<4h", source, cursor+2+8*i) for i in range(abs(count))]
+        tube = all(vertex <= 47 and 236 <= u <= 502 and 76 <= v <= 108
+                   for vertex, _, u, v in corners)
+        mount = all(72 <= vertex <= 79 and 164 <= u <= 218 and 12 <= v <= 40
+                    for vertex, _, u, v in corners)
+        optic = int(tube or mount)
+        command_lists[optic].extend(source[cursor:end])
+        triangle_counts[optic] += abs(count)-2
+        cursor = end
+    if triangle_counts[1] != 68:
+        raise ValueError(f"Unexpected optic mesh: {triangle_counts[1]} triangles")
+
     result = bytearray(source)
-    records, maps, aspect = paint_map(source, prefix == "v", prefix == "p" and weapon in INVERTED_PLAYER_MODELS)
+    commands = []
+    for command_list in command_lists:
+        commands.append(len(result))
+        result.extend(command_list + b"\0\0")
+    while len(result) % 4:
+        result.append(0)
+    pack_into("<2i", result, model+72, 2, len(result))
+    for material in range(2):
+        result.extend(pack("<3i", triangle_counts[material], commands[material], material))
+        result.extend(source[mesh+12:mesh+20])
+    skins = len(result)
+    result.extend(pack("<2h", 0, 1))
+    texture_table = len(result)
+    body_pixels = texture_table + 160
+    atlas = source[offset:offset+width*height+768]
+    optic_pixels = body_pixels + len(atlas)
+    result.extend(pack("<64s4i", b"w_awp.bmp", flags, width, height, body_pixels))
+    result.extend(pack("<64s4i", b"awp_scope_stock.bmp", flags, width, height, optic_pixels))
+    result.extend(atlas + atlas)
+    pack_into("<3i", result, 180, 2, texture_table, body_pixels)
+    pack_into("<3i", result, 192, 2, 1, skins)
+    pack_into("<i", result, 72, len(result))
+    return bytes(result)
+
+
+def recolor(source, weapon, tier, prefix):
+    player = prefix == "p"
+    protected = set()
+    if player and weapon == "awp":
+        source = isolate_player_awp_scope(source)
+    result = bytearray(source)
+    records, maps, aspect = paint_map(source, prefix == "v", player and weapon in INVERTED_PLAYER_MODELS, player)
     for index, mapping in maps.items():
         name, _, w, h, offset = records[index]
         end = offset+w*h
-        protected = set()
-        if prefix == "p" and weapon == "awp" and name == "w_awp.bmp":
-            # Both lens caps share this island in the stock player atlas.
-            sx,sy = w//256,h//64
-            protected = {y*w+x for y in range(37*sy,54*sy) for x in range(117*sx,139*sx)}
         pixels,palette = texture(source[offset:end],source[end:end+768],w,mapping,aspect,
-                                 "butterfly" if weapon=="knife" else weapon,tier,protected)
+                                 "butterfly" if weapon=="knife" else weapon,tier,protected,player=player)
         result[offset:end+768] = pixels+palette
     return result
 
@@ -162,21 +297,31 @@ def write_model(path, model):
         pending.unlink(missing_ok=True)
 
 
-def main():
+def main(*, variants_only=False):
     total = 0
     for weapon in WEAPONS:
+        if variants_only and weapon == "knife":
+            continue
         sources = (("v", BUTTERFLY),) if weapon == "knife" else (
             ("v", MODELS / f"v_{weapon}.mdl"), ("p", MODELS / f"p_{weapon}.mdl"))
         for prefix, source_path in sources:
             source = source_path.read_bytes()
             if weapon != "knife":
                 source = enlarge_atlases(source)
-            for tier, rarity in enumerate(TIERS):
-                folder = OUTPUT / ("butterfly" if weapon == "knife" else weapon) / rarity
-                folder.mkdir(parents=True, exist_ok=True)
-                model = recolor(source, weapon, tier, prefix)
-                write_model(folder / f"{prefix}_{weapon}_r5.mdl", checked_model(model))
-                total += 1
+            if not variants_only:
+                for tier, rarity in enumerate(TIERS):
+                    folder = OUTPUT / ("butterfly" if weapon == "knife" else weapon) / rarity
+                    folder.mkdir(parents=True, exist_ok=True)
+                    model = recolor(source, weapon, tier, prefix)
+                    write_model(folder / model_filename(prefix, weapon, tier=tier), checked_model(model))
+                    total += 1
+            if weapon != "knife":
+                for variant, tier in enumerate(VARIANT_TIERS, 1):
+                    folder = OUTPUT / weapon / TIERS[tier]
+                    folder.mkdir(parents=True, exist_ok=True)
+                    model = recolor(source, weapon, variant + 3, prefix)
+                    write_model(folder / model_filename(prefix, weapon, variant), checked_model(model))
+                    total += 1
     print(f"Built {total} models under {OUTPUT.relative_to(ROOT)}")
 
 

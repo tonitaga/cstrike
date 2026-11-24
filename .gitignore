@@ -4,3 +4,5 @@ logs/*
 *.sq3
 *.journal
 *.vault
+__pycache__/
+*.ztmp

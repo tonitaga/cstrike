@@ -10,40 +10,57 @@
 
 #define MAX_GIFTS 24
 #define MAX_GIFT_POINTS 128
+#define AUTO_POINT_LIFETIME 120.0
+#define AUTO_POINT_SPACING 84.0
 #define MAX_FLOOR_SHIFT 64.0
-#define PROFILE_SIZE 320
+#define PROFILE_SIZE 600
 #define MIN_POINT_DISTANCE 48.0
 #define TASK_CASE_REVEAL 7100
 #define CASE_BOX_OPEN_TIME 0.90
+#define CASE_BATCH_MAX 5
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
 new const GIFT_MODEL[] = "models/incom/newyear/gift.mdl";
+new const GIFT_SPARK[] = "sprites/incom/newyear/gift_spark.spr";
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
 new const CASE_TICK[] = "incom/newyear/case_tick.wav";
 new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
     {"Хвойная гравировка", "Северная вязь", "Ледяная геометрия", "Бархатный подарок"},
-    {"Медные шишки", "Морозная рябина", "Еловые огни", "Вишнёвый салют"},
+    {"Медные шишки", "Морозная рябина", "Еловые огни", "Зимняя жар-птица"},
     {"Мятная звезда", "Карамельная трость", "Праздничные лампочки", "Парад конфетти"},
-    {"Кобальтовый иней", "Пряничный городок", "Стеклянные игрушки", "Часы полуночи"},
-    {"Альпийский снег", "Подарки под ёлкой", "Северное сияние", "Арктический салют"},
+    {"Кобальтовый иней", "Пряничный городок", "Стеклянные игрушки", "Ледяной витраж"},
+    {"Альпийский снег", "Подарки под ёлкой", "Северное сияние", "Ледяные куранты"},
     {"Остролист", "Сахарная глазурь", "Серебряные сосульки", "Изумрудная ёлка"},
-    {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Салют на клинке"}
+    {"Морозная гравировка", "Карамельная бабочка", "Ледяные узоры", "Рубиновая инкрустация"}
 };
-new bool:g_WebReveal[MAX_PLAYERS + 1];
+new const SKIN_EXTRA_NAMES[CASE_WEAPON_COUNT][GIFT_EXTRA_SKINS][] = {
+    {"Еловая гравюра", "Морозные перья", "Бечёвка", "Северный свитер", "Мятный кристалл", "Медные колокола", "Ледяной дворец", "Бархатные розетки", "Изумрудный бант"},
+    {"Меловой снег", "Медный бор", "Зимняя рябина", "Бумажные снежинки", "Серебряная хвоя", "Латунная гирлянда", "Лиловая мишура", "Алый фейерверк", "Медная шкатулка"},
+    {"Мятные звёзды", "Бирюзовый иней", "Мятные леденцы", "Карамельные полосы", "Стеклянные звёзды", "Еловые фонарики", "Розовый серпантин", "Сахарные кристаллы", "Зимний фарфор"},
+    {"Синий фарфор", "Звёздный календарь", "Имбирное печенье", "Пряничная улица", "Золотые подвески", "Бордовые веера", "Аметистовые шары", "Серебряный механизм", "Бой курантов"},
+    {"Горная хвоя", "Ледяные контуры", "Снег над елями", "Алые коробки", "Полярная лента", "Кобальтовые сосульки", "Звёздное сияние", "Серебряная метель", "Фонари в зимнем лесу"},
+    {"Листья падуба", "Имбирная глазурь", "Снежный вечер", "Алые бубенцы", "Сахарные звёздочки", "Кобальтовые игрушки", "Изумрудный атлас", "Ленты в полночь", "Позолоченные игрушки"}
+};
+new g_SkinNames[GIFT_COLLECTION_SIZE][72];
 new g_CaseMotdUrl, g_CaseSceneSerial;
 new bool:g_Revealing[MAX_PLAYERS + 1];
 new g_RevealStep[MAX_PLAYERS + 1];
-new g_RevealReward[MAX_PLAYERS + 1], g_RevealCredit[MAX_PLAYERS + 1], g_RevealName[MAX_PLAYERS + 1][32];
+new g_RevealCount[MAX_PLAYERS + 1];
+new g_RevealReward[MAX_PLAYERS + 1][CASE_BATCH_MAX], g_RevealCredit[MAX_PLAYERS + 1][CASE_BATCH_MAX];
+new g_RevealName[MAX_PLAYERS + 1][32];
 new Float:g_RevealDeadline[MAX_PLAYERS + 1];
 new const WEAPON_NAMES[][] = {"M4A1", "AK-47", "Glock", "Deagle", "AWP", "USP", "Бабочка"};
 new const RARITY_NAMES[][] = {"Обычный", "Редкий", "Эпический", "Легендарный"};
 
 new g_Vault = INVALID_HANDLE;
-new g_Enable, g_Interval, g_WaveMin, g_WaveMax, g_ActiveMax, g_Lifetime;
+new g_Enable, g_Interval, g_WaveMin, g_WaveMax, g_MinPlayers, g_ActiveMax, g_Lifetime;
 new g_RewardMin, g_RewardMax, g_KillReward, g_KillCooldown, g_CasePrice;
 new Float:g_LastWave;
 new Float:g_Points[MAX_GIFT_POINTS][3], g_PointCount;
-new g_Gifts[MAX_GIFTS], g_GiftPoint[MAX_GIFTS];
+new Float:g_AutoPoints[MAX_GIFT_POINTS][3], Float:g_AutoSeen[MAX_GIFT_POINTS];
+new g_AutoNext;
+new g_Gifts[MAX_GIFTS], g_GiftPoint[MAX_GIFTS], g_GiftSpark;
+new Float:g_GiftExpires[MAX_GIFTS];
 new g_PointFile[160];
 new const SKIN_FOLDERS[][] = {"m4a1", "ak47", "glock18", "deagle", "awp", "usp", "butterfly"};
 new const SKIN_TIERS[][] = {"common", "rare", "epic", "legendary"};
@@ -58,22 +75,40 @@ new Float:g_LastKill[MAX_PLAYERS + 1][MAX_PLAYERS + 1];
 public plugin_precache()
 {
     precache_model(GIFT_MODEL);
+    g_GiftSpark = precache_model(GIFT_SPARK);
     precache_sound(GIFT_CHIME);
     precache_sound(CASE_TICK);
     for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
     {
         new filename[12];
         copy(filename, charsmax(filename), weapon == CASE_WEAPON_BUTTERFLY ? "knife" : SKIN_FOLDERS[weapon]);
-        for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
+        for (new variant = 0; variant < GiftVariantCount(weapon); variant++)
         {
-            new index = GiftSkinIndex(weapon, rarity);
-            formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_%s_r5.mdl",
-                     SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename);
+            new index = GiftVariantIndex(weapon, variant);
+            new rarity = GiftSkinRarity(index);
+            new suffix[8];
+            if (variant < CASE_RARITY_COUNT)
+            {
+                if (rarity == CASE_RARITY_LEGENDARY && (weapon == CASE_WEAPON_DEAGLE || weapon == CASE_WEAPON_BUTTERFLY))
+                    copy(suffix, charsmax(suffix), "r14");
+                else
+                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r11" : "r13");
+                copy(g_SkinNames[index], charsmax(g_SkinNames[]), SKIN_NAMES[weapon][variant]);
+            }
+            else
+            {
+                new bool:reworked = rarity == CASE_RARITY_LEGENDARY
+                    && (weapon == CASE_WEAPON_AK47 || weapon == CASE_WEAPON_GLOCK || weapon == CASE_WEAPON_AWP);
+                formatex(suffix, charsmax(suffix), "n%02d%s", variant - CASE_RARITY_COUNT + 1, reworked ? (weapon == CASE_WEAPON_AK47 ? "h" : "g") : "f");
+                copy(g_SkinNames[index], charsmax(g_SkinNames[]), SKIN_EXTRA_NAMES[weapon][variant - CASE_RARITY_COUNT]);
+            }
+            formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_%s_%s.mdl",
+                     SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename, suffix);
             precache_model(g_View[index]);
             if (weapon != CASE_WEAPON_BUTTERFLY)
             {
-                formatex(g_Player[index], charsmax(g_Player[]), "models/incom/newyear/%s/%s/p_%s_r5.mdl",
-                         SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename);
+                formatex(g_Player[index], charsmax(g_Player[]), "models/incom/newyear/%s/%s/p_%s_%sp%s.mdl",
+                         SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename, suffix, weapon == CASE_WEAPON_AWP ? "2" : "");
                 precache_model(g_Player[index]);
             }
         }
@@ -85,6 +120,7 @@ public plugin_init()
     register_plugin("INCOM New Year Gifts", "1.2", "INCOMSYSTEM");
     g_Enable = register_cvar("incom_gifts_enabled", "1");
     g_Interval = register_cvar("incom_gifts_interval", "60");
+    g_MinPlayers = register_cvar("incom_gifts_min_players", "4");
     g_WaveMin = register_cvar("incom_gifts_wave_min", "2");
     g_WaveMax = register_cvar("incom_gifts_wave_max", "5");
     g_ActiveMax = register_cvar("incom_gifts_active_max", "5");
@@ -211,7 +247,7 @@ NearPoint(const Float:position[3], Float:distance)
     return nearest;
 }
 
-bool:FindFloor(const Float:point[3], Float:result[3])
+bool:FindFloor(const Float:point[3], Float:result[3], bool:staticFloor = false)
 {
     new Float:start[3], Float:finish[3], Float:fraction, Float:normal[3];
     CopyPoint(start, point);
@@ -224,6 +260,13 @@ bool:FindFloor(const Float:point[3], Float:result[3])
     get_tr2(trace, TR_vecPlaneNormal, normal);
     get_tr2(trace, TR_vecEndPos, result);
     new bool:valid = fraction < 1.0 && !get_tr2(trace, TR_StartSolid) && normal[2] >= 0.65;
+    new hit = get_tr2(trace, TR_pHit);
+    if (valid && staticFloor && hit > 0)
+    {
+        new classname[32];
+        pev(hit, pev_classname, classname, charsmax(classname));
+        valid = equal(classname, "func_wall") != 0;
+    }
     free_tr2(trace);
     result[2] += 1.0;
     if (!valid || engfunc(EngFunc_PointContents, result) != CONTENTS_EMPTY)
@@ -305,6 +348,58 @@ public RemovePoint(id, flags, command)
     return PLUGIN_HANDLED;
 }
 
+// Automatic points come from routes players have actually walked this map.
+SampleGiftRoutes(Float:now)
+{
+    new players[MAX_PLAYERS], count;
+    get_players(players, count, "ach");
+    for (new i = 0; i < count; i++)
+    {
+        new id = players[i], Float:origin[3], Float:floor[3];
+        if (!(pev(id, pev_flags) & FL_ONGROUND) || pev(id, pev_movetype) != MOVETYPE_WALK)
+            continue;
+        pev(id, pev_origin, origin);
+        if (!FindFloor(origin, floor, true) || origin[2] - floor[2] > 40.0
+            || NearPoint(floor, MIN_POINT_DISTANCE) >= 0)
+            continue;
+
+        new nearby = -1;
+        for (new point = 0; point < MAX_GIFT_POINTS; point++)
+        {
+            if (g_AutoSeen[point] && get_distance_f(floor, g_AutoPoints[point]) < AUTO_POINT_SPACING)
+            {
+                nearby = point;
+                break;
+            }
+        }
+        if (nearby >= 0)
+        {
+            g_AutoSeen[nearby] = now;
+            continue;
+        }
+        // Active gifts retain their point ID until picked up or expired.
+        for (new attempt = 0; attempt < MAX_GIFT_POINTS; attempt++)
+        {
+            new point = g_AutoNext;
+            g_AutoNext = (g_AutoNext + 1) % MAX_GIFT_POINTS;
+            new bool:occupied;
+            for (new slot = 0; slot < MAX_GIFTS; slot++)
+            {
+                if (g_Gifts[slot] && g_GiftPoint[slot] == MAX_GIFT_POINTS + point)
+                {
+                    occupied = true;
+                    break;
+                }
+            }
+            if (occupied)
+                continue;
+            CopyPoint(g_AutoPoints[point], floor);
+            g_AutoSeen[point] = now;
+            break;
+        }
+    }
+}
+
 public CheckWaves()
 {
     new Float:now = get_gametime();
@@ -315,6 +410,7 @@ public CheckWaves()
             RemoveGift(i);
         return;
     }
+    SampleGiftRoutes(now);
     if (now - g_LastWave >= float(max(1, get_pcvar_num(g_Interval))))
     {
         g_LastWave = now;
@@ -335,7 +431,22 @@ public ForceWave(id, flags, command)
 
 SpawnWave()
 {
-    new candidates[MAX_GIFT_POINTS], bool:occupied[MAX_GIFT_POINTS], active, freeCount;
+    new minimum = clamp(get_pcvar_num(g_MinPlayers), 0, MaxClients);
+    if (minimum)
+    {
+        new players[MAX_PLAYERS], count, playing;
+        get_players(players, count, "ch");
+        for (new i = 0; i < count; i++)
+        {
+            new CsTeams:team = cs_get_user_team(players[i]);
+            if (team == CS_TEAM_T || team == CS_TEAM_CT)
+                playing++;
+        }
+        if (playing < minimum)
+            return 0;
+    }
+
+    new candidates[MAX_GIFT_POINTS * 2], bool:occupied[MAX_GIFT_POINTS * 2], active, freeCount;
     new cap = clamp(get_pcvar_num(g_ActiveMax), 0, MAX_GIFTS);
     for (new i = 0; i < MAX_GIFTS; i++)
     {
@@ -352,14 +463,26 @@ SpawnWave()
         if (!occupied[i])
             candidates[freeCount++] = i;
     }
+    new manualCount = freeCount;
+    new Float:now = get_gametime();
+    for (new i = 0; i < MAX_GIFT_POINTS; i++)
+    {
+        if (!occupied[MAX_GIFT_POINTS + i] && g_AutoSeen[i] && now - g_AutoSeen[i] <= AUTO_POINT_LIFETIME)
+            candidates[freeCount++] = MAX_GIFT_POINTS + i;
+    }
     new upper = clamp(get_pcvar_num(g_WaveMax), 0, MAX_GIFTS);
     new lower = clamp(get_pcvar_num(g_WaveMin), 0, upper);
     new target = GiftWaveSize(random_num(lower, upper), active, cap, freeCount);
     new spawned;
     while (spawned < target && freeCount)
     {
-        new take = random_num(0, freeCount - 1);
+        new take = random_num(0, (manualCount ? manualCount : freeCount) - 1);
         new point = candidates[take];
+        if (manualCount)
+        {
+            candidates[take] = candidates[--manualCount];
+            take = manualCount;
+        }
         candidates[take] = candidates[--freeCount];
         if (SpawnGift(point))
             spawned++;
@@ -378,9 +501,35 @@ SpawnWave()
 
 bool:SpawnGift(point)
 {
-    new Float:floor[3];
-    if (!FindFloor(g_Points[point], floor) || get_distance_f(g_Points[point], floor) > MAX_FLOOR_SHIFT)
+    new Float:floor[3], Float:location[3];
+    new bool:automatic = point >= MAX_GIFT_POINTS;
+    if (automatic)
+        CopyPoint(location, g_AutoPoints[point - MAX_GIFT_POINTS]);
+    else
+        CopyPoint(location, g_Points[point]);
+    if (!FindFloor(location, floor, automatic)
+        || get_distance_f(location, floor) > (automatic ? 5.0 : MAX_FLOOR_SHIFT))
         return false;
+
+    new players[MAX_PLAYERS], count;
+    get_players(players, count, "a");
+    for (new i = 0; i < count; i++)
+    {
+        new Float:origin[3];
+        pev(players[i], pev_origin, origin);
+        if (get_distance_f(origin, floor) < 50.0)
+            return false;
+    }
+
+    for (new i = 0; i < MAX_GIFTS; i++)
+    {
+        if (!IsGiftEntity(g_Gifts[i]))
+            continue;
+        new Float:origin[3];
+        pev(g_Gifts[i], pev_origin, origin);
+        if (get_distance_f(origin, floor) < MIN_POINT_DISTANCE)
+            return false;
+    }
 
     new slot;
     while (slot < MAX_GIFTS && g_Gifts[slot])
@@ -397,7 +546,8 @@ bool:SpawnGift(point)
     entity_set_int(gift, EV_INT_solid, SOLID_TRIGGER);
     entity_set_size(gift, Float:{-13.0, -13.0, 0.0}, Float:{13.0, 13.0, 27.0});
     entity_set_origin(gift, floor);
-    entity_set_float(gift, EV_FL_nextthink, get_gametime() + float(max(1, get_pcvar_num(g_Lifetime))));
+    g_GiftExpires[slot] = get_gametime() + float(max(1, get_pcvar_num(g_Lifetime)));
+    entity_set_float(gift, EV_FL_nextthink, get_gametime() + 0.1);
     g_GiftPoint[slot] = point;
     g_Gifts[slot] = gift;
     return true;
@@ -431,8 +581,33 @@ RemoveGift(slot)
 public GiftExpire(gift)
 {
     new slot = FindGiftSlot(gift);
-    if (slot >= 0)
+    if (slot < 0)
+        return;
+    new Float:now = get_gametime();
+    if (now >= g_GiftExpires[slot])
+    {
         RemoveGift(slot);
+        return;
+    }
+
+    new Float:origin[3];
+    pev(gift, pev_origin, origin);
+    // Local sparks leave the box and nearby map textures at their normal lighting.
+    new Float:angle = now * 3.0 + float(slot);
+    origin[0] += 15.0 * floatcos(angle);
+    origin[1] += 15.0 * floatsin(angle);
+    origin[2] += random_float(16.0, 29.0);
+
+    message_begin_f(MSG_PVS, SVC_TEMPENTITY, origin);
+    write_byte(TE_SPRITE);
+    write_coord_f(origin[0]);
+    write_coord_f(origin[1]);
+    write_coord_f(origin[2]);
+    write_short(g_GiftSpark);
+    write_byte(3); // 0.3 model scale
+    write_byte(155);
+    message_end();
+    entity_set_float(gift, EV_FL_nextthink, floatmin(now + 0.38, g_GiftExpires[slot]));
 }
 
 public GiftTouch(gift, player)
@@ -460,9 +635,10 @@ public client_disconnected(id)
     if (g_Revealing[id])
     {
         g_Revealing[id] = false;
-        AnnounceCaseDrop(id, g_RevealReward[id]);
+        for (new i = 0; i < g_RevealCount[id]; i++)
+            AnnounceCaseDrop(id, g_RevealReward[id][i]);
     }
-    g_WebReveal[id] = false;
+    g_RevealCount[id] = 0;
     g_SelectionLoaded[id] = false;
     arrayset(g_Selected[id], 0, sizeof g_Selected[]);
     ResetSkinFallback(id);
@@ -589,35 +765,79 @@ public BuyCase(id, menu, item)
         return PLUGIN_HANDLED;
     }
 
-    new key[40], inventory[GIFT_COLLECTION_SIZE], balance, weapon, rarity;
+    new caseId = str_to_num(info);
+    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT)
+        return PLUGIN_HANDLED;
+
+    new title[96], label[64], data[16];
+    formatex(title, charsmax(title), "%s: сколько кейсов открыть?", WEAPON_NAMES[caseId]);
+    new quantityMenu = menu_create(title, "BuyCaseQuantity");
+    new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
+    for (new count = 1; count <= CASE_BATCH_MAX; count++)
+    {
+        formatex(data, charsmax(data), "%d %d", caseId, count);
+        formatex(label, charsmax(label), "%d шт. — %d снежинок", count, cost * count);
+        menu_additem(quantityMenu, label, data);
+    }
+    menu_display(id, quantityMenu);
+    return PLUGIN_HANDLED;
+}
+
+public BuyCaseQuantity(id, menu, item)
+{
+    new data[16], access, callback;
+    new bool:valid = item >= 0 && menu_item_getinfo(menu, item, access, data, charsmax(data), .callback = callback);
+    menu_destroy(menu);
+    if (!valid || !get_pcvar_num(g_Enable))
+        return PLUGIN_HANDLED;
+    if (g_Revealing[id])
+    {
+        client_print(id, print_chat, "[Новый год] Дождись окончания раскрутки.");
+        return PLUGIN_HANDLED;
+    }
+    new caseText[6], countText[6];
+    parse(data, caseText, charsmax(caseText), countText, charsmax(countText));
+    new caseId = str_to_num(caseText), count = str_to_num(countText);
+    if (caseId < 0 || caseId >= CASE_WEAPON_COUNT || count < 1 || count > CASE_BATCH_MAX)
+        return PLUGIN_HANDLED;
+
+    new key[40], inventory[GIFT_COLLECTION_SIZE], balance;
     if (!GetPlayerKey(id, key, charsmax(key)))
         return ShowBalance(id);
     LoadProfile(key, balance, inventory);
-
-    new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
-    if (balance < cost)
+    new total = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE) * count;
+    if (balance < total)
     {
-        client_print(id, print_chat, "[Новый год] Для кейса нужно ещё %d снежинок.", cost-balance);
+        client_print(id, print_chat, "[Новый год] Нужно ещё %d снежинок.", total - balance);
         return PLUGIN_HANDLED;
     }
-    new caseId = str_to_num(info);
-    if (!incom_case_roll(caseId, weapon, rarity))
-        return PLUGIN_HANDLED;
 
-    new reward = GiftSkinIndex(weapon, rarity);
-    new sale = CaseDuplicateValue(caseId, weapon, rarity);
-    if (reward < 0 || reward >= GIFT_COLLECTION_SIZE || !sale)
-        return PLUGIN_HANDLED;
+    // Charge the whole batch before evaluating duplicates, then save once.
+    balance -= total;
+    for (new i = 0; i < count; i++)
+    {
+        new weapon, rarity;
+        if (!incom_case_roll(caseId, weapon, rarity))
+            return PLUGIN_HANDLED;
+        new reward = GiftRollSkin(weapon, rarity);
+        new sale = CaseDuplicateValue(caseId, weapon, rarity);
+        if (reward < 0 || reward >= GIFT_COLLECTION_SIZE || !sale)
+            return PLUGIN_HANDLED;
+        g_RevealReward[id][i] = reward;
+        g_RevealCredit[id][i] = 0;
+        if (inventory[reward])
+        {
+            new updated = GiftAddBalance(balance, sale);
+            g_RevealCredit[id][i] = updated - balance;
+            balance = updated;
+        }
+        else
+            inventory[reward] = 1;
+    }
 
-    new remainder = balance-cost;
-    new updated = remainder;
-    if (inventory[reward])
-        updated = GiftAddBalance(remainder, sale);
-    else
-        inventory[reward] = 1;
-
-    SaveProfile(key, updated, inventory);
-    StartCaseReveal(id, caseId, reward, updated, updated-remainder);
+    SaveProfile(key, balance, inventory);
+    g_RevealCount[id] = count;
+    StartCaseReveal(id, caseId, balance);
     return PLUGIN_HANDLED;
 }
 
@@ -639,36 +859,49 @@ bool:ShowCaseScene(id, caseId, balance)
     if ((!equali(url, "http://", 7) && !equali(url, "https://", 8)) || contain(url, "#") >= 0)
         return false;
 
-    new bracket[160], length, reward = g_RevealReward[id];
-    new rewardSlot = reward % CASE_RARITY_COUNT;
-    if (reward / CASE_RARITY_COUNT == CASE_WEAPON_BUTTERFLY)
-        rewardSlot += CASE_RARITY_COUNT;
-
-    for (new i = 0; i < CASE_MOTD_ITEMS; i++)
+    // Use case-local skin IDs to keep five full rails within the MOTD URL limit.
+    new encoded[CASE_BATCH_MAX * (CASE_MOTD_ITEMS + 1) + 1], credits[CASE_BATCH_MAX * 8 + 1];
+    new const alphabet[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+    new length, creditLength;
+    for (new row = 0; row < g_RevealCount[id]; row++)
     {
-        new slot = CaseRevealItem(i, CASE_MOTD_TARGET, random_num(0, CASE_RARITY_COUNT * 2 - 2), rewardSlot);
-        new weapon = slot < CASE_RARITY_COUNT ? caseId : CASE_WEAPON_BUTTERFLY;
-        new item = GiftSkinIndex(weapon, slot % CASE_RARITY_COUNT);
-        length += formatex(bracket[length], charsmax(bracket)-length, "%s%d", i == 0 ? "" : ",", item);
+        if (row)
+            encoded[length++] = ',';
+        for (new i = 0; i < CASE_MOTD_ITEMS; i++)
+        {
+            new item = g_RevealReward[id][row];
+            if (i != CASE_MOTD_TARGET)
+            {
+                new weapon, rarity;
+                if (!CaseDropResolve(caseId, random_num(0, CASE_DROP_ROLL_COUNT - 1), weapon, rarity))
+                    return false;
+                item = GiftRollSkin(weapon, rarity);
+            }
+            new code = GiftSkinVariant(item);
+            if (GiftSkinWeapon(item) == CASE_WEAPON_BUTTERFLY)
+                code += GIFT_WEAPON_VARIANTS;
+            encoded[length++] = alphabet[code];
+        }
+        creditLength += formatex(credits[creditLength], charsmax(credits) - creditLength,
+                                 "%s%d", row ? "," : "", g_RevealCredit[id][row]);
     }
-    new address[440];
-    formatex(address, charsmax(address), "%s%ccaseview=4&turn=%d-%d#%s;%d;%d;%d;%d;%d;%d",
-             url, contain(url, "?") >= 0 ? '&' : '?', get_systime(), ++g_CaseSceneSerial, bracket, CASE_MOTD_START,
-             CASE_MOTD_TARGET, reward, balance, CASE_MOTD_SPIN_MS, g_RevealCredit[id]);
-    show_motd(id, address, "Новогодний кейс");
+    new address[511];
+    if (strlen(url) + length + creditLength + 70 >= charsmax(address))
+        return false;
+    formatex(address, charsmax(address), "%s%ccaseview=9&turn=%d-%d#%s;%d;%d;%d;%d;%s;%d",
+             url, contain(url, "?") >= 0 ? '&' : '?', get_systime(), ++g_CaseSceneSerial, encoded,
+             CASE_MOTD_START, CASE_MOTD_TARGET, balance, CASE_MOTD_SPIN_MS, credits, caseId);
+    show_motd(id, address, "Новогодние кейсы");
     return true;
 }
 
-StartCaseReveal(id, caseId, reward, balance, credit)
+StartCaseReveal(id, caseId, balance)
 {
     g_Revealing[id] = true;
-    g_RevealReward[id] = reward;
-    g_RevealCredit[id] = credit;
     get_user_name(id, g_RevealName[id], charsmax(g_RevealName[]));
-    g_WebReveal[id] = ShowCaseScene(id, caseId, balance);
     g_RevealStep[id] = -1;
     g_RevealDeadline[id] = get_gametime() + CASE_BOX_OPEN_TIME + float(CASE_MOTD_SPIN_MS) / 1000.0;
-    if (g_WebReveal[id])
+    if (ShowCaseScene(id, caseId, balance))
         set_task(CASE_BOX_OPEN_TIME, "CaseMotdTick", TASK_CASE_REVEAL + id);
     else
         set_task(CASE_BOX_OPEN_TIME + float(CASE_MOTD_SPIN_MS) / 1000.0,
@@ -708,31 +941,38 @@ public CaseMotdTick(taskId)
 
 FinishCaseReveal(id)
 {
-    new reward = g_RevealReward[id];
-    new bool:usedWeb = g_WebReveal[id];
     g_Revealing[id] = false;
-    g_WebReveal[id] = false;
-    new weapon = reward / CASE_RARITY_COUNT, rarity = reward % CASE_RARITY_COUNT;
-    if (CaseRevealIsPublic(rarity))
+    for (new i = 0; i < g_RevealCount[id]; i++)
+    {
+        new reward = g_RevealReward[id][i];
+        new weapon = GiftSkinWeapon(reward), rarity = GiftSkinRarity(reward);
+        new sale[64];
+        if (g_RevealCredit[id][i])
+            formatex(sale, charsmax(sale), " Дубликат: +%d снежинок.", g_RevealCredit[id][i]);
+        client_print_color(id, print_team_default, "^4[Новый год]^1 Кейс %d: ^3«%s | %s»^1 (%s).%s",
+                           i + 1, WEAPON_NAMES[weapon], g_SkinNames[reward], RARITY_NAMES[rarity], sale);
         AnnounceCaseDrop(id, reward);
-    else if (!usedWeb)
-        client_print_color(id, print_team_default, "^4[Новый год]^1 Выпал скин ^3«%s | %s»^1 (%s).",
-                           WEAPON_NAMES[weapon], SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity]);
-    if (g_RevealCredit[id])
-        client_print_color(id, print_team_default, "^4[Новый год]^1 Дубликат продан. Начислено ^3+%d^1 снежинок.",
-                           g_RevealCredit[id]);
+    }
+    g_RevealCount[id] = 0;
 }
 
 AnnounceCaseDrop(id, reward)
 {
-    new rarity = reward % CASE_RARITY_COUNT;
+    new rarity = GiftSkinRarity(reward);
     if (!CaseRevealIsPublic(rarity))
         return;
 
-    new weapon = reward / CASE_RARITY_COUNT;
-    client_print_color(0, rarity == CASE_RARITY_EPIC ? print_team_blue : print_team_red,
+    new weapon = GiftSkinWeapon(reward);
+    new players[MAX_PLAYERS], count;
+    get_players(players, count, "ch");
+    for (new i = 0; i < count; i++)
+    {
+        if (players[i] == id)
+            continue;
+        client_print_color(players[i], rarity == CASE_RARITY_EPIC ? print_team_blue : print_team_red,
                        "^4[Новый год]^1 Игроку ^3%s^1 выпал скин ^4«%s | %s»^1. Редкость: ^3%s^1.",
-                       g_RevealName[id], WEAPON_NAMES[weapon], SKIN_NAMES[weapon][rarity], RARITY_NAMES[rarity]);
+                       g_RevealName[id], WEAPON_NAMES[weapon], g_SkinNames[reward], RARITY_NAMES[rarity]);
+    }
 }
 
 public ShowCollection(id)
@@ -750,9 +990,9 @@ public ShowCollection(id)
     new info[5], count;
     for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
     {
-        for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
+        for (new variant = 0; variant < GiftVariantCount(weapon); variant++)
         {
-            if (!inventory[GiftSkinIndex(weapon, rarity)])
+            if (!inventory[GiftVariantIndex(weapon, variant)])
                 continue;
             num_to_str(weapon, info, charsmax(info));
             menu_additem(menu, WEAPON_NAMES[weapon], info);
@@ -790,16 +1030,17 @@ ShowCollectionWeapon(id, weapon)
     LoadProfile(key, balance, inventory);
     LoadSelections(id);
     new menu = menu_create(WEAPON_NAMES[weapon], "SelectCollectionSkin");
-    menu_setprop(menu, MPROP_PERPAGE, 0);
+    menu_setprop(menu, MPROP_PERPAGE, 4);
     new const colors[CASE_RARITY_COUNT][] = {"\d", "\w", "\r", "\y"};
     new name[120], info[5], count;
-    for (new rarity = 0; rarity < CASE_RARITY_COUNT; rarity++)
+    for (new variant = 0; variant < GiftVariantCount(weapon); variant++)
     {
-        new index = GiftSkinIndex(weapon, rarity);
+        new index = GiftVariantIndex(weapon, variant);
+        new rarity = GiftSkinRarity(index);
         if (!inventory[index])
             continue;
-        formatex(name, charsmax(name), "%s[%s]\w %s%s", colors[rarity], RARITY_NAMES[rarity], SKIN_NAMES[weapon][rarity],
-                 g_Selected[id][weapon] == rarity + 1 ? " [+]" : "");
+        formatex(name, charsmax(name), "%s[%s]\w %s%s", colors[rarity], RARITY_NAMES[rarity], g_SkinNames[index],
+                 g_Selected[id][weapon] == variant + 1 ? " [+]" : "");
         num_to_str(index, info, charsmax(info));
         menu_additem(menu, name, info);
         count++;
@@ -836,9 +1077,9 @@ public SelectCollectionSkin(id, menu, item)
         return PLUGIN_HANDLED;
 
     LoadSelections(id);
-    new weapon = index / CASE_RARITY_COUNT, rarity = index % CASE_RARITY_COUNT;
-    new bool:removing = g_Selected[id][weapon] == rarity + 1;
-    g_Selected[id][weapon] = removing ? 0 : rarity + 1;
+    new weapon = GiftSkinWeapon(index), rarity = GiftSkinRarity(index), variant = GiftSkinVariant(index);
+    new bool:removing = g_Selected[id][weapon] == variant + 1;
+    g_Selected[id][weapon] = removing ? 0 : variant + 1;
     new vaultKey[56], record[CASE_WEAPON_BUTTERFLY + 2];
     formatex(vaultKey, charsmax(vaultKey), "equip:%s", key);
     for (new i = 0; i < sizeof g_Selected[]; i++)
@@ -864,7 +1105,10 @@ bool:LoadSelections(id)
     if (length)
     {
         for (new i = 0; i < sizeof g_Selected[] && record[i]; i++)
-            g_Selected[id][i] = clamp(record[i] - '0', 0, CASE_RARITY_COUNT);
+        {
+            new selection = record[i] - '0';
+            g_Selected[id][i] = selection >= 1 && selection <= GiftVariantCount(i) ? selection : 0;
+        }
     }
     g_SelectionLoaded[id] = true;
     return true;
@@ -915,7 +1159,7 @@ ApplySkin(id, weaponId)
     if (!isSeasonalPlayer)
         copy(g_OldPlayer[id], charsmax(g_OldPlayer[]), player);
 
-    new index = GiftSkinIndex(weapon, g_Selected[id][weapon] - 1);
+    new index = GiftVariantIndex(weapon, g_Selected[id][weapon] - 1);
     if (!equal(view, g_View[index]))
         set_pev(id, pev_viewmodel2, g_View[index]);
     if (g_Player[index][0] && !equal(player, g_Player[index]))

@@ -167,7 +167,7 @@ def raster(points, width, height):
                 yield x,y,a,b,c
 
 
-def print_projection(model, records, allowed, idle=False, invert_vertical=False):
+def print_projection(model, records, allowed, idle=False, invert_vertical=False, *, continuous=False):
     mesh = list(triangles(model, allowed, idle=idle))
     project, (length, height), (long, tall, depth) = projection(
         mesh, invert_vertical, invert_horizontal=idle, axes=True)
@@ -177,12 +177,13 @@ def print_projection(model, records, allowed, idle=False, invert_vertical=False)
     maps = {
         i: (array("f", [0])*(records[i][2]*records[i][3]),
             array("f", [0])*(records[i][2]*records[i][3]),
-            bytearray(records[i][2]*records[i][3]))
+            bytearray(records[i][2]*records[i][3]),
+            bytearray([128])*(records[i][2]*records[i][3]))
         for i in allowed
     }
     for i, tri in mesh:
         w, h = records[i][2:4]
-        u_map, v_map, state = maps[i]
+        u_map, v_map, state, lighting = maps[i]
         points = [point for point, _, _ in tri]
         normal = unit(cross(sub(points[1],points[0]),sub(points[2],points[0])))
         uv = [(u,v) for _,u,v in tri]
@@ -190,8 +191,10 @@ def print_projection(model, records, allowed, idle=False, invert_vertical=False)
         side_weight = abs(dot(normal,depth))
         top_weight = abs(dot(normal,tall))
         end_weight = abs(dot(normal,long))
+        # The face normal sets the broad relief; stock texture detail adds local shadows.
+        light = min(255, round(255*(.42+.36*top_weight+.18*side_weight+.05*end_weight)))
         # Prefer the side print where multiple faces share an atlas island.
-        if side_weight >= max(top_weight,end_weight):
+        if continuous or side_weight >= max(top_weight,end_weight):
             view = 3
             coords = [(x,y) for x,y,_ in plane]
         elif top_weight >= end_weight:
@@ -207,8 +210,9 @@ def print_projection(model, records, allowed, idle=False, invert_vertical=False)
             u_map[pos] = a*coords[0][0]+b*coords[1][0]+c*coords[2][0]
             v_map[pos] = a*coords[0][1]+b*coords[1][1]+c*coords[2][1]
             state[pos] = view
+            lighting[pos] = light
     # Copy the edge print into atlas padding so texture filtering cannot expose a seam.
-    for i,(u_map,v_map,state) in maps.items():
+    for i,(u_map,v_map,state,lighting) in maps.items():
         w,h = records[i][2:4]
         for _ in range(2):
             previous = bytes(state)
@@ -221,5 +225,6 @@ def print_projection(model, records, allowed, idle=False, invert_vertical=False)
                 for neighbor in candidates:
                     if neighbor >= 0 and previous[neighbor]:
                         u_map[pos],v_map[pos],state[pos] = u_map[neighbor],v_map[neighbor],previous[neighbor]
+                        lighting[pos] = lighting[neighbor]
                         break
     return maps, (thickness/height,length/thickness,length/height)

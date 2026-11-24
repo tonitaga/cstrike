@@ -21,12 +21,11 @@ public plugin_init()
 
         for (new w = 0; w <= CASE_WEAPON_COUNT; w++)
         {
-            new const main[] = {5180, 1702, 444, 74};
-            new const other[] = {350, 115, 30, 5};
-            new const knife[] = {60, 30, 9, 1};
+            new const main[] = {7500, 1950, 300, 50};
+            new const knife[] = {120, 60, 18, 2};
             for (new r = 0; r < CASE_RARITY_COUNT; r++)
             {
-                new expected = w == CASE_WEAPON_COUNT ? knife[r] : (w == caseId ? main[r] : other[r]);
+                new expected = w == CASE_WEAPON_COUNT ? knife[r] : (w == caseId ? main[r] : 0);
                 if (counts[w][r] != expected)
                     set_fail_state("Incorrect case odds");
             }
@@ -39,6 +38,16 @@ public plugin_init()
         || CaseDropResolve(0, 10000, weapon, rarity))
         set_fail_state("Accepted invalid case or roll");
 
+    new const weaponCredit[] = {4, 17, 116, 700};
+    new const knifeCredit[] = {291, 583, 1944, 17500};
+    for (new r = 0; r < CASE_RARITY_COUNT; r++)
+    {
+        if (CaseDuplicateValue(CASE_WEAPON_AK47, CASE_WEAPON_AK47, r) != weaponCredit[r]
+            || CaseDuplicateValue(CASE_WEAPON_AK47, CASE_WEAPON_BUTTERFLY, r) != knifeCredit[r]
+            || CaseDuplicateValue(CASE_WEAPON_AK47, CASE_WEAPON_DEAGLE, r) != 0)
+            set_fail_state("Case duplicate sale price is wrong");
+    }
+
     weapon = -1;
     rarity = -1;
     if (incom_case_roll(-1, weapon, rarity) || weapon != -1 || rarity != -1)
@@ -46,7 +55,7 @@ public plugin_init()
 
     for (new caseId = 0; caseId < CASE_WEAPON_COUNT; caseId++)
     {
-        if (!incom_case_roll(caseId, weapon, rarity) || weapon < 0 || weapon > CASE_WEAPON_BUTTERFLY
+        if (!incom_case_roll(caseId, weapon, rarity) || (weapon != caseId && weapon != CASE_WEAPON_BUTTERFLY)
             || rarity < 0 || rarity >= CASE_RARITY_COUNT)
             set_fail_state("Invalid native case outcome");
     }
