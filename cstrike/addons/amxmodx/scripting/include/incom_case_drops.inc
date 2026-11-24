@@ -73,8 +73,8 @@ stock CaseDropWeight(caseId, weapon, rarity)
 stock CaseDuplicateValue(caseId, weapon, rarity)
 {
     new weight = CaseDropWeight(caseId, weapon, rarity);
-    // 3.5 / (weight / 10000), rounded down.
-    return weight ? 35000 / weight : 0;
+    // 2.75 / (weight / 10000), rounded down.
+    return weight ? 27500 / weight : 0;
 }
 
 stock bool:CaseDropResolve(caseId, roll, &weapon, &rarity)

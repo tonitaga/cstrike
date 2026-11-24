@@ -48,8 +48,8 @@ new const CASE_TYPES[CASE_TYPE_COUNT][CaseType] = {
 new const CASE_ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
-new const GIFT_MODEL[] = "models/incom/newyear/gift.mdl";
-new const GIFT_SPARK[] = "sprites/incom/newyear/gift_spark.spr";
+new const GIFT_MODELS[][] = {"models/incom/newyear/gift.mdl", "models/incom/newyear/gift_rare.mdl"};
+new const GIFT_SPARKS[][] = {"sprites/incom/newyear/gift_spark.spr", "sprites/incom/newyear/gift_spark_rare.spr"};
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
 new const CASE_TICK[] = "incom/newyear/case_tick.wav";
 new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
@@ -92,11 +92,13 @@ new const RARITY_NAMES[][] = {"Обычный", "Редкий", "Эпическ�
 new g_Vault = INVALID_HANDLE;
 new g_Enable, g_Interval, g_WaveMin, g_WaveMax, g_MinPlayers, g_ActiveMax, g_Lifetime;
 new g_RewardMin, g_RewardMax, g_KillReward, g_KillCooldown, g_CasePrice;
+new g_RareChance, g_RareMultiplier, g_GiftCaseChance;
 new Float:g_LastWave;
 new Float:g_Points[MAX_GIFT_POINTS][3], g_PointCount;
 new Float:g_AutoPoints[MAX_GIFT_POINTS][3], Float:g_AutoSeen[MAX_GIFT_POINTS];
 new g_AutoNext;
-new g_Gifts[MAX_GIFTS], g_GiftPoint[MAX_GIFTS], g_GiftSpark;
+new g_Gifts[MAX_GIFTS], g_GiftPoint[MAX_GIFTS], g_GiftSpark[sizeof GIFT_SPARKS];
+new bool:g_RareGift[MAX_GIFTS];
 new Float:g_GiftExpires[MAX_GIFTS];
 new g_PointFile[160];
 new const SKIN_FOLDERS[][] = {"m4a1", "ak47", "glock18", "deagle", "awp", "usp", "butterfly"};
@@ -111,8 +113,11 @@ new Float:g_LastKill[MAX_PLAYERS + 1][MAX_PLAYERS + 1];
 
 public plugin_precache()
 {
-    precache_model(GIFT_MODEL);
-    g_GiftSpark = precache_model(GIFT_SPARK);
+    for (new kind; kind < sizeof GIFT_MODELS; kind++)
+    {
+        precache_model(GIFT_MODELS[kind]);
+        g_GiftSpark[kind] = precache_model(GIFT_SPARKS[kind]);
+    }
     precache_sound(GIFT_CHIME);
     precache_sound(CASE_TICK);
     for (new weapon = 0; weapon < sizeof SKIN_WEAPONS; weapon++)
@@ -164,19 +169,22 @@ public plugin_precache()
 public plugin_init()
 {
     register_plugin("INCOM New Year Gifts", "1.2", "INCOMSYSTEM");
-    g_Enable = register_cvar("incom_gifts_enabled", "1");
-    g_Interval = register_cvar("incom_gifts_interval", "60");
-    g_MinPlayers = register_cvar("incom_gifts_min_players", "4");
-    g_WaveMin = register_cvar("incom_gifts_wave_min", "2");
-    g_WaveMax = register_cvar("incom_gifts_wave_max", "5");
-    g_ActiveMax = register_cvar("incom_gifts_active_max", "5");
-    g_Lifetime = register_cvar("incom_gifts_lifetime", "55");
-    g_RewardMin = register_cvar("incom_gifts_reward_min", "15");
-    g_RewardMax = register_cvar("incom_gifts_reward_max", "21");
-    g_KillReward = register_cvar("incom_gifts_kill_reward", "2");
-    g_KillCooldown = register_cvar("incom_gifts_kill_cooldown", "20");
-    g_CasePrice = register_cvar("incom_gifts_case_price", "60");
-    g_CaseMotdUrl = register_cvar("incom_gifts_case_motd_url", "");
+    g_Enable = register_cvar("incom_newyear_gifts_enabled", "1");
+    g_Interval = register_cvar("incom_newyear_gifts_interval", "60");
+    g_MinPlayers = register_cvar("incom_newyear_gifts_min_players", "4");
+    g_WaveMin = register_cvar("incom_newyear_gifts_wave_min", "2");
+    g_WaveMax = register_cvar("incom_newyear_gifts_wave_max", "5");
+    g_ActiveMax = register_cvar("incom_newyear_gifts_active_max", "5");
+    g_Lifetime = register_cvar("incom_newyear_gifts_lifetime", "55");
+    g_RewardMin = register_cvar("incom_newyear_gifts_reward_min", "15");
+    g_RewardMax = register_cvar("incom_newyear_gifts_reward_max", "21");
+    g_RareChance = register_cvar("incom_newyear_gifts_rare_chance", "10");
+    g_RareMultiplier = register_cvar("incom_newyear_gifts_rare_multiplier", "2.0");
+    g_GiftCaseChance = register_cvar("incom_newyear_gifts_case_chance", "5");
+    g_KillReward = register_cvar("incom_newyear_gifts_kill_reward", "2");
+    g_KillCooldown = register_cvar("incom_newyear_gifts_kill_cooldown", "20");
+    g_CasePrice = register_cvar("incom_newyear_gifts_case_price", "60");
+    g_CaseMotdUrl = register_cvar("incom_newyear_gifts_case_motd_url", "");
 
     register_touch(GIFT_CLASS, "player", "GiftTouch");
     register_think(GIFT_CLASS, "GiftExpire");
@@ -523,7 +531,7 @@ SpawnWave()
     new upper = clamp(get_pcvar_num(g_WaveMax), 0, MAX_GIFTS);
     new lower = clamp(get_pcvar_num(g_WaveMin), 0, upper);
     new target = GiftWaveSize(random_num(lower, upper), active, cap, freeCount);
-    new spawned;
+    new spawned, rareCount;
     while (spawned < target && freeCount)
     {
         new take = random_num(0, (manualCount ? manualCount : freeCount) - 1);
@@ -534,13 +542,25 @@ SpawnWave()
             take = manualCount;
         }
         candidates[take] = candidates[--freeCount];
-        if (SpawnGift(point))
+        new bool:rare = GiftChance(g_RareChance);
+        if (SpawnGift(point, rare))
+        {
             spawned++;
+            rareCount += rare ? 1 : 0;
+        }
     }
     if (spawned)
     {
-        set_hudmessage(255, 200, 75, -1.0, 0.22, 0, 0.0, 5.0, 0.1, 0.2, -1);
-        show_hudmessage(0, "Подарки на карте: +%d!^nПодойди к коробке, чтобы подобрать её.", spawned);
+        if (rareCount)
+        {
+            set_hudmessage(110, 210, 255, -1.0, 0.22, 0, 0.0, 5.0, 0.1, 0.2, -1);
+            show_hudmessage(0, "Подарков: %d, редких: %d^nПодойди к коробке, чтобы подобрать её.", spawned, rareCount);
+        }
+        else
+        {
+            set_hudmessage(255, 200, 75, -1.0, 0.22, 0, 0.0, 5.0, 0.1, 0.2, -1);
+            show_hudmessage(0, "Подарки на карте: +%d!^nПодойди к коробке, чтобы подобрать её.", spawned);
+        }
         new players[MAX_PLAYERS], count;
         get_players(players, count, "ch");
         for (new i = 0; i < count; i++)
@@ -549,7 +569,13 @@ SpawnWave()
     return spawned;
 }
 
-bool:SpawnGift(point)
+bool:GiftChance(cvar)
+{
+    new weight = floatround(floatclamp(get_pcvar_float(cvar), 0.0, 100.0) * 100.0);
+    return random_num(0, 9999) < weight;
+}
+
+bool:SpawnGift(point, bool:rare)
 {
     new Float:floor[3], Float:location[3];
     new bool:automatic = point >= MAX_GIFT_POINTS;
@@ -591,10 +617,14 @@ bool:SpawnGift(point)
     if (!gift)
         return false;
     entity_set_string(gift, EV_SZ_classname, GIFT_CLASS);
-    entity_set_model(gift, GIFT_MODEL);
+    entity_set_model(gift, GIFT_MODELS[rare ? 1 : 0]);
     entity_set_int(gift, EV_INT_movetype, MOVETYPE_NONE);
     entity_set_int(gift, EV_INT_solid, SOLID_TRIGGER);
-    entity_set_size(gift, Float:{-13.0, -13.0, 0.0}, Float:{13.0, 13.0, 27.0});
+    if (rare)
+        entity_set_size(gift, Float:{-10.4, -10.4, 0.0}, Float:{10.4, 10.4, 21.6});
+    else
+        entity_set_size(gift, Float:{-13.0, -13.0, 0.0}, Float:{13.0, 13.0, 27.0});
+    g_RareGift[slot] = rare;
     entity_set_origin(gift, floor);
     g_GiftExpires[slot] = get_gametime() + float(max(1, get_pcvar_num(g_Lifetime)));
     entity_set_float(gift, EV_FL_nextthink, get_gametime() + 0.1);
@@ -643,21 +673,23 @@ public GiftExpire(gift)
     new Float:origin[3];
     pev(gift, pev_origin, origin);
     // Local sparks leave the box and nearby map textures at their normal lighting.
-    new Float:angle = now * 3.0 + float(slot);
-    origin[0] += 15.0 * floatcos(angle);
-    origin[1] += 15.0 * floatsin(angle);
-    origin[2] += random_float(16.0, 29.0);
+    new bool:rare = g_RareGift[slot];
+    new Float:angle = now * (rare ? 5.0 : 3.0) + float(slot);
+    new Float:radius = rare ? 12.0 : 15.0;
+    origin[0] += radius * floatcos(angle);
+    origin[1] += radius * floatsin(angle);
+    origin[2] += rare ? random_float(10.0, 25.0) : random_float(16.0, 29.0);
 
     message_begin_f(MSG_PVS, SVC_TEMPENTITY, origin);
     write_byte(TE_SPRITE);
     write_coord_f(origin[0]);
     write_coord_f(origin[1]);
     write_coord_f(origin[2]);
-    write_short(g_GiftSpark);
+    write_short(g_GiftSpark[rare ? 1 : 0]);
     write_byte(3); // 0.3 model scale
-    write_byte(155);
+    write_byte(rare ? 195 : 155);
     message_end();
-    entity_set_float(gift, EV_FL_nextthink, floatmin(now + 0.38, g_GiftExpires[slot]));
+    entity_set_float(gift, EV_FL_nextthink, floatmin(now + (rare ? 0.26 : 0.38), g_GiftExpires[slot]));
 }
 
 public GiftTouch(gift, player)
@@ -671,12 +703,46 @@ public GiftTouch(gift, player)
     if (!GetPlayerKey(player, key, charsmax(key)))
         return;
     LoadProfile(key, balance, inventory, cases);
-    new upper = clamp(get_pcvar_num(g_RewardMax), 0, GIFT_MAX_BALANCE);
-    new lower = clamp(get_pcvar_num(g_RewardMin), 0, upper);
-    new total = GiftAddBalance(balance, random_num(lower, upper));
+    new bool:rare = g_RareGift[slot];
+    new award = GiftSnowflakeReward(rare);
+    new total = GiftAddBalance(balance, award);
+    new caseType = -1;
+    if (GiftChance(g_GiftCaseChance))
+        caseType = QueueGiftCase(CASE_EVENT_NEW_YEAR, cases);
     SaveProfile(key, total, inventory, cases);
     RemoveGift(slot);
-    client_print_color(player, print_team_blue, "^4[Новый год]^1 Подарок ^4+%d^1 снежинок. Баланс: ^3%d^1.", total-balance, total);
+    client_print_color(player, print_team_blue, "^4[Новый год]^1 %s ^4+%d^1 снежинок. Баланс: ^3%d^1.",
+                       rare ? "Редкий подарок" : "Подарок", total-balance, total);
+    if (caseType >= 0)
+        client_print_color(player, print_team_blue, "^4[Новый год]^1 Бонус: ^3[%s] %s^1. Открыть: ^4/case^1.",
+                           CASE_EVENTS[CASE_TYPES[caseType][CaseEvent]], CASE_TYPES[caseType][CaseName]);
+}
+
+GiftSnowflakeReward(bool:rare)
+{
+    new upper = clamp(get_pcvar_num(g_RewardMax), 0, GIFT_MAX_BALANCE);
+    new lower = clamp(get_pcvar_num(g_RewardMin), 0, upper);
+    new award = random_num(lower, upper);
+    if (!rare)
+        return award;
+
+    new Float:multiplier = floatmax(1.0, get_pcvar_float(g_RareMultiplier));
+    return floatround(floatmin(float(GIFT_MAX_BALANCE), float(award) * multiplier));
+}
+
+QueueGiftCase(event, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1])
+{
+    new eligible[sizeof CASE_TYPES], count;
+    for (new type; type < sizeof CASE_TYPES; type++)
+    {
+        if (CASE_TYPES[type][CaseEvent] == event && CASE_TYPES[type][CaseAvailable]
+            && strlen(cases[type]) < CASE_STOCK_MAX)
+            eligible[count++] = type;
+    }
+    if (!count)
+        return -1;
+    new type = eligible[random_num(0, count - 1)];
+    return QueueCaseRewards(type, 1, cases[type], strlen(cases[type])) ? type : -1;
 }
 
 public client_disconnected(id)
@@ -880,9 +946,11 @@ ShowEventCases(id, event)
         num_to_str(type, data, charsmax(data));
         new first = CaseFirearm(type, 0), second = CaseFirearm(type, 1);
         if (second >= 0)
-            formatex(label, charsmax(label), "\w«%s» \d· %s / %s / ножи", CASE_TYPES[type][CaseName], WEAPON_NAMES[first], WEAPON_NAMES[second]);
+            formatex(label, charsmax(label), "\y[%s] \w%s \d· %s / %s / ножи", CASE_EVENTS[event],
+                     CASE_TYPES[type][CaseName], WEAPON_NAMES[first], WEAPON_NAMES[second]);
         else
-            formatex(label, charsmax(label), "\w«%s» \d· %s / ножи", CASE_TYPES[type][CaseName], WEAPON_NAMES[first]);
+            formatex(label, charsmax(label), "\y[%s] \w%s \d· %s / ножи", CASE_EVENTS[event],
+                     CASE_TYPES[type][CaseName], WEAPON_NAMES[first]);
         menu_additem(menu, label, data);
     }
     menu_additem(menu, "\dНазад", "back");
@@ -929,8 +997,8 @@ ShowCaseStorage(id)
         if (!count)
             continue;
         num_to_str(type, data, charsmax(data));
-        formatex(label, charsmax(label), "\w«%s» \y×%d%s", CASE_TYPES[type][CaseName], count,
-                 CASE_TYPES[type][CaseAvailable] ? "" : " \d(прежний)");
+        formatex(label, charsmax(label), "\y[%s] \w%s \y×%d%s", CASE_EVENTS[CASE_TYPES[type][CaseEvent]],
+                 CASE_TYPES[type][CaseName], count, CASE_TYPES[type][CaseAvailable] ? "" : " \d(прежний)");
         menu_additem(menu, label, data);
         listed++;
     }
@@ -1064,7 +1132,7 @@ public BuyCaseQuantity(id, menu, item)
         client_print_color(id, print_team_red, "^4[Кейсы]^1 Лимит хранилища: ^3%d^1 одного типа.", CASE_STOCK_MAX);
         return ShowCaseStorage(id);
     }
-    if (!QueueCasePurchase(type, count, cases[type], stored))
+    if (!QueueCaseRewards(type, count, cases[type], stored))
         return PLUGIN_HANDLED;
     SaveProfile(key, balance - total, inventory, cases);
     client_print_color(id, print_team_blue, "^4[Кейсы]^1 «%s»: куплено ^4%d^1, потрачено ^3%d^1 снежинок.",
@@ -1098,7 +1166,7 @@ public SelectCaseReceipt(id, menu, item)
     return ShowCaseQuantity(id, type, action == 1);
 }
 
-bool:QueueCasePurchase(type, count, queue[CASE_STOCK_MAX + 1], stored)
+bool:QueueCaseRewards(type, count, queue[CASE_STOCK_MAX + 1], stored)
 {
     for (new i = 0; i < count; i++)
     {
