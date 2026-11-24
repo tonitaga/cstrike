@@ -193,12 +193,9 @@ public plugin_init()
     register_event("DeathMsg", "OnDeath", "a", "1>0");
     register_clcmd("say /case", "OpenCaseMenu");
     register_clcmd("say_team /case", "OpenCaseMenu");
-    register_clcmd("say /newyear", "OpenCaseMenu");
-    register_clcmd("say_team /newyear", "OpenCaseMenu");
     register_clcmd("say /snowflakes", "ShowBalance");
     register_clcmd("say /skins", "ShowCollection");
     register_clcmd("say_team /skins", "ShowCollection");
-    register_clcmd("say /wintercollection", "ShowCollection");
     register_concmd("amx_gift_add", "AddPoint", ADMIN_CFG, "- add a gift point at your feet");
     register_concmd("amx_gift_remove", "RemovePoint", ADMIN_CFG, "- remove the nearest gift point");
     register_concmd("amx_gift_wave", "ForceWave", ADMIN_CFG, "- spawn a gift wave now");
@@ -883,9 +880,8 @@ public OpenCaseMenu(id)
     for (new type; type < sizeof CASE_TYPES; type++)
         stored += strlen(cases[type]);
 
-    new title[96], label[72];
-    formatex(title, charsmax(title), "\yКейсы^n\wСнежинки: \y%d", balance);
-    new menu = CreateWinterMenu(title, "SelectCaseAction");
+    new label[72];
+    new menu = CreateWinterMenu("\yКейсы", "SelectCaseAction");
     menu_additem(menu, "\wКупить кейсы", "buy");
     formatex(label, charsmax(label), "\wОткрыть кейсы \y[%d]", stored);
     menu_additem(menu, label, "open");
@@ -936,8 +932,15 @@ ShowEventCases(id, event)
     LoadProfile(key, balance, inventory, cases);
 
     new title[148], label[104], data[8];
-    new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
-    formatex(title, charsmax(title), "\yМагазин · %s^n\wБаланс: \y%d \w| за кейс: \y%d", CASE_EVENTS[event], balance, cost);
+    if (event == CASE_EVENT_NEW_YEAR)
+    {
+        new cost = clamp(get_pcvar_num(g_CasePrice), 1, GIFT_MAX_BALANCE);
+        formatex(title, charsmax(title), "\yМагазин · %s^n\wСнежинки: \y%d \w| за кейс: \y%d", CASE_EVENTS[event], balance, cost);
+    }
+    else
+    {
+        formatex(title, charsmax(title), "\yМагазин · %s", CASE_EVENTS[event]);
+    }
     new menu = CreateWinterMenu(title, "SelectCasePurchase");
     for (new type = 0; type < sizeof CASE_TYPES; type++)
     {
