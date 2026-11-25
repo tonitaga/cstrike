@@ -28,7 +28,7 @@ public plugin_precache()
         for (new role; role < sizeof ModelPrefix - 1; role++)
         {
             formatex(key, charsmax(key), "incom_grenade_change_%s_%c", GrenadeNames[grenade], ModelPrefix[role]);
-            formatex(path, charsmax(path), "models/incom/grenade_change/newyear/%c_%s.mdl", ModelPrefix[role], GrenadeNames[grenade]);
+            formatex(path, charsmax(path), "models/incom/grenade_change/newyear_v2/%c_%s.mdl", ModelPrefix[role], GrenadeNames[grenade]);
             cvars[grenade][role] = register_cvar(key, path);
             formatex(g_Stock[grenade][role], GRENADE_MODEL_PATH - 1, "models/%c_%s.mdl", ModelPrefix[role], GrenadeNames[grenade]);
         }

@@ -1,4 +1,5 @@
 #define TASK_GIFT_EFFECT 7300
+#define FIRE_RATE_MULTIPLIER 1.20
 
 enum
 {
@@ -6,22 +7,22 @@ enum
     GIFT_EFFECT_JUMP,
     GIFT_EFFECT_SPEED,
     GIFT_EFFECT_COCOA,
-    GIFT_EFFECT_ICE_TREADS,
     GIFT_EFFECT_WARM_GLOVES,
+    GIFT_EFFECT_FIRE_RATE,
     GIFT_EFFECT_COUNT
 };
 
 new const GIFT_EFFECT_NAMES[][] =
 {
-    "", "Высокий прыжок", "Скорость +25%", "Горячий какао", "Ледоступы", "Тёплые перчатки"
+    "", "Высокий прыжок", "Скорость +25%", "Горячий какао", "Тёплые перчатки", "Искра салюта"
 };
 
 new g_GiftEffectChance, g_GiftEffectDuration;
 new Float:g_GiftEffectEnd[MAX_PLAYERS + 1][GIFT_EFFECT_COUNT];
 new Float:g_CocoaNextHeal[MAX_PLAYERS + 1];
+new g_GiftShotClip[MAX_PLAYERS + 1];
 new bool:g_GiftJumpGrounded[MAX_PLAYERS + 1];
 new Float:g_GiftHealthBefore[MAX_PLAYERS + 1], Float:g_GiftArmorBefore[MAX_PLAYERS + 1];
-new Float:g_GiftSlowBefore[MAX_PLAYERS + 1];
 
 InitGiftEffects()
 {
@@ -35,6 +36,8 @@ InitGiftEffects()
     RegisterHookChain(RG_CBasePlayer_Killed, "GiftEffectKilledPost", true);
     RegisterHookChain(RG_CBasePlayerWeapon_DefaultReload, "GiftEffectReload");
     RegisterHookChain(RG_CBasePlayerWeapon_DefaultShotgunReload, "GiftEffectShotgunReload");
+    RegisterHookChain(RG_CBasePlayerWeapon_ItemPostFrame, "GiftFireRatePre");
+    RegisterHookChain(RG_CBasePlayerWeapon_ItemPostFrame, "GiftFireRatePost", true);
 }
 
 bool:GiftEffectActive(id, effect)
@@ -156,32 +159,23 @@ public GiftEffectJumpPost(id)
 
 public GiftEffectDamagePre(id)
 {
-    if (GiftEffectActive(id, GIFT_EFFECT_COCOA) || GiftEffectActive(id, GIFT_EFFECT_ICE_TREADS))
+    if (GiftEffectActive(id, GIFT_EFFECT_COCOA))
     {
         g_GiftHealthBefore[id] = get_entvar(id, var_health);
         g_GiftArmorBefore[id] = get_entvar(id, var_armorvalue);
-        g_GiftSlowBefore[id] = get_member(id, m_flVelocityModifier);
     }
     return HC_CONTINUE;
 }
 
-public GiftEffectDamagePost(id, inflictor, attacker, Float:damage, damageType)
+public GiftEffectDamagePost(id)
 {
-    if (!GiftEffectActive(id, GIFT_EFFECT_COCOA) && !GiftEffectActive(id, GIFT_EFFECT_ICE_TREADS))
+    if (!GiftEffectActive(id, GIFT_EFFECT_COCOA))
         return HC_CONTINUE;
     if (Float:get_entvar(id, var_health) >= g_GiftHealthBefore[id]
         && Float:get_entvar(id, var_armorvalue) >= g_GiftArmorBefore[id])
         return HC_CONTINUE;
 
-    if (GiftEffectActive(id, GIFT_EFFECT_COCOA))
-        g_CocoaNextHeal[id] = get_gametime() + 3.0;
-    if (GiftEffectActive(id, GIFT_EFFECT_ICE_TREADS) && attacker != id && attacker >= 1
-        && attacker <= MaxClients && (damageType & (DMG_BULLET | DMG_SLASH)))
-    {
-        new Float:modifier = get_member(id, m_flVelocityModifier);
-        if (modifier < g_GiftSlowBefore[id])
-            set_member(id, m_flVelocityModifier, modifier + (g_GiftSlowBefore[id] - modifier) * 0.30);
-    }
+    g_CocoaNextHeal[id] = get_gametime() + 3.0;
     return HC_CONTINUE;
 }
 
@@ -189,6 +183,12 @@ public GiftEffectKilledPost(id)
 {
     ClearGiftEffect(id, false);
     return HC_CONTINUE;
+}
+
+// Queried by weapons_maxclip for reloads it starts without the game reload hooks.
+public IncomGiftHasQuickReload(id)
+{
+    return GiftEffectActive(id, GIFT_EFFECT_WARM_GLOVES);
 }
 
 public GiftEffectReload(weapon, clipSize, animation, Float:delay)
@@ -204,6 +204,42 @@ public GiftEffectShotgunReload(weapon, animation, startAnimation, Float:delay, F
     {
         SetHookChainArg(4, ATYPE_FLOAT, delay * 0.5);
         SetHookChainArg(5, ATYPE_FLOAT, startDelay * 0.5);
+    }
+    return HC_CONTINUE;
+}
+
+public GiftFireRatePre(weapon)
+{
+    new id = get_member(weapon, m_pPlayer);
+    if (!GiftEffectActive(id, GIFT_EFFECT_FIRE_RATE))
+        return HC_CONTINUE;
+
+    g_GiftShotClip[id] = 0;
+    new type = get_member(weapon, m_iId);
+    if (!((1 << type) & (CSW_ALL_RIFLES | CSW_ALL_SMGS | (1 << CSW_M249))))
+        return HC_CONTINUE;
+    if (type == CSW_FAMAS && (get_member(weapon, m_Weapon_iWeaponState) & CS_WPNSTATE_FAMAS_BURST_MODE))
+        return HC_CONTINUE;
+    if (!get_member(weapon, m_Weapon_fInReload))
+        g_GiftShotClip[id] = get_member(weapon, m_Weapon_iClip);
+    return HC_CONTINUE;
+}
+
+public GiftFireRatePost(weapon)
+{
+    new id = get_member(weapon, m_pPlayer);
+    if (!GiftEffectActive(id, GIFT_EFFECT_FIRE_RATE) || g_GiftShotClip[id] < 1
+        || get_member(weapon, m_Weapon_iClip) >= g_GiftShotClip[id])
+        return HC_CONTINUE;
+
+    g_GiftShotClip[id] = 0;
+    new Float:primary = get_member(weapon, m_Weapon_flNextPrimaryAttack);
+    if (primary > 0.0)
+    {
+        new Float:accelerated = primary / FIRE_RATE_MULTIPLIER;
+        set_member(weapon, m_Weapon_flNextPrimaryAttack, accelerated);
+        set_member(weapon, m_Weapon_flPrevPrimaryAttack,
+            floatmax(0.0, Float:get_member(weapon, m_Weapon_flPrevPrimaryAttack) - (primary - accelerated)));
     }
     return HC_CONTINUE;
 }

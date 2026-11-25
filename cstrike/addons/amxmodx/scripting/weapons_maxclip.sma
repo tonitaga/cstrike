@@ -212,11 +212,12 @@ public Item_PostFrame(iEnt)
 				SendWeaponAnim(id, 0)
 			}
 		}
-		else if( iClip == g_iDftMaxClip[iId] )
+		else if( iClip >= g_iDftMaxClip[iId] )
 		{
 			if( iBpAmmo )
 			{
-				set_pdata_float(id, m_flNextAttack, g_fDelay[iId], XTRA_OFS_PLAYER)
+				new Float:reloadDelay = g_fDelay[iId] * GiftReloadScale(id)
+				set_pdata_float(id, m_flNextAttack, reloadDelay, XTRA_OFS_PLAYER)
 
 				if( SILENT_BS & (1<<iId) && get_pdata_int(iEnt, m_fSilent, XTRA_OFS_WEAPON) )
 				{
@@ -228,7 +229,7 @@ public Item_PostFrame(iEnt)
 				}
 				set_pdata_int(iEnt, m_fInReload, 1, XTRA_OFS_WEAPON)
 
-				set_pdata_float(iEnt, m_flTimeWeaponIdle, g_fDelay[iId] + 0.5, XTRA_OFS_WEAPON)
+				set_pdata_float(iEnt, m_flTimeWeaponIdle, reloadDelay + 0.5, XTRA_OFS_WEAPON)
 			}
 		}
 	}
@@ -268,7 +269,7 @@ public Shotgun_WeaponIdle( iEnt )
 		static iBpAmmo ; iBpAmmo = get_pdata_int(id, 381, XTRA_OFS_PLAYER)
 		static iDftMaxClip ; iDftMaxClip = g_iDftMaxClip[iId]
 
-		if( iClip < iMaxClip && iClip == iDftMaxClip && iBpAmmo )
+		if( iClip < iMaxClip && iClip >= iDftMaxClip && iBpAmmo )
 		{
 			Shotgun_Reload(iEnt, iId, iMaxClip, iClip, iBpAmmo, id)
 			return
@@ -319,7 +320,7 @@ public Shotgun_PostFrame( iEnt )
 			set_pdata_float(iEnt, m_flNextPrimaryAttack, 0.5, XTRA_OFS_WEAPON)  // Tip ?
 		}
 
-		else if( iClip == g_iDftMaxClip[iId] )
+		else if( iClip >= g_iDftMaxClip[iId] )
 		{
 			if( iBpAmmo )
 			{
@@ -334,19 +335,20 @@ Shotgun_Reload(iEnt, iId, iMaxClip, iClip, iBpAmmo, id)
 	if(iBpAmmo <= 0 || iClip == iMaxClip)
 		return
 
-	if(get_pdata_int(iEnt, m_flNextPrimaryAttack, XTRA_OFS_WEAPON) > 0.0)
+	if(get_pdata_float(iEnt, m_flNextPrimaryAttack, XTRA_OFS_WEAPON) > 0.0)
 		return
 
 	switch( get_pdata_int(iEnt, m_fInSpecialReload, XTRA_OFS_WEAPON) )
 	{
 		case 0:
 		{
+			new Float:startDelay = 0.55 * GiftReloadScale(id)
 			SendWeaponAnim( id , start_reload )
 			set_pdata_int(iEnt, m_fInSpecialReload, 1, XTRA_OFS_WEAPON)
-			set_pdata_float(id, m_flNextAttack, 0.55, 5)
-			set_pdata_float(iEnt, m_flTimeWeaponIdle, 0.55, XTRA_OFS_WEAPON)
-			set_pdata_float(iEnt, m_flNextPrimaryAttack, 0.55, XTRA_OFS_WEAPON)
-			set_pdata_float(iEnt, m_flNextSecondaryAttack, 0.55, XTRA_OFS_WEAPON)
+			set_pdata_float(id, m_flNextAttack, startDelay, XTRA_OFS_PLAYER)
+			set_pdata_float(iEnt, m_flTimeWeaponIdle, startDelay, XTRA_OFS_WEAPON)
+			set_pdata_float(iEnt, m_flNextPrimaryAttack, startDelay, XTRA_OFS_WEAPON)
+			set_pdata_float(iEnt, m_flNextSecondaryAttack, startDelay, XTRA_OFS_WEAPON)
 			return
 		}
 		case 1:
@@ -359,7 +361,7 @@ Shotgun_Reload(iEnt, iId, iMaxClip, iClip, iBpAmmo, id)
 			emit_sound(id, CHAN_ITEM, random_num(0,1) ? "weapons/reload1.wav" : "weapons/reload3.wav", 1.0, ATTN_NORM, 0, 85 + random_num(0,0x1f))
 			SendWeaponAnim( id, insert )
 
-			set_pdata_float(iEnt, m_flTimeWeaponIdle, iId == CSW_XM1014 ? 0.30 : 0.45, XTRA_OFS_WEAPON)
+			set_pdata_float(iEnt, m_flTimeWeaponIdle, (iId == CSW_XM1014 ? 0.30 : 0.45) * GiftReloadScale(id), XTRA_OFS_WEAPON)
 		}
 		default:
 		{
@@ -368,4 +370,13 @@ Shotgun_Reload(iEnt, iId, iMaxClip, iClip, iBpAmmo, id)
 			set_pdata_int(iEnt, m_fInSpecialReload, 1, XTRA_OFS_WEAPON)
 		}
 	}
+}
+
+Float:GiftReloadScale(id)
+{
+	if (callfunc_begin("IncomGiftHasQuickReload", "incom_newyear_gifts.amxx") != 1)
+		return 1.0
+
+	callfunc_push_int(id)
+	return callfunc_end() ? 0.5 : 1.0
 }

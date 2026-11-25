@@ -1,10 +1,14 @@
 #define QUEST_PERIODS 3
 #define QUEST_SLOTS 3
+#define QUEST_KILL_SCALE 2
+#define QUEST_MAX_KILLS (200 * QUEST_KILL_SCALE)
 #define QUEST_WEAPONS 7
 #define QUEST_PAID (QUEST_WEAPONS + 1)
 #define QUEST_OTHER (QUEST_WEAPONS + 2)
 #define QUEST_STATE (QUEST_WEAPONS + 3)
 #define QUEST_ALL ((1 << QUEST_WEAPONS) - 1)
+#define QUEST_EXPLICIT_EXCLUDED ((1 << 4) | (1 << 5))
+#define QUEST_CATALOG_UPDATED (1 << QUEST_SLOTS)
 
 enum { QUEST_MAP, QUEST_DAY, QUEST_WEEK };
 enum { QUEST_TOTAL, QUEST_EACH, QUEST_ANY };
@@ -37,11 +41,11 @@ InitQuests()
 
     new map[64];
     get_mapname(map, charsmax(map));
-    g_QuestMapMask = QUEST_ALL;
+    g_QuestMapMask = QUEST_ALL & ~QUEST_EXPLICIT_EXCLUDED;
     if (containi(map, "35hp") == 0 || containi(map, "ka_") == 0)
         g_QuestMapMask = 64;
     else if (containi(map, "aim_usp") == 0)
-        g_QuestMapMask = 32 | 64;
+        g_QuestMapMask = 64;
     else if (containi(map, "aim_deagle") == 0)
         g_QuestMapMask = 8 | 64;
     else if (containi(map, "awp_") == 0)
@@ -97,6 +101,12 @@ LoadQuests(const key[], questState[QUEST_PERIODS][QUEST_STATE])
             arrayset(questState[period], 0, QUEST_STATE);
             questState[period][0] = epochs[period];
         }
+        if (period != QUEST_MAP && !(questState[period][QUEST_PAID] & QUEST_CATALOG_UPDATED))
+        {
+            new picks[QUEST_SLOTS];
+            new replaced = QuestAssignments(key, epochs[period], period, picks);
+            questState[period][QUEST_PAID] = (questState[period][QUEST_PAID] & ~replaced) | QUEST_CATALOG_UPDATED;
+        }
     }
 }
 
@@ -120,7 +130,7 @@ QuestSeed(const key[], epoch, period)
 
 QuestAssignments(const key[], epoch, period, picks[QUEST_SLOTS])
 {
-    new pool[sizeof QUEST_RULES + QUEST_WEAPONS * 2], count;
+    new pool[sizeof QUEST_RULES], count;
     if (period == QUEST_MAP)
     {
         for (new weapon; weapon < QUEST_WEAPONS; weapon++)
@@ -145,6 +155,32 @@ QuestAssignments(const key[], epoch, period, picks[QUEST_SLOTS])
     // Single-weapon maps still offer three distinct goals.
     for (new base; slot < QUEST_SLOTS; slot++, base++)
         picks[slot] = picks[base] + QUEST_WEAPONS;
+
+    if (period == QUEST_MAP)
+        return 0;
+
+    // Preserve the original assignment order and replace only retired objectives.
+    new replaced;
+    for (slot = 0; slot < QUEST_SLOTS; slot++)
+    {
+        if (QuestRuleAvailable(picks[slot]))
+            continue;
+        replaced |= 1 << slot;
+        do
+        {
+            seed = (seed * 1664525 + 1013904223) & 2147483647;
+            new index = seed % count;
+            picks[slot] = pool[index];
+            pool[index] = pool[--count];
+        } while (!QuestRuleAvailable(picks[slot]));
+    }
+    return replaced;
+}
+
+bool:QuestRuleAvailable(rule)
+{
+    new mask = QUEST_RULES[rule][QuestMask];
+    return mask == QUEST_ALL || !(mask & QUEST_EXPLICIT_EXCLUDED);
 }
 
 QuestGoal(period, rule, &mask, &mode, &amount, &kinds, &snow, &cases)
@@ -157,15 +193,22 @@ QuestGoal(period, rule, &mask, &mode, &amount, &kinds, &snow, &cases)
         kinds = 1;
         snow = 7 + (rule / QUEST_WEAPONS) * 4;
         cases = 0;
-        return;
     }
-    new multiplier = period == QUEST_WEEK ? 5 : 1;
-    mask = QUEST_RULES[rule][QuestMask];
-    mode = QUEST_RULES[rule][QuestMode];
-    amount = QUEST_RULES[rule][QuestAmount] * multiplier;
-    kinds = QUEST_RULES[rule][QuestKinds];
-    cases = period == QUEST_WEEK ? QUEST_RULES[rule][QuestCases] : 0;
-    snow = QUEST_RULES[rule][QuestSnow] * multiplier - cases * 60;
+    else
+    {
+        new multiplier = period == QUEST_WEEK ? 5 : 1;
+        mask = QUEST_RULES[rule][QuestMask];
+        mode = QUEST_RULES[rule][QuestMode];
+        amount = QUEST_RULES[rule][QuestAmount] * multiplier;
+        kinds = QUEST_RULES[rule][QuestKinds];
+        cases = period == QUEST_WEEK ? QUEST_RULES[rule][QuestCases] : 0;
+        snow = QUEST_RULES[rule][QuestSnow] * multiplier - cases * 60;
+    }
+
+    amount *= QUEST_KILL_SCALE;
+    // Round half a snowflake up and pay half a case as its 30-snowflake value.
+    snow = (snow * 3 + 1) / 2 + (cases % 2) * 30;
+    cases = cases * 3 / 2;
 }
 
 QuestScore(const questState[QUEST_STATE], mask, mode, amount, kinds)
@@ -221,7 +264,7 @@ QuestCredit(id, const key[], weapon, &balance, cases[sizeof CASE_TYPES][CASE_STO
     for (new period; period < QUEST_PERIODS; period++)
     {
         new counter = weapon < QUEST_WEAPONS ? weapon + 1 : QUEST_OTHER;
-        questState[period][counter] = min(200, questState[period][counter] + 1);
+        questState[period][counter] = min(QUEST_MAX_KILLS, questState[period][counter] + 1);
         new picks[QUEST_SLOTS];
         QuestAssignments(key, questState[period][0], period, picks);
         for (new slot; slot < QUEST_SLOTS; slot++)
