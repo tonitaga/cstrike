@@ -48,8 +48,9 @@ new const CASE_TYPES[CASE_TYPE_COUNT][CaseType] = {
 new const CASE_ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
-new const GIFT_MODELS[][] = {"models/incom/newyear/gift.mdl", "models/incom/newyear/gift_rare.mdl"};
-new const GIFT_SPARKS[][] = {"sprites/incom/newyear/gift_spark.spr", "sprites/incom/newyear/gift_spark_rare.spr"};
+enum { GIFT_NORMAL, GIFT_RARE, GIFT_LEGENDARY };
+new const GIFT_MODELS[][] = {"models/incom/newyear/gift.mdl", "models/incom/newyear/gift_rare.mdl", "models/incom/newyear/gift_legendary.mdl"};
+new const GIFT_SPARKS[][] = {"sprites/incom/newyear/gift_spark.spr", "sprites/incom/newyear/gift_spark_rare.spr", "sprites/incom/newyear/gift_spark_legendary.spr"};
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
 new const CASE_TICK[] = "incom/newyear/case_tick.wav";
 new const SKIN_NAMES[CASE_WEAPON_BUTTERFLY + 1][CASE_RARITY_COUNT][] = {
@@ -98,7 +99,8 @@ new Float:g_Points[MAX_GIFT_POINTS][3], g_PointCount;
 new Float:g_AutoPoints[MAX_GIFT_POINTS][3], Float:g_AutoSeen[MAX_GIFT_POINTS];
 new g_AutoNext;
 new g_Gifts[MAX_GIFTS], g_GiftPoint[MAX_GIFTS], g_GiftSpark[sizeof GIFT_SPARKS];
-new bool:g_RareGift[MAX_GIFTS];
+new g_GiftKind[MAX_GIFTS];
+new g_LegendaryChance, g_LegendaryCaseMin, g_LegendaryCaseMax;
 new Float:g_GiftExpires[MAX_GIFTS];
 new g_PointFile[160];
 new const SKIN_FOLDERS[][] = {"m4a1", "ak47", "glock18", "deagle", "awp", "usp", "butterfly"};
@@ -181,6 +183,9 @@ public plugin_init()
     g_RareChance = register_cvar("incom_newyear_gifts_rare_chance", "10");
     g_RareMultiplier = register_cvar("incom_newyear_gifts_rare_multiplier", "2.0");
     g_GiftCaseChance = register_cvar("incom_newyear_gifts_case_chance", "5");
+    g_LegendaryChance = register_cvar("incom_newyear_gifts_legendary_chance", "1");
+    g_LegendaryCaseMin = register_cvar("incom_newyear_gifts_legendary_case_min", "2");
+    g_LegendaryCaseMax = register_cvar("incom_newyear_gifts_legendary_case_max", "4");
     g_KillReward = register_cvar("incom_newyear_gifts_kill_reward", "2");
     g_KillCooldown = register_cvar("incom_newyear_gifts_kill_cooldown", "20");
     g_CasePrice = register_cvar("incom_newyear_gifts_case_price", "60");
@@ -528,7 +533,7 @@ SpawnWave()
     new upper = clamp(get_pcvar_num(g_WaveMax), 0, MAX_GIFTS);
     new lower = clamp(get_pcvar_num(g_WaveMin), 0, upper);
     new target = GiftWaveSize(random_num(lower, upper), active, cap, freeCount);
-    new spawned, rareCount;
+    new spawned, rareCount, legendaryCount;
     while (spawned < target && freeCount)
     {
         new take = random_num(0, (manualCount ? manualCount : freeCount) - 1);
@@ -539,16 +544,29 @@ SpawnWave()
             take = manualCount;
         }
         candidates[take] = candidates[--freeCount];
-        new bool:rare = GiftChance(g_RareChance);
-        if (SpawnGift(point, rare))
+        new roll = random_num(0, 9999);
+        new legendaryWeight = GiftWeight(g_LegendaryChance);
+        new kind = GIFT_NORMAL;
+        if (roll < legendaryWeight)
+            kind = GIFT_LEGENDARY;
+        else if (roll < legendaryWeight + GiftWeight(g_RareChance))
+            kind = GIFT_RARE;
+
+        if (SpawnGift(point, kind))
         {
             spawned++;
-            rareCount += rare ? 1 : 0;
+            rareCount += kind == GIFT_RARE ? 1 : 0;
+            legendaryCount += kind == GIFT_LEGENDARY ? 1 : 0;
         }
     }
     if (spawned)
     {
-        if (rareCount)
+        if (legendaryCount)
+        {
+            set_hudmessage(255, 201, 70, -1.0, 0.22, 0, 0.0, 6.0, 0.1, 0.3, -1);
+            show_hudmessage(0, "Легендарных подарков: %d!^nВсего подарков на карте: %d", legendaryCount, spawned);
+        }
+        else if (rareCount)
         {
             set_hudmessage(110, 210, 255, -1.0, 0.22, 0, 0.0, 5.0, 0.1, 0.2, -1);
             show_hudmessage(0, "Подарков: %d, редких: %d^nПодойди к коробке, чтобы подобрать её.", spawned, rareCount);
@@ -566,13 +584,17 @@ SpawnWave()
     return spawned;
 }
 
-bool:GiftChance(cvar)
+GiftWeight(cvar)
 {
-    new weight = floatround(floatclamp(get_pcvar_float(cvar), 0.0, 100.0) * 100.0);
-    return random_num(0, 9999) < weight;
+    return floatround(floatclamp(get_pcvar_float(cvar), 0.0, 100.0) * 100.0);
 }
 
-bool:SpawnGift(point, bool:rare)
+bool:GiftChance(cvar)
+{
+    return random_num(0, 9999) < GiftWeight(cvar);
+}
+
+bool:SpawnGift(point, kind)
 {
     new Float:floor[3], Float:location[3];
     new bool:automatic = point >= MAX_GIFT_POINTS;
@@ -614,14 +636,14 @@ bool:SpawnGift(point, bool:rare)
     if (!gift)
         return false;
     entity_set_string(gift, EV_SZ_classname, GIFT_CLASS);
-    entity_set_model(gift, GIFT_MODELS[rare ? 1 : 0]);
+    entity_set_model(gift, GIFT_MODELS[kind]);
     entity_set_int(gift, EV_INT_movetype, MOVETYPE_NONE);
     entity_set_int(gift, EV_INT_solid, SOLID_TRIGGER);
-    if (rare)
+    if (kind != GIFT_NORMAL)
         entity_set_size(gift, Float:{-10.4, -10.4, 0.0}, Float:{10.4, 10.4, 21.6});
     else
         entity_set_size(gift, Float:{-13.0, -13.0, 0.0}, Float:{13.0, 13.0, 27.0});
-    g_RareGift[slot] = rare;
+    g_GiftKind[slot] = kind;
     entity_set_origin(gift, floor);
     g_GiftExpires[slot] = get_gametime() + float(max(1, get_pcvar_num(g_Lifetime)));
     entity_set_float(gift, EV_FL_nextthink, get_gametime() + 0.1);
@@ -669,24 +691,47 @@ public GiftExpire(gift)
 
     new Float:origin[3];
     pev(gift, pev_origin, origin);
-    // Local sparks leave the box and nearby map textures at their normal lighting.
-    new bool:rare = g_RareGift[slot];
+    // Keep the box on the floor while the particles orbit.
+    new kind = g_GiftKind[slot];
+    if (kind == GIFT_LEGENDARY)
+    {
+        new Float:angles[3];
+        angles[1] = float(floatround(now * 38.0 + float(slot) * 29.0) % 360);
+        entity_set_vector(gift, EV_VEC_angles, angles);
+        for (new i; i < 3; i++)
+        {
+            new Float:angle = now * 4.0 + float(i) * 2.0944;
+            new Float:spark[3];
+            spark[0] = origin[0] + 15.0 * floatcos(angle);
+            spark[1] = origin[1] + 15.0 * floatsin(angle);
+            spark[2] = origin[2] + 17.0 + 7.0 * floatsin(angle + now * 2.0);
+            SendGiftSpark(spark, kind, 3 + i, 225);
+        }
+        entity_set_float(gift, EV_FL_nextthink, floatmin(now + 0.16, g_GiftExpires[slot]));
+        return;
+    }
+    new bool:rare = kind == GIFT_RARE;
     new Float:angle = now * (rare ? 5.0 : 3.0) + float(slot);
     new Float:radius = rare ? 12.0 : 15.0;
     origin[0] += radius * floatcos(angle);
     origin[1] += radius * floatsin(angle);
     origin[2] += rare ? random_float(10.0, 25.0) : random_float(16.0, 29.0);
 
+    SendGiftSpark(origin, kind, 3, rare ? 195 : 155);
+    entity_set_float(gift, EV_FL_nextthink, floatmin(now + (rare ? 0.26 : 0.38), g_GiftExpires[slot]));
+}
+
+SendGiftSpark(const Float:origin[3], kind, scale, brightness)
+{
     message_begin_f(MSG_PVS, SVC_TEMPENTITY, origin);
     write_byte(TE_SPRITE);
     write_coord_f(origin[0]);
     write_coord_f(origin[1]);
     write_coord_f(origin[2]);
-    write_short(g_GiftSpark[rare ? 1 : 0]);
-    write_byte(3); // 0.3 model scale
-    write_byte(rare ? 195 : 155);
+    write_short(g_GiftSpark[kind]);
+    write_byte(scale);
+    write_byte(brightness);
     message_end();
-    entity_set_float(gift, EV_FL_nextthink, floatmin(now + (rare ? 0.26 : 0.38), g_GiftExpires[slot]));
 }
 
 public GiftTouch(gift, player)
@@ -700,7 +745,26 @@ public GiftTouch(gift, player)
     if (!GetPlayerKey(player, key, charsmax(key)))
         return;
     LoadProfile(key, balance, inventory, cases);
-    new bool:rare = g_RareGift[slot];
+    new kind = g_GiftKind[slot];
+    if (kind == GIFT_LEGENDARY)
+    {
+        new upper = clamp(get_pcvar_num(g_LegendaryCaseMax), 1, CASE_STOCK_MAX * sizeof CASE_TYPES);
+        new lower = clamp(get_pcvar_num(g_LegendaryCaseMin), 1, upper);
+        new wanted = random_num(lower, upper), awarded;
+        while (awarded < wanted && QueueGiftCase(CASE_EVENT_NEW_YEAR, cases) >= 0)
+            awarded++;
+        if (!awarded)
+            return;
+
+        SaveProfile(key, balance, inventory, cases);
+        RemoveGift(slot);
+        client_print_color(player, print_team_red, "^4[Новый год]^1 Легендарный подарок! Кейсов в хранилище: ^3+%d^1. Открыть: ^4/case^1.", awarded);
+        if (awarded < wanted)
+            client_print_color(player, print_team_red, "^4[Новый год]^1 В хранилище больше нет места для новогодних кейсов.");
+        return;
+    }
+
+    new bool:rare = kind == GIFT_RARE;
     new award = GiftSnowflakeReward(rare);
     new total = GiftAddBalance(balance, award);
     new caseType = -1;

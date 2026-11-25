@@ -11,7 +11,7 @@ if errorlevel 1 exit /b 1
 :hlds
 echo (%time%) HLDS Starting...
 reg add "HKCU\Software\Valve\Steam\ActiveProcess" /v SteamClientDll /t REG_SZ /d "" /f
-start /wait /high hlds.exe -autoupdate -console -game cstrike -secure -master -noipx +maxplayers 32 +ip 192.168.1.146 +port 27015
+start /wait /high hlds.exe -autoupdate -console -game cstrike -secure -master -noipx +maxplayers 32 +ip 192.168.53.121 +port 27015
 echo (%time%) HLDS Crashed, restarting...
 goto hlds
 :check
