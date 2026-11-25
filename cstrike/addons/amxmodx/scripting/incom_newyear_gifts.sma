@@ -14,7 +14,9 @@
 #define AUTO_POINT_SPACING 84.0
 #define MAX_FLOOR_SHIFT 64.0
 #define CASE_STOCK_MAX 50
-#define PROFILE_SIZE ((GIFT_COLLECTION_SIZE + 1) * 7 + sizeof CASE_TYPES * (CASE_STOCK_MAX + 1) + 1)
+#define QUEST_DATA 192
+#define QUEST_MARKER "|Q1 "
+#define PROFILE_SIZE ((GIFT_COLLECTION_SIZE + 1) * 7 + sizeof CASE_TYPES * (CASE_STOCK_MAX + 1) + QUEST_DATA + 1)
 #define MIN_POINT_DISTANCE 48.0
 #define TASK_CASE_REVEAL 7100
 #define CASE_BOX_OPEN_TIME 0.90
@@ -170,6 +172,8 @@ public plugin_precache()
 
 public plugin_init()
 {
+    InitQuests();
+    InitGiftEffects();
     register_plugin("INCOM New Year Gifts", "1.2", "INCOMSYSTEM");
     g_Enable = register_cvar("incom_newyear_gifts_enabled", "1");
     g_Interval = register_cvar("incom_newyear_gifts_interval", "60");
@@ -761,6 +765,7 @@ public GiftTouch(gift, player)
         client_print_color(player, print_team_red, "^4[Новый год]^1 Легендарный подарок! Кейсов в хранилище: ^3+%d^1. Открыть: ^4/case^1.", awarded);
         if (awarded < wanted)
             client_print_color(player, print_team_red, "^4[Новый год]^1 В хранилище больше нет места для новогодних кейсов.");
+        TryGiftEffect(player);
         return;
     }
 
@@ -777,6 +782,7 @@ public GiftTouch(gift, player)
     if (caseType >= 0)
         client_print_color(player, print_team_blue, "^4[Новый год]^1 Бонус: ^3[%s] %s^1. Открыть: ^4/case^1.",
                            CASE_EVENTS[CASE_TYPES[caseType][CaseEvent]], CASE_TYPES[caseType][CaseName]);
+    TryGiftEffect(player);
 }
 
 GiftSnowflakeReward(bool:rare)
@@ -808,6 +814,7 @@ QueueGiftCase(event, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1])
 
 public client_disconnected(id)
 {
+    ClearGiftEffect(id, false);
     remove_task(TASK_CASE_REVEAL + id);
     if (g_Revealing[id])
     {
@@ -847,11 +854,16 @@ public OnDeath()
 
     new award = clamp(get_pcvar_num(g_KillReward), 0, GIFT_MAX_BALANCE);
     new key[40], inventory[GIFT_COLLECTION_SIZE], balance, cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1];
-    if (!award || !GetPlayerKey(killer, key, charsmax(key)))
+    new weapon = QuestsEnabled() ? QuestWeapon() : -1;
+    if ((!award && weapon < 0) || !GetPlayerKey(killer, key, charsmax(key)))
         return;
 
     LoadProfile(key, balance, inventory, cases);
-    SaveProfile(key, GiftAddBalance(balance, award), inventory, cases);
+    balance = GiftAddBalance(balance, award);
+    new quests[QUEST_DATA];
+    if (weapon >= 0)
+        QuestCredit(killer, key, weapon, balance, cases, quests);
+    SaveProfile(key, balance, inventory, cases, quests);
     g_LastKill[killer][victim] = now;
 }
 
@@ -898,7 +910,7 @@ LoadProfile(const key[], &balance, inventory[GIFT_COLLECTION_SIZE], cases[sizeof
     }
 }
 
-SaveProfile(const key[], balance, const inventory[GIFT_COLLECTION_SIZE], const cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1])
+SaveProfile(const key[], balance, const inventory[GIFT_COLLECTION_SIZE], const cases[sizeof CASE_TYPES][CASE_STOCK_MAX + 1], const quests[] = "")
 {
     new record[PROFILE_SIZE];
     new length = num_to_str(balance, record, charsmax(record));
@@ -906,6 +918,16 @@ SaveProfile(const key[], balance, const inventory[GIFT_COLLECTION_SIZE], const c
         length += formatex(record[length], charsmax(record) - length, " %d", inventory[i]);
     for (new type = 0; type < sizeof CASE_TYPES; type++)
         length += formatex(record[length], charsmax(record) - length, "|%s", cases[type]);
+    if (quests[0])
+        add(record, charsmax(record), quests);
+    else
+    {
+        new previous[PROFILE_SIZE];
+        nvault_get(g_Vault, key, previous, charsmax(previous));
+        new offset = contain(previous, QUEST_MARKER);
+        if (offset >= 0)
+            add(record, charsmax(record), previous[offset]);
+    }
     nvault_set(g_Vault, key, record);
 }
 
@@ -1656,3 +1678,6 @@ ResetSkinFallback(id)
     g_OldView[id][0] = 0;
     g_OldPlayer[id][0] = 0;
 }
+
+#include <incom_newyear_quests>
+#include <incom_newyear_gift_effects>
