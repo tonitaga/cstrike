@@ -47,11 +47,11 @@ new const CASE_TYPES[CASE_TYPE_COUNT][CaseType] = {
     {CASE_EVENT_NEW_YEAR, "Террорист", true},
     {CASE_EVENT_NEW_YEAR, "Снайпер", true}
 };
-new const CASE_ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
+new const CASE_ALPHABET[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV";
 
 new const GIFT_CLASS[] = "incom_newyear_gift";
 enum { GIFT_NORMAL, GIFT_RARE, GIFT_LEGENDARY };
-new const GIFT_MODELS[][] = {"models/incom/newyear/gift.mdl", "models/incom/newyear/gift_rare.mdl", "models/incom/newyear/gift_legendary.mdl"};
+new const GIFT_MODELS[][] = {"models/incom/newyear/gift_a4.mdl", "models/incom/newyear/gift_rare_a4.mdl", "models/incom/newyear/gift_legendary_a4.mdl"};
 new const GIFT_SPARKS[][] = {"sprites/incom/newyear/gift_spark.spr", "sprites/incom/newyear/gift_spark_rare.spr", "sprites/incom/newyear/gift_spark_legendary.spr"};
 new const GIFT_CHIME[] = "incom/newyear/gift_wave.wav";
 new const CASE_TICK[] = "incom/newyear/case_tick.wav";
@@ -77,10 +77,12 @@ new const KNIFE_EXTRA_NAMES[][] = {
     "Снежная сталь", "Зимняя хвоя", "Леденцовая лента", "Медная шишка",
     "Звёздный аметист", "Полярное стекло", "Зелёная аврора", "Механика праздника",
     "Ледяная пыль", "Хвойный венок", "Карамельный завиток", "Медный зимний лес",
-    "Фиолетовый иней", "Бирюзовый витраж", "Хрустальная сакура", "Перо жар-птицы"
+    "Фиолетовый иней", "Бирюзовый витраж", "Полуночный экспресс", "Полярный лис",
+    "Морозная сталь", "Заснеженная хвоя", "Карамельная спираль", "Медный остролист",
+    "Ледяная мозаика", "Праздничные фонари", "Алый кардинал", "Аврора над елями"
 };
-new const KNIFE_NAMES[][] = {"Бабочка", "Skeleton", "Karambit"};
-new const KNIFE_FOLDERS[][] = {"butterfly", "skeleton", "karambit"};
+new const KNIFE_NAMES[][] = {"Бабочка", "Skeleton", "Karambit", "Bayonet"};
+new const KNIFE_FOLDERS[][] = {"butterfly", "skeleton", "karambit", "bayonet"};
 new g_SkinNames[GIFT_COLLECTION_SIZE][72];
 new g_CaseMotdUrl, g_CaseSceneSerial;
 new bool:g_Revealing[MAX_PLAYERS + 1];
@@ -137,17 +139,18 @@ public plugin_precache()
             {
                 formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_knife_k%02d%s.mdl",
                          KNIFE_FOLDERS[variant / 8], SKIN_TIERS[rarity], variant,
-                         rarity == CASE_RARITY_LEGENDARY ? "b" : "");
+                         KnifeModelSuffix(variant, rarity));
                 copy(g_SkinNames[index], charsmax(g_SkinNames[]), KNIFE_EXTRA_NAMES[variant - CASE_RARITY_COUNT]);
+                PrecacheKnifePlayerModel(index);
                 precache_model(g_View[index]);
                 continue;
             }
             if (variant < CASE_RARITY_COUNT)
             {
                 if (rarity == CASE_RARITY_LEGENDARY && (weapon == CASE_WEAPON_DEAGLE || weapon == CASE_WEAPON_BUTTERFLY))
-                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r15" : "r14");
+                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r15a4" : "r14");
                 else
-                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r11" : "r13");
+                    copy(suffix, charsmax(suffix), weapon == CASE_WEAPON_BUTTERFLY ? "r11a4" : "r13");
                 copy(g_SkinNames[index], charsmax(g_SkinNames[]), SKIN_NAMES[weapon][variant]);
             }
             else
@@ -160,7 +163,9 @@ public plugin_precache()
             formatex(g_View[index], charsmax(g_View[]), "models/incom/newyear/%s/%s/v_%s_%s.mdl",
                      SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename, suffix);
             precache_model(g_View[index]);
-            if (weapon != CASE_WEAPON_BUTTERFLY)
+            if (weapon == CASE_WEAPON_BUTTERFLY)
+                PrecacheKnifePlayerModel(index);
+            else
             {
                 formatex(g_Player[index], charsmax(g_Player[]), "models/incom/newyear/%s/%s/p_%s_%sp%s.mdl",
                          SKIN_FOLDERS[weapon], SKIN_TIERS[rarity], filename, suffix, weapon == CASE_WEAPON_AWP ? "2" : "");
@@ -168,6 +173,41 @@ public plugin_precache()
             }
         }
     }
+}
+
+KnifeModelSuffix(variant, rarity)
+{
+    new suffix[5];
+    if (variant >= GIFT_LEGACY_KNIFE_VARIANTS)
+        copy(suffix, charsmax(suffix), "q");
+    else if (variant == 23)
+        copy(suffix, charsmax(suffix), "bk");
+    else if (variant == 22)
+        copy(suffix, charsmax(suffix), "bf");
+    else if (rarity == CASE_RARITY_LEGENDARY)
+        copy(suffix, charsmax(suffix), "b");
+    if (variant < 8 || variant >= 16)
+        add(suffix, charsmax(suffix), "a4");
+    return suffix;
+}
+
+PrecacheKnifePlayerModel(index)
+{
+    copy(g_Player[index], charsmax(g_Player[]), g_View[index]);
+    new filename = strlen(g_Player[index]) - 1;
+    while (filename > 0 && g_Player[index][filename - 1] != '/')
+        filename--;
+    g_Player[index][filename] = 'p';
+    new variant = GiftSkinVariant(index);
+    new revision[8] = "h10.mdl";
+    if (variant < 8)
+        copy(revision, charsmax(revision), "h5.mdl");
+    else if (variant >= GIFT_LEGACY_KNIFE_VARIANTS)
+        copy(revision, charsmax(revision), "h2.mdl");
+    else if (variant >= 16)
+        copy(revision, charsmax(revision), "h8.mdl");
+    replace(g_Player[index], charsmax(g_Player[]), ".mdl", revision);
+    precache_model(g_Player[index]);
 }
 
 public plugin_init()
@@ -1178,22 +1218,24 @@ CaseStoredSkin(type, code)
         return -1;
     if (slot < GIFT_WEAPON_VARIANTS)
         return GiftVariantIndex(CaseFirearm(type, 0), slot);
-    if (slot < GIFT_WEAPON_VARIANTS + GIFT_KNIFE_VARIANTS)
+    if (slot < GIFT_WEAPON_VARIANTS + GIFT_LEGACY_KNIFE_VARIANTS)
         return GiftVariantIndex(CASE_WEAPON_BUTTERFLY, slot - GIFT_WEAPON_VARIANTS);
+    if (slot >= 2 * GIFT_WEAPON_VARIANTS + GIFT_LEGACY_KNIFE_VARIANTS)
+        return GiftVariantIndex(CASE_WEAPON_BUTTERFLY, slot - 2 * GIFT_WEAPON_VARIANTS);
 
     new second = CaseFirearm(type, 1);
     if (second < 0)
         return -1;
-    return GiftVariantIndex(second, slot - GIFT_WEAPON_VARIANTS - GIFT_KNIFE_VARIANTS);
+    return GiftVariantIndex(second, slot - GIFT_WEAPON_VARIANTS - GIFT_LEGACY_KNIFE_VARIANTS);
 }
 
 CaseSkinCode(type, skin)
 {
     new weapon = GiftSkinWeapon(skin), slot = GiftSkinVariant(skin);
     if (weapon == CASE_WEAPON_BUTTERFLY)
-        slot += GIFT_WEAPON_VARIANTS;
+        slot += slot < GIFT_LEGACY_KNIFE_VARIANTS ? GIFT_WEAPON_VARIANTS : 2 * GIFT_WEAPON_VARIANTS;
     else if (weapon == CaseFirearm(type, 1))
-        slot += GIFT_WEAPON_VARIANTS + GIFT_KNIFE_VARIANTS;
+        slot += GIFT_WEAPON_VARIANTS + GIFT_LEGACY_KNIFE_VARIANTS;
     return CASE_ALPHABET[slot];
 }
 

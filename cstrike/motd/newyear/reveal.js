@@ -7,9 +7,9 @@
     var result = document.getElementById("result");
     var resultContent = document.getElementById("result-content");
     var saved = document.getElementById("saved");
-    var alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN";
+    var alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUV";
     var mysteryKnife = "knife-mystery.png";
-    var request = /^#([0-9a-zA-N,]+);(\d+);(\d+);(\d+);(\d+);([0-9,]+);(\d+)$/.exec(location.hash);
+    var request = /^#([0-9a-zA-V,]+);(\d+);(\d+);(\d+);(\d+);([0-9,]+);(\d+)$/.exec(location.hash);
 
     function show(element) {
         element.className = element.className.replace(/\s*hidden\b/, "");
@@ -57,7 +57,7 @@
         hide(intro);
         show(saved);
         saved.firstElementChild.textContent = "Графическая рулетка недоступна";
-        saved.lastElementChild.textContent = "Закрой окно и открой /wintercollection. Предмет уже выдан.";
+        saved.lastElementChild.textContent = "Закрой окно и открой /skins. Предмет уже выдан.";
     }
 
     if (!request || typeof caseCards === "undefined" || typeof caseSkinIds === "undefined") {

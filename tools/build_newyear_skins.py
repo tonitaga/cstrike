@@ -21,6 +21,7 @@ KNIFE_FAMILIES = (
     ("skeleton", MODELS / "incom/knife/skeleton/case_hardened/v_knife.mdl", 8, 8),
     ("karambit", MODELS / "incom/knife/karambit/doppler_emerald_v2/v_knife.mdl", 16, 8),
 )
+BAYONET_FAMILY = ("bayonet", MODELS / "incom/knife/bayonet/chang_specialist/v_knife.mdl", 24, 8)
 PRINT_COLORS = 128
 LIGHT_LEVELS = (.78, .93, 1.05, 1.17, 1.29)
 # Side-panel anchors avoid the support hand.
@@ -44,11 +45,11 @@ def model_filename(prefix, weapon, variant=0, *, tier=None):
             revision = "h"
         suffix = f"n{variant:02}{revision}"
     else:
-        suffix = "r11" if weapon == "knife" else "r13"
+        suffix = "r11a4" if weapon == "knife" else "r13"
         if tier == 3 and weapon == "deagle":
             suffix = "r14"
         if tier == 3 and weapon == "knife":
-            suffix = "r15"
+            suffix = "r15a4"
     if prefix == "p":
         suffix += "p2" if weapon == "awp" else "p"
     return f"{prefix}_{weapon}_{suffix}.mdl"
@@ -162,6 +163,7 @@ def texture_records(model):
     for i in range(count):
         name, flags, w, h, offset = unpack_from("<64s4i", model, table + 80 * i)
         yield name.split(b"\0")[0].decode().lower(), flags, w, h, offset
+
 
 
 def enlarge_atlases(source):
@@ -280,6 +282,33 @@ def recolor(source, weapon, tier, prefix, *, rarity=None):
     return result
 
 
+def align_studio_textures(model):
+    """Pad indexed atlases for renderers that require multiples of four."""
+    records = tuple(texture_records(model))
+    if all(w % 4 == 0 and h % 4 == 0 for _, _, w, h, _ in records):
+        return model
+
+    result = bytearray(model)
+    _, table = unpack_from("<2i", model, 180)
+    for index, (_, _, width, height, offset) in enumerate(records):
+        padded_width = (width + 3) & ~3
+        padded_height = (height + 3) & ~3
+        if (width, height) == (padded_width, padded_height):
+            continue
+        result.extend(bytes(-len(result) % 4))
+        new_offset = len(result)
+        for y in range(padded_height):
+            start = offset + min(y, height - 1) * width
+            row = model[start:start + width]
+            result.extend(row + row[-1:] * (padded_width - width))
+        end = offset + width * height
+        result.extend(model[end:end + 768])
+        pack_into("<3i", result, table + index * 80 + 68,
+                  padded_width, padded_height, new_offset)
+    pack_into("<i", result, 72, len(result))
+    return result
+
+
 def checked_model(model):
     if unpack_from("<i", model, 72)[0] != len(model):
         raise ValueError("Incorrect declared MDL length")
@@ -290,6 +319,7 @@ def checked_model(model):
 
 
 def write_model(path, model):
+    model = checked_model(align_studio_textures(model))
     with NamedTemporaryFile(dir=path.parent, prefix=path.stem, suffix=".tmp", delete=False) as output:
         pending = Path(output.name)
         output.write(model)
@@ -311,27 +341,35 @@ def knife_art_rarity(variant):
 
 
 def knife_model_path(variant):
-    family, _, _, _ = KNIFE_FAMILIES[variant // 8]
+    family, _, _, _ = (*KNIFE_FAMILIES, BAYONET_FAMILY)[variant // 8]
     rarity = knife_art_rarity(variant)
-    revision = "b" if rarity == 3 else ""
+    revision = {22: "bf", 23: "bk"}.get(variant, "q" if variant >= 24 else ("b" if rarity == 3 else ""))
+    if family != "skeleton":
+        revision += "a4"
     return OUTPUT / family / TIERS[rarity] / f"v_knife_k{variant:02}{revision}.mdl"
 
 
-def build_knife_family(family, variants=None):
+def build_knife_family(family, lighting, variants=None):
     name, source_path, first, size = family
     source = source_path.read_bytes()
     artwork_family = "butterfly-extra" if name == "butterfly" else name
     count = 0
     for variant in range(first, first+size) if variants is None else variants:
         path = knife_model_path(variant)
+        # The two legendary Karambits use separately authored blade projections.
+        if variant in (22, 23) and path.is_file():
+            continue
         path.parent.mkdir(parents=True, exist_ok=True)
         data = recolor(source, artwork_family, variant-first, "v", rarity=knife_art_rarity(variant))
-        write_model(path, checked_model(data))
+        write_model(path, checked_model(lighting.apply(data, idle=True)))
         count += 1
     return count
 
 
 def main(*, variants_only=False):
+    from newyear_form_lighting import FormLighting
+
+    lighting = FormLighting()
     total = 0
     for weapon in WEAPONS:
         if variants_only and weapon == "knife":
@@ -347,6 +385,7 @@ def main(*, variants_only=False):
                     folder = OUTPUT / ("butterfly" if weapon == "knife" else weapon) / rarity
                     folder.mkdir(parents=True, exist_ok=True)
                     model = recolor(source, weapon, tier, prefix)
+                    model = lighting.apply(model, idle=prefix == "v")
                     write_model(folder / model_filename(prefix, weapon, tier=tier), checked_model(model))
                     total += 1
             if weapon != "knife":
@@ -354,10 +393,11 @@ def main(*, variants_only=False):
                     folder = OUTPUT / weapon / TIERS[tier]
                     folder.mkdir(parents=True, exist_ok=True)
                     model = recolor(source, weapon, variant + 3, prefix)
+                    model = lighting.apply(model, idle=prefix == "v")
                     write_model(folder / model_filename(prefix, weapon, variant), checked_model(model))
                     total += 1
     if not variants_only:
-        total += sum(build_knife_family(family) for family in KNIFE_FAMILIES)
+        total += sum(build_knife_family(family, lighting) for family in KNIFE_FAMILIES)
     print(f"Built {total} models under {OUTPUT.relative_to(ROOT)}")
 
 
